@@ -53,7 +53,7 @@ public class ScoreResultView extends LinearLayout {
         score_again.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(iDialog != null){
+                if (iDialog != null) {
                     iDialog.sure();
                 }
             }
@@ -61,7 +61,7 @@ public class ScoreResultView extends LinearLayout {
         score_exit.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(iDialog != null){
+                if (iDialog != null) {
                     iDialog.cancel();
                 }
             }
@@ -72,6 +72,7 @@ public class ScoreResultView extends LinearLayout {
         boolean isGood = score > 90;
         score_img.setBackgroundResource(isGood ? R.mipmap.good : R.mipmap.bad);
         scoreView.setBackgroundResource(isGood ? R.mipmap.score_good : R.mipmap.score_bad);
+        scoreView.setText(score + "");
     }
 
 }
