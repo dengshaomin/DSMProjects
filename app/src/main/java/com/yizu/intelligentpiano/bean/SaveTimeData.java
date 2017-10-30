@@ -16,6 +16,14 @@ public class SaveTimeData {
     private String step;
     private boolean isRest = false;
 
+    //pullview使用,当前处于正确状态的按钮
+    private boolean pressCorrect = false;
+    //对应的物理keycode
+    private Integer physicalKey;
+    //是否已经被记录
+    private boolean hasRecord;
+
+
     public SaveTimeData(int mAddDuration, int duration, int octave, String step) {
         this.mAddDuration = mAddDuration;
         this.duration = duration;
@@ -61,5 +69,29 @@ public class SaveTimeData {
 
     public void setDuration(int duration) {
         this.duration = duration;
+    }
+
+    public boolean isPressCorrect() {
+        return pressCorrect;
+    }
+
+    public void setPressCorrect(boolean pressCorrect) {
+        this.pressCorrect = pressCorrect;
+    }
+
+
+
+    public Integer getPhysicalKey() {
+        return physicalKey;
+    }
+    public void setPhysicalKey(Integer physicalKey) {
+        this.physicalKey = physicalKey;
+    }
+    public boolean isHasRecord() {
+        return hasRecord;
+    }
+
+    public void setHasRecord(boolean hasRecord) {
+        this.hasRecord = hasRecord;
     }
 }

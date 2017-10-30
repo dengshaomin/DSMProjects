@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.yizu.intelligentpiano">
+          package="com.yizu.intelligentpiano">
 
     <!-- 在SDCard中创建与删除文件权限 -->
-    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />
+    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"/>
     <!-- 往SDCard写入数据权限 -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <!-- 从SDCard读取数据权限 -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <!-- 访问网络权限 -->
-    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.INTERNET"/>
     <!-- 开机广播权限 -->
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <!-- 获取网络状态的权限 -->
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
-    <uses-feature android:name="android.hardware.usb.host" />
+    <uses-feature android:name="android.hardware.usb.host"/>
     <uses-feature android:name="android.software.midi">
         android:required="true"</uses-feature>
 
@@ -29,19 +29,19 @@
         android:theme="@style/AppTheme">
         <meta-data
             android:name="com.alibaba.app.appkey"
-            android:value="24635410" />
+            android:value="24635410"/>
         <meta-data
             android:name="com.alibaba.app.appsecret"
-            android:value="aa3052518c486e144d3b731eb6c5b7fd" />
+            android:value="aa3052518c486e144d3b731eb6c5b7fd"/>
 
         <activity
             android:name=".view.MainActivity"
             android:configChanges="screenSize|keyboardHidden|orientation"
             android:screenOrientation="landscape">
-            <!--<intent-filter>-->
-            <!--<action android:name="android.intent.action.MAIN" />-->
-            <!--<category android:name="android.intent.category.LAUNCHER" />-->
-            <!--</intent-filter>-->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
         </activity>
         <activity
             android:name=".view.UpdataActivity"
@@ -57,10 +57,10 @@
             android:name=".view.PianoActivity"
             android:configChanges="screenSize|keyboardHidden|orientation"
             android:screenOrientation="landscape">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            <!--<intent-filter>-->
+            <!--<action android:name="android.intent.action.MAIN" />-->
+            <!--<category android:name="android.intent.category.LAUNCHER" />-->
+            <!--</intent-filter>-->
         </activity>
 
         <!-- (PUSH)消息接收监听器 （用户可自主扩展） -->
@@ -68,23 +68,23 @@
             android:name=".broadcast.MyMessageReceiver"
             android:exported="false"> <!-- 为保证receiver安全，建议设置不可导出，如需对其他应用开放可通过android：permission进行限制 -->
             <intent-filter>
-                <action android:name="com.alibaba.push2.action.NOTIFICATION_OPENED" />
+                <action android:name="com.alibaba.push2.action.NOTIFICATION_OPENED"/>
             </intent-filter>
             <intent-filter>
-                <action android:name="com.alibaba.push2.action.NOTIFICATION_REMOVED" />
+                <action android:name="com.alibaba.push2.action.NOTIFICATION_REMOVED"/>
             </intent-filter>
             <intent-filter>
-                <action android:name="com.alibaba.sdk.android.push.RECEIVE" />
+                <action android:name="com.alibaba.sdk.android.push.RECEIVE"/>
             </intent-filter>
         </receiver>
         <receiver android:name=".broadcast.AppStartReceiver">
             <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
         </receiver>
         <receiver android:name=".broadcast.TimeChangeReceiver">
             <intent-filter>
-                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE"/>
             </intent-filter>
         </receiver>
 
@@ -93,8 +93,8 @@
             android:configChanges="screenSize|keyboardHidden|orientation"
             android:screenOrientation="landscape">
             <!--<intent-filter>-->
-                <!--<action android:name="android.intent.action.MAIN" />-->
-                <!--<category android:name="android.intent.category.LAUNCHER" />-->
+            <!--<action android:name="android.intent.action.MAIN" />-->
+            <!--<category android:name="android.intent.category.LAUNCHER" />-->
             <!--</intent-filter>-->
         </activity>
     </application>

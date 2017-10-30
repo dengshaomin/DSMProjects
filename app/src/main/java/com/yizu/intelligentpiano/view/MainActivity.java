@@ -127,6 +127,7 @@ public class MainActivity extends BaseActivity {
      * 检查是否有写权限
      */
     private void cheackedPermisition() {
+        startActivity(new Intent(MainActivity.this,PianoActivity.class));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             int mPermisition = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
 //            如果没有位置权限
@@ -242,6 +243,7 @@ public class MainActivity extends BaseActivity {
         if (requestCode == 1001) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 MyToast.ShowLong("授权成功");
+                startActivity(new Intent(MainActivity.this,PianoActivity.class));
                 if (Constents.isNetworkConnected) {
                     updataAPP();
                 }

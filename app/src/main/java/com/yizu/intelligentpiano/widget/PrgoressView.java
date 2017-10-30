@@ -11,6 +11,8 @@ import android.view.View;
 
 import com.yizu.intelligentpiano.R;
 import com.yizu.intelligentpiano.bean.Move;
+import com.yizu.intelligentpiano.constens.IPlayState;
+import com.yizu.intelligentpiano.constens.ScoreHelper;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
 
 import java.util.List;
@@ -46,6 +48,15 @@ public class PrgoressView extends View {
     private int mMovePosiotion = -1;
     private int mLenth = 0;
     private int padding = 0;
+    private IPlayState iPlayState;
+
+    public IPlayState getiPlayState() {
+        return iPlayState;
+    }
+
+    public void setiPlayState(IPlayState iPlayState) {
+        this.iPlayState = iPlayState;
+    }
 
     /**
      * 定时器
@@ -61,16 +72,22 @@ public class PrgoressView extends View {
                     padding = 0;
                     mStaffView.scrollTo(0, 0);
                     mLenth = 0;
+                    if (iPlayState != null) {
+                        iPlayState.end();
+                    }
                     invalidate();
                 } else {
+                    if (iPlayState != null) {
+                        iPlayState.start();
+                    }
                     if (mData.get(mMovePosiotion).getLenth() / (mLayoutWidth - 100) == padding) {
                     } else {
                         mLenth = mData.get(mMovePosiotion).getLenth() - mLinsRoomWidth * 2;
                         padding++;
                         mStaffView.scrollTo((int) mLenth, 0);
                     }
-                    invalidate();
                     mTimer.schedule(new MyTimerTask(), mSpeedTime * mData.get(mMovePosiotion).getDuration());
+                    invalidate();
                 }
             }
         }
@@ -155,6 +172,7 @@ public class PrgoressView extends View {
      * 开始滚动
      */
     public void startPlay() {
+        mMovePosiotion = -1;
         MyLogUtils.e(TAG, "开始播放");
         if (mTimer == null) {
             mTimer = new Timer();
@@ -189,6 +207,7 @@ public class PrgoressView extends View {
         mLinsRoomWidth = mStaffView.getmLinsRoomWidth();
         twoStaff_fristLins_up = mStaffView.getTwoStaff_fristLins_up();
         isTowStaff = mStaffView.isTowStaff();
+        ScoreHelper.getInstance().setTotalNode(mData.size());
         invalidate();
     }
 }

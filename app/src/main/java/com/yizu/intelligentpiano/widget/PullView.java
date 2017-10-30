@@ -7,15 +7,19 @@ import android.graphics.RectF;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 
 import com.yizu.intelligentpiano.R;
 import com.yizu.intelligentpiano.bean.PullData;
 import com.yizu.intelligentpiano.bean.SaveTimeData;
 import com.yizu.intelligentpiano.bean.xml.Attributess;
+import com.yizu.intelligentpiano.constens.ScoreHelper;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -206,7 +210,6 @@ public class PullView extends View {
         }
     }
 
-
     /**
      * 计算每个音符的位置
      *
@@ -261,6 +264,7 @@ public class PullView extends View {
         }
         mRectF.top = mScrollHeight + mTimeError - (saveTimeData.getmAddDuration() + saveTimeData.getDuration()) * mSpeedLenth;
         mRectF.bottom = mScrollHeight + mTimeError - saveTimeData.getmAddDuration() * mSpeedLenth;
+        ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, getBottom());
         canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, mPaint);
         return 0;
     }

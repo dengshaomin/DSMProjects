@@ -20,6 +20,7 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.Scroller;
 import android.widget.TextView;
 
 import com.yizu.intelligentpiano.R;
@@ -30,6 +31,8 @@ import com.yizu.intelligentpiano.constens.HttpUrls;
 import com.yizu.intelligentpiano.constens.IDwonLoader;
 import com.yizu.intelligentpiano.constens.IFinish;
 import com.yizu.intelligentpiano.constens.IOkHttpCallBack;
+import com.yizu.intelligentpiano.constens.IPlayState;
+import com.yizu.intelligentpiano.constens.ScoreHelper;
 import com.yizu.intelligentpiano.utils.DownloadUtils;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
 import com.yizu.intelligentpiano.utils.MyToast;
@@ -43,8 +46,12 @@ import com.yizu.intelligentpiano.widget.PrgoressView;
 import com.yizu.intelligentpiano.widget.PullView;
 import com.yizu.intelligentpiano.widget.StaffView;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import jp.kshoji.driver.midi.activity.AbstractSingleMidiActivity;
 import jp.kshoji.driver.midi.device.MidiInputDevice;
@@ -79,6 +86,8 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         public boolean handleMessage(Message msg) {
             if (msg.what > 20 && msg.what < 109) {
                 mPianoKeyView.painoKeyPress(msg.what);
+                ScoreHelper.getInstance().caCorrectKey(msg.what, true);
+                timer.schedule(new PressTimerTask(), 3000);
             }
             return true;
         }
@@ -88,6 +97,8 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         public boolean handleMessage(Message msg) {
             if (msg.what > 20 && msg.what < 109) {
                 mPianoKeyView.painoKeyCanclePress(msg.what);
+                ScoreHelper.getInstance().caCorrectKey(msg.what, false);
+                timer1.schedule(new UpTimerTask(), 3000);
             }
             return true;
         }
@@ -107,6 +118,31 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         initView();
         setData();
         setListener();
+        sendTestPhysicKeys();
+    }
+
+    Timer timer;
+    Timer timer1;
+
+    private void sendTestPhysicKeys() {
+        timer = new Timer();
+        timer.schedule(new PressTimerTask(), 2000);
+        timer1 = new Timer();
+        timer1.schedule(new UpTimerTask(), 3000);
+    }
+
+    private class PressTimerTask extends TimerTask {
+        @Override
+        public void run() {
+            prassHandler.sendEmptyMessage(31);
+        }
+    }
+
+    private class UpTimerTask extends TimerTask {
+        @Override
+        public void run() {
+            canclePrassHandler.sendEmptyMessage(31);
+        }
     }
 
     /**
@@ -243,10 +279,21 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         mSpeed = (ImageView) findViewById(R.id.speed);
         mRewind = (ImageView) findViewById(R.id.rewind);
         mProgessView = (PrgoressView) findViewById(R.id.prgoressView);
+        mProgessView.setiPlayState(new IPlayState() {
+            @Override
+            public void start() {
+
+            }
+
+            @Override
+            public void end() {
+                int a = ScoreHelper.getInstance().caLastScores();
+            }
+        });
     }
 
 
-    //    打分上传
+    //    打分上传z
     private void addMusicHistory() {
         Map<String, String> map = new HashMap<>();
         map.put("music_id", "23");
@@ -266,10 +313,12 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
     /**
      * 显示成绩
      */
-    private void showResultView(boolean isGood) {
+    private void showResultView(int score) {
         final LinearLayout views = (LinearLayout) findViewById(R.id.main_piano);
         LinearLayout view = (LinearLayout) LayoutInflater.from(this).inflate(R.layout.dialog_score, null);
         TextView text = (TextView) view.findViewById(R.id.score_score);
+        text.setText(score + "");
+        boolean isGood = score > 90;
         if (!isGood) {
             ImageView imageView = (ImageView) view.findViewById(R.id.score_img);
             imageView.setBackgroundResource(R.mipmap.bad);
@@ -466,10 +515,20 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         MyLogUtils.e(TAG, "onMidiReset");
     }
 
+    private boolean pullViewState = false;
+
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.play:
+                if (pullViewState) {
+                    mPullView.stopPlay();
+                    mProgessView.stopPlay();
+                } else {
+                    mPullView.startPlay();
+                    mProgessView.startPlay();
+                }
+                pullViewState = !pullViewState;
                 break;
             case R.id.speed:
                 //快放
