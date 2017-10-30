@@ -76,6 +76,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
     private ImageView mSpeed;
     //慢放
     private ImageView mRewind;
+    private TextView realyTimeScore;
 
     private int type = 0;
     //是否显示瀑布流
@@ -88,7 +89,17 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         public boolean handleMessage(Message msg) {
             if (msg.what > 20 && msg.what < 109) {
                 mPianoKeyView.painoKeyPress(msg.what);
-                ScoreHelper.getInstance().caCorrectKey(msg.what, true);
+                ScoreHelper.getInstance().caCorrectKey(msg.what, true, new ScoreHelper.ScoreCallBack() {
+                    @Override
+                    public void callBack(final int score) {
+                        new Handler().post(new Runnable() {
+                            @Override
+                            public void run() {
+                                realyTimeScore.setText("当前得分：" + score + "分");
+                            }
+                        });
+                    }
+                });
                 timer.schedule(new PressTimerTask(), 3000);
             }
             return true;
@@ -99,7 +110,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         public boolean handleMessage(Message msg) {
             if (msg.what > 20 && msg.what < 109) {
                 mPianoKeyView.painoKeyCanclePress(msg.what);
-                ScoreHelper.getInstance().caCorrectKey(msg.what, false);
+                ScoreHelper.getInstance().caCorrectKey(msg.what, false, null);
                 timer1.schedule(new UpTimerTask(), 3000);
             }
             return true;
@@ -274,6 +285,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
     }
 
     private void initView() {
+        realyTimeScore = findViewById(R.id.realyTimeScore);
         mPianoKeyView = (PianoKeyView) findViewById(R.id.piano_key);
         mStaffView = (StaffView) findViewById(R.id.staffview);
         mPullView = (PullView) findViewById(R.id.pullview);
@@ -533,6 +545,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
             mPullView.stopPlay();
             mProgessView.stopPlay();
         } else {
+            ScoreHelper.getInstance().reset();
             mPullView.startPlay();
             mProgessView.startPlay();
         }

@@ -17,6 +17,9 @@ public class ScoreHelper {
     private static ScoreHelper scoreHelper;
     private int totalNodes;
     private int correctNodes;
+    private int hasGoneNodes;
+    private List<SaveTimeData> correctKeys;
+    private List<Integer> physicKeys;
 
     public static ScoreHelper getInstance() {
         if (scoreHelper == null) {
@@ -30,9 +33,6 @@ public class ScoreHelper {
     }
 
 
-    private List<SaveTimeData> correctKeys;
-    private List<Integer> physicKeys;
-
     public void setTotalNode(int totalNode) {
         totalNodes = totalNode;
     }
@@ -41,6 +41,7 @@ public class ScoreHelper {
         if (correctKeys == null) correctKeys = new ArrayList<>();
         if (rectF.bottom >= bottom && rectF.top <= bottom) {
             if (!saveTimeData.isPressCorrect()) {
+                hasGoneNodes++;
                 saveTimeData.setPressCorrect(true);
                 saveTimeData.setPhysicalKey(getPhysicKey(saveTimeData));
                 correctKeys.add(saveTimeData);
@@ -51,11 +52,14 @@ public class ScoreHelper {
         }
     }
 
-    public void caCorrectKey(int physicKey, boolean press) {
+    public void caCorrectKey(int physicKey, boolean press, ScoreCallBack callback) {
         if (physicKeys == null) physicKeys = new ArrayList<>();
         if (press) {
             if (!physicKeys.contains(physicKey)) {
                 physicKeys.add(physicKey);
+                if (callback != null) {
+                    callback.callBack(caRealTimeScores());
+                }
             }
         } else {
             if (physicKeys.contains(physicKey)) {
@@ -79,6 +83,11 @@ public class ScoreHelper {
         }
     }
 
+    private int caRealTimeScores() {
+        if (hasGoneNodes == 0) return 100;
+        return (int) ((float) correctNodes / (float) hasGoneNodes * 100);
+    }
+
     public List<SaveTimeData> getCurrentKeys() {
         return correctKeys;
 
@@ -90,5 +99,15 @@ public class ScoreHelper {
 
     public int caLastScores() {
         return (int) ((float) correctNodes / (float) totalNodes * 100);
+    }
+
+    public void reset() {
+        totalNodes = correctNodes = hasGoneNodes = 0;
+        correctKeys = new ArrayList<>();
+        physicKeys = new ArrayList<>();
+    }
+
+    public interface ScoreCallBack {
+        public void callBack(int score);
     }
 }
