@@ -28,6 +28,7 @@ import com.yizu.intelligentpiano.bean.Songs;
 import com.yizu.intelligentpiano.bean.xml.XmlBean;
 import com.yizu.intelligentpiano.constens.Constents;
 import com.yizu.intelligentpiano.constens.HttpUrls;
+import com.yizu.intelligentpiano.constens.IDialog;
 import com.yizu.intelligentpiano.constens.IDwonLoader;
 import com.yizu.intelligentpiano.constens.IFinish;
 import com.yizu.intelligentpiano.constens.IOkHttpCallBack;
@@ -44,6 +45,7 @@ import com.yizu.intelligentpiano.utils.XmlPrareUtils;
 import com.yizu.intelligentpiano.widget.PianoKeyView;
 import com.yizu.intelligentpiano.widget.PrgoressView;
 import com.yizu.intelligentpiano.widget.PullView;
+import com.yizu.intelligentpiano.widget.ScoreResultView;
 import com.yizu.intelligentpiano.widget.StaffView;
 
 import java.util.ArrayList;
@@ -287,7 +289,8 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
 
             @Override
             public void end() {
-                int a = ScoreHelper.getInstance().caLastScores();
+                int scores = ScoreHelper.getInstance().caLastScores();
+                showResultView(scores);
             }
         });
     }
@@ -310,26 +313,34 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         });
     }
 
+    private ScoreResultView scoreResultView;
+
     /**
      * 显示成绩
      */
     private void showResultView(int score) {
         final LinearLayout views = (LinearLayout) findViewById(R.id.main_piano);
-        LinearLayout view = (LinearLayout) LayoutInflater.from(this).inflate(R.layout.dialog_score, null);
-        TextView text = (TextView) view.findViewById(R.id.score_score);
-        text.setText(score + "");
-        boolean isGood = score > 90;
-        if (!isGood) {
-            ImageView imageView = (ImageView) view.findViewById(R.id.score_img);
-            imageView.setBackgroundResource(R.mipmap.bad);
-            text.setBackgroundResource(R.mipmap.score_bad);
+        if (popupWindow == null) {
+            scoreResultView = new ScoreResultView(this);
+            popupWindow = new PopupWindow(scoreResultView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+            popupWindow.setBackgroundDrawable(new BitmapDrawable());
+            scoreResultView.setiDialog(new IDialog() {
+                @Override
+                public void sure() {
+                    startPlay();
+                }
+
+                @Override
+                public void cancel() {
+                    popupWindow.dismiss();
+                }
+            });
         }
         final WindowManager.LayoutParams lp = getWindow().getAttributes();
         lp.alpha = 0.5f;
         getWindow().setAttributes(lp);
-        popupWindow = new PopupWindow(view, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
-        popupWindow.setBackgroundDrawable(new BitmapDrawable());
         popupWindow.setFocusable(true);
+        scoreResultView.setViewData(score);
         popupWindow.showAtLocation(views, Gravity.TOP, 0, 114);
         popupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
             @Override
@@ -517,18 +528,22 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
 
     private boolean pullViewState = false;
 
+    private void startPlay() {
+        if (pullViewState) {
+            mPullView.stopPlay();
+            mProgessView.stopPlay();
+        } else {
+            mPullView.startPlay();
+            mProgessView.startPlay();
+        }
+        pullViewState = !pullViewState;
+    }
+
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.play:
-                if (pullViewState) {
-                    mPullView.stopPlay();
-                    mProgessView.stopPlay();
-                } else {
-                    mPullView.startPlay();
-                    mProgessView.startPlay();
-                }
-                pullViewState = !pullViewState;
+                startPlay();
                 break;
             case R.id.speed:
                 //快放
