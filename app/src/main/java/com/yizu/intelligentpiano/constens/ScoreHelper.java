@@ -20,6 +20,15 @@ public class ScoreHelper {
     private int hasGoneNodes;
     private List<SaveTimeData> correctKeys;
     private List<Integer> physicKeys;
+    private ScoreCallBack callback;
+
+    public ScoreCallBack getCallback() {
+        return callback;
+    }
+
+    public void setCallback(ScoreCallBack callback) {
+        this.callback = callback;
+    }
 
     public static ScoreHelper getInstance() {
         if (scoreHelper == null) {
@@ -52,7 +61,7 @@ public class ScoreHelper {
         }
     }
 
-    public void caCorrectKey(int physicKey, boolean press, ScoreCallBack callback) {
+    public void caCorrectKey(int physicKey, boolean press) {
         if (physicKeys == null) physicKeys = new ArrayList<>();
         if (press) {
             if (!physicKeys.contains(physicKey)) {
@@ -98,7 +107,10 @@ public class ScoreHelper {
     }
 
     public int caLastScores() {
-        return (int) ((float) correctNodes / (float) totalNodes * 100);
+//        return (int) ((float) correctNodes / (float) totalNodes * 100);
+        int score = caRealTimeScores();
+        score = score > 100 ? 100 : score;
+        return 0 < score ? score : 0;
     }
 
     public void reset() {

@@ -62,7 +62,7 @@ import jp.kshoji.driver.midi.device.MidiOutputDevice;
 /**
  * 钢琴演奏
  */
-public class PianoActivity extends AbstractSingleMidiActivity implements View.OnClickListener {
+public class PianoActivity extends AbstractSingleMidiActivity implements View.OnClickListener, ScoreHelper.ScoreCallBack {
     private static final String TAG = "PianoActivity";
     private PopupWindow popupWindow;
     private MyBroadcastReceiver receiver;
@@ -89,17 +89,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         public boolean handleMessage(Message msg) {
             if (msg.what > 20 && msg.what < 109) {
                 mPianoKeyView.painoKeyPress(msg.what);
-                ScoreHelper.getInstance().caCorrectKey(msg.what, true, new ScoreHelper.ScoreCallBack() {
-                    @Override
-                    public void callBack(final int score) {
-                        new Handler().post(new Runnable() {
-                            @Override
-                            public void run() {
-                                realyTimeScore.setText("当前得分：" + score + "分");
-                            }
-                        });
-                    }
-                });
+                ScoreHelper.getInstance().caCorrectKey(msg.what, true);
                 timer.schedule(new PressTimerTask(), 3000);
             }
             return true;
@@ -110,7 +100,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         public boolean handleMessage(Message msg) {
             if (msg.what > 20 && msg.what < 109) {
                 mPianoKeyView.painoKeyCanclePress(msg.what);
-                ScoreHelper.getInstance().caCorrectKey(msg.what, false, null);
+                ScoreHelper.getInstance().caCorrectKey(msg.what, false);
                 timer1.schedule(new UpTimerTask(), 3000);
             }
             return true;
@@ -142,6 +132,11 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         timer.schedule(new PressTimerTask(), 2000);
         timer1 = new Timer();
         timer1.schedule(new UpTimerTask(), 3000);
+    }
+
+    @Override
+    public void callBack(int score) {
+        realyTimeScore.setText("当前得分：" + score + "分");
     }
 
     private class PressTimerTask extends TimerTask {
@@ -305,6 +300,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
                 showResultView(scores);
             }
         });
+        ScoreHelper.getInstance().setCallback(this);
     }
 
 
