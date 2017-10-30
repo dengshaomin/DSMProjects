@@ -81,6 +81,7 @@
             </LinearLayout>
 
             <TextView
+                android:id="@+id/realyTimeScore"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:gravity="center"
@@ -256,7 +257,6 @@
                     android:id="@+id/score_score"
                     android:layout_width="@dimen/com_120px"
                     android:layout_height="@dimen/com_120px"
-
                     android:layout_marginLeft="@dimen/com_170px"
                     android:layout_toEndOf="@id/score_img"
                     android:background="@mipmap/score_good"
