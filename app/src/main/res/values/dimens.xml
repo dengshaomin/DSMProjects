@@ -57,4 +57,14 @@
     <dimen name="com_100px">100px</dimen>
     <dimen name="com_300px">300px</dimen>
     <dimen name="com_80px">80px</dimen>
+    <dimen name="com_534px">534px</dimen>
+    <dimen name="com_230px">230px</dimen>
+    <dimen name="com_25px">25px</dimen>
+    <dimen name="com_60px">60px</dimen>
+    <dimen name="com_76px">76px</dimen>
+    <dimen name="com_238px">238px</dimen>
+    <dimen name="com_312px">312px</dimen>
+    <dimen name="com_70px">70px</dimen>
+    <dimen name="com_240px">240px</dimen>
+    <dimen name="com_170px">170px</dimen>
 </resources>

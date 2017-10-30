@@ -1,145 +1,300 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_piano"
     android:layout_width="match_parent"
-    android:layout_height="@dimen/com_240dp"
+    android:layout_height="@dimen/com_760px"
     android:keepScreenOn="true"
-    android:orientation="vertical"
     tools:context="com.yizu.intelligentpiano.view.PianoActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="@dimen/com_534px"
+                android:layout_height="@dimen/com_230px"
+                android:background="@color/blue"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="@dimen/com_10dp">
+
+                <com.yizu.intelligentpiano.widget.XCRoundImageView
+                    android:id="@+id/user_icon"
+                    android:layout_width="@dimen/com_120px"
+                    android:layout_height="@dimen/com_120px"
+                    android:layout_marginLeft="@dimen/com_30px"
+                    android:layout_marginRight="@dimen/com_30px"
+                    android:src="@mipmap/myicon" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:orientation="vertical"
+                    android:paddingLeft="@dimen/com_5dp">
+
+                    <TextView
+                        android:id="@+id/user_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:lines="1"
+                        android:text="昵称"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/com_30px" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingTop="@dimen/com_10px"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/user_song"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:lines="1"
+                            android:text="月亮之上"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/com_30px" />
+
+                        <TextView
+                            android:id="@+id/user_songfunction"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="80分"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/com_30px" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:padding="@dimen/com_30px"
+                android:text="当前得分：89分"
+                android:textColor="@color/black"
+                android:textSize="@dimen/com_25px" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <com.yizu.intelligentpiano.widget.StaffView
+                    android:id="@+id/staffview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+                <com.yizu.intelligentpiano.widget.PrgoressView
+                    android:id="@+id/prgoressView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+            </RelativeLayout>
+        </LinearLayout>
 
         <RelativeLayout
-            android:layout_width="@dimen/com_150dp"
-            android:layout_height="@dimen/com_60dp"
-            android:background="@color/blue"
-            android:padding="@dimen/com_10dp">
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/com_0dp"
+            android:layout_weight="1">
 
-            <com.yizu.intelligentpiano.widget.XCRoundImageView
-                android:id="@+id/user_icon"
-                android:layout_width="@dimen/com_40dp"
-                android:layout_height="@dimen/com_40dp"
-                android:src="@mipmap/myicon" />
+            <com.yizu.intelligentpiano.widget.PullView
+                android:id="@+id/pullview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/black" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/com_120px"
+                android:orientation="horizontal"
+                android:paddingLeft="@dimen/com_30px">
+
+                <ImageView
+                    android:id="@+id/rewind"
+                    android:layout_width="@dimen/com_120px"
+                    android:layout_height="match_parent"
+                    android:padding="@dimen/com_30px"
+                    android:src="@mipmap/rewind" />
+
+                <ImageView
+                    android:id="@+id/play"
+                    android:layout_width="@dimen/com_120px"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/selecter_staff_play" />
+
+                <ImageView
+                    android:id="@+id/speed"
+                    android:layout_width="@dimen/com_120px"
+                    android:layout_height="match_parent"
+                    android:padding="@dimen/com_30px"
+                    android:src="@mipmap/speed" />
+            </LinearLayout>
+        </RelativeLayout>
+
+        <com.yizu.intelligentpiano.widget.PianoKeyView
+            android:id="@+id/piano_key"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/black" />
+    </LinearLayout>
+
+    <RelativeLayout
+        android:id="@+id/time"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/shape_select"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/com_60px"
+                android:background="@drawable/shape_song"
+                android:gravity="center"
+                android:text="@string/prompt"
+                android:textColor="@color/white"
+                android:textSize="@dimen/com_20px" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/com_76px"
+                android:layout_marginLeft="@dimen/com_238px"
+                android:layout_marginRight="@dimen/com_238px"
+                android:layout_marginTop="@dimen/com_76px"
+                android:text="@string/time"
+                android:textColor="@color/black"
+                android:textSize="@dimen/com_25px" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/com_60px"
+                android:layout_marginLeft="@dimen/com_312px"
+                android:layout_marginRight="@dimen/com_312px"
+                android:background="@drawable/selector_button"
+                android:gravity="center"
+                android:paddingBottom="@dimen/com_20px"
+                android:paddingTop="@dimen/com_20px"
+                android:text="知道了"
+                android:textColor="@drawable/selector_text"
+                android:textSize="@dimen/com_20px" />
+        </LinearLayout>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/score_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:visibility="gone"
+        >
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/shape_select"
+            android:orientation="vertical">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_toEndOf="@id/user_icon"
-                android:orientation="vertical"
-                android:paddingLeft="@dimen/com_5dp">
+                android:background="@drawable/shape_song"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="@dimen/com_70px"
+                    android:layout_height="@dimen/com_70px"
+                    android:layout_marginLeft="@dimen/com_20px"
+                    android:padding="@dimen/com_20px"
+                    android:src="@mipmap/muicss" />
 
                 <TextView
-                    android:id="@+id/user_name"
+                    android:id="@+id/score_songname"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:ellipsize="end"
+                    android:gravity="center"
                     android:lines="1"
-                    android:text="昵称"
+                    android:text="月亮之上-未知"
                     android:textColor="@color/white"
-                    android:textSize="@dimen/com_10sp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingTop="@dimen/com_3dp"
-                    android:visibility="gone">
-
-                    <TextView
-                        android:id="@+id/user_song"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:ellipsize="end"
-                        android:lines="1"
-                        android:text="月亮之上"
-                        android:textColor="@color/white"
-                        android:textSize="@dimen/com_7sp" />
-
-                    <TextView
-                        android:id="@+id/user_songfunction"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="80分"
-                        android:textColor="@color/white"
-                        android:textSize="@dimen/com_7sp" />
-                </LinearLayout>
-
+                    android:textSize="@dimen/com_30px" />
             </LinearLayout>
-        </RelativeLayout>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:padding="@dimen/com_10dp"
-            android:text="当前得分：89分"
-            android:textColor="@color/black"
-            android:textSize="@dimen/com_10sp" />
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/com_50px">
 
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+                <ImageView
+                    android:id="@+id/score_img"
+                    android:layout_width="@dimen/com_240px"
+                    android:layout_height="@dimen/com_60px"
+                    android:layout_centerVertical="true"
+                    android:background="@mipmap/good" />
 
-            <com.yizu.intelligentpiano.widget.StaffView
-                android:id="@+id/staffview"
+                <TextView
+                    android:id="@+id/score_score"
+                    android:layout_width="@dimen/com_120px"
+                    android:layout_height="@dimen/com_120px"
+
+                    android:layout_marginLeft="@dimen/com_170px"
+                    android:layout_toEndOf="@id/score_img"
+                    android:background="@mipmap/score_good"
+                    android:gravity="center"
+                    android:text="99分"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/com_30px" />
+            </RelativeLayout>
+
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingBottom="@dimen/com_60px">
 
-            <com.yizu.intelligentpiano.widget.PrgoressView
-                android:id="@+id/prgoressView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-        </RelativeLayout>
-    </LinearLayout>
+                <TextView
+                    android:id="@+id/score_again"
+                    android:layout_width="@dimen/com_200px"
+                    android:layout_height="@dimen/com_50px"
+                    android:background="@drawable/selector_button"
+                    android:gravity="center"
+                    android:text="@string/again"
+                    android:textColor="@drawable/selector_text"
+                    android:textSize="@dimen/com_20px" />
 
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/com_0dp"
-        android:layout_weight="1">
-
-        <com.yizu.intelligentpiano.widget.PullView
-            android:id="@+id/pullview"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@color/black" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="@dimen/com_40dp"
-            android:orientation="horizontal"
-            android:paddingLeft="@dimen/com_10dp">
-
-            <ImageView
-                android:id="@+id/rewind"
-                android:layout_width="@dimen/com_40dp"
-                android:layout_height="match_parent"
-                android:padding="@dimen/com_10dp"
-                android:src="@mipmap/rewind" />
-
-            <ImageView
-                android:id="@+id/play"
-                android:layout_width="@dimen/com_40dp"
-                android:layout_height="match_parent"
-                android:src="@drawable/selecter_staff_play" />
-
-            <ImageView
-                android:id="@+id/speed"
-                android:layout_width="@dimen/com_40dp"
-                android:layout_height="match_parent"
-                android:padding="@dimen/com_10dp"
-                android:src="@mipmap/speed" />
+                <TextView
+                    android:id="@+id/score_exit"
+                    android:layout_width="@dimen/com_200px"
+                    android:layout_height="@dimen/com_50px"
+                    android:layout_alignParentRight="true"
+                    android:layout_marginLeft="@dimen/com_50px"
+                    android:background="@drawable/selector_button"
+                    android:gravity="center"
+                    android:text="@string/exit"
+                    android:textColor="@drawable/selector_text"
+                    android:textSize="@dimen/com_20px" />
+            </LinearLayout>
         </LinearLayout>
     </RelativeLayout>
-
-    <com.yizu.intelligentpiano.widget.PianoKeyView
-        android:id="@+id/piano_key"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/black" />
-</LinearLayout>
+</RelativeLayout>
