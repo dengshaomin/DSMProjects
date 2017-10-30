@@ -336,6 +336,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
                 }
             });
         }
+
         final WindowManager.LayoutParams lp = getWindow().getAttributes();
         lp.alpha = 0.5f;
         getWindow().setAttributes(lp);
