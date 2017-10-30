@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">智能钢琴</string>
+    <string name="updata">检查更新中......</string>
+    <string name="love_piano">只要喜欢就可以弹</string>
+    <string name="wx_login">微信登陆 更多精彩</string>
+    <string name="song_name">最佳曲目：</string>
+    <string name="re">弹奏记录</string>
+    <string name="again">再试一次</string>
+    <string name="exit">退出</string>
+    <string name="prompt">提示</string>
+    <string name="time">账户余额不足5分钟了哦，\n请及时进入小程序充值呦!</string>
+    <string name="vedio">视频-练习指导</string>
+    <string name="song1">儿童</string>
+    <string name="song2">金典</string>
+    <string name="song3">怀古</string>
+    <string name="song4">流行</string>
+    <string name="song5">动漫游戏</string>
+    <string name="song6">伤感</string>
+</resources>

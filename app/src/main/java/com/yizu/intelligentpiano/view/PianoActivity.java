@@ -1,0 +1,537 @@
+package com.yizu.intelligentpiano.view;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.drawable.BitmapDrawable;
+import android.hardware.usb.UsbDevice;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.support.annotation.NonNull;
+import android.view.Gravity;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
+import android.widget.TextView;
+
+import com.yizu.intelligentpiano.R;
+import com.yizu.intelligentpiano.bean.Songs;
+import com.yizu.intelligentpiano.bean.xml.XmlBean;
+import com.yizu.intelligentpiano.constens.Constents;
+import com.yizu.intelligentpiano.constens.HttpUrls;
+import com.yizu.intelligentpiano.constens.IDwonLoader;
+import com.yizu.intelligentpiano.constens.IFinish;
+import com.yizu.intelligentpiano.constens.IOkHttpCallBack;
+import com.yizu.intelligentpiano.utils.DownloadUtils;
+import com.yizu.intelligentpiano.utils.MyLogUtils;
+import com.yizu.intelligentpiano.utils.MyToast;
+import com.yizu.intelligentpiano.utils.OkHttpUtils;
+import com.yizu.intelligentpiano.utils.PreManger;
+import com.yizu.intelligentpiano.utils.SDCardUtils;
+import com.yizu.intelligentpiano.utils.ShowTimeDialog;
+import com.yizu.intelligentpiano.utils.XmlPrareUtils;
+import com.yizu.intelligentpiano.widget.PianoKeyView;
+import com.yizu.intelligentpiano.widget.PrgoressView;
+import com.yizu.intelligentpiano.widget.PullView;
+import com.yizu.intelligentpiano.widget.StaffView;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import jp.kshoji.driver.midi.activity.AbstractSingleMidiActivity;
+import jp.kshoji.driver.midi.device.MidiInputDevice;
+import jp.kshoji.driver.midi.device.MidiOutputDevice;
+
+/**
+ * 钢琴演奏
+ */
+public class PianoActivity extends AbstractSingleMidiActivity implements View.OnClickListener {
+    private static final String TAG = "PianoActivity";
+    private PopupWindow popupWindow;
+    private MyBroadcastReceiver receiver;
+    private PianoKeyView mPianoKeyView;
+    private StaffView mStaffView;
+    private PullView mPullView;
+    private PrgoressView mProgessView;
+    //播放
+    private ImageView mPlay;
+    //快进
+    private ImageView mSpeed;
+    //慢放
+    private ImageView mRewind;
+
+    private int type = 0;
+    //是否显示瀑布流
+    private boolean isShowPull = true;
+    //是否处理按键
+    private boolean KeyIsOk = false;
+
+    private Handler prassHandler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message msg) {
+            if (msg.what > 20 && msg.what < 109) {
+                mPianoKeyView.painoKeyPress(msg.what);
+            }
+            return true;
+        }
+    });
+    private Handler canclePrassHandler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message msg) {
+            if (msg.what > 20 && msg.what < 109) {
+                mPianoKeyView.painoKeyCanclePress(msg.what);
+            }
+            return true;
+        }
+    });
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        //隐藏标题
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        //设置全屏
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_piano);
+
+        setRegisterReceiver();
+        initView();
+        setData();
+        setListener();
+    }
+
+    /**
+     * 下载xml文件
+     *
+     * @param fileUrl  下载文件的网络路径
+     * @param fileName 保存的文件名
+     * @param saveUrl  保存的文件夹
+     */
+    private void downLoadFile(String fileUrl, final String fileName, final String saveUrl) {
+//        "http://piano.sinotransfer.com/Uploads/Download/2017-09-20/59c21068ef4b5.xml"
+        new DownloadUtils(this).downloadFile(fileUrl,
+                fileName, DownloadUtils.FileType.XML, saveUrl, new IDwonLoader() {
+                    @Override
+                    public void video() {
+
+                    }
+
+                    @Override
+                    public void Xml() {
+                        MyLogUtils.e(TAG, "下载成功");
+                        String urls = SDCardUtils.getExternalStorageDirectory().concat(saveUrl + "/" + fileName);
+                        getXmlData(urls);
+                    }
+                });
+    }
+
+    /**
+     * 获取xml数据
+     *
+     * @param urls
+     */
+    private void getXmlData(String urls) {
+        MyLogUtils.e(TAG, "xmlUrls：" + urls);
+        XmlPrareUtils utils = new XmlPrareUtils(this);
+        XmlBean bean = utils.getXmlBean(urls);
+        if (bean == null) {
+            MyLogUtils.e(TAG, "解析失败");
+            return;
+        }
+        mStaffView.setStaffData(bean.getList(), new IFinish() {
+            @Override
+            public void success() {
+                //更新PullView的数据
+                mPullView.setPullData(mStaffView, mPianoKeyView);
+                mProgessView.setPrgoressData(mStaffView);
+            }
+        });
+
+    }
+
+    private void setListener() {
+        mPlay.setOnClickListener(this);
+    }
+
+    private void setData() {
+//        if (getIntent() != null) {
+//            String title = getIntent().getStringExtra("title");
+//            MyLogUtils.e(TAG, "title：" + title);
+//            String auther = getIntent().getStringExtra("auther");
+//            MyLogUtils.e(TAG, "auther：" + auther);
+//            String xml = getIntent().getStringExtra("xml");
+//            MyLogUtils.e(TAG, "xml：" + xml);
+//            type = getIntent().getIntExtra("type", 0);
+//            MyLogUtils.e(TAG, "type：" + type);
+//            isShowPull = getIntent().getBooleanExtra("isShowPull", true);
+//            MyLogUtils.e(TAG, "isShowPull：" + isShowPull);
+//            //设置是否显示瀑布流
+//            mPullView.isShow(isShowPull);
+//            initData(type, title, auther, xml);
+//        }
+        type = 3;
+        String title = "伤不起";
+        String auther = "邹浩";
+        String xml = "http://piano.sinotransfer.com/Uploads/Download/2017-09-20/59c21068ef4b5.xml";
+        initData(type, title, auther, xml);
+    }
+
+    /**
+     * 判断xml是否需要下载
+     *
+     * @param type
+     * @param title
+     * @param auther
+     * @param xml
+     */
+    private void initData(int type, String title, String auther, String xml) {
+        String url = "";
+        switch (type) {
+            case 1:
+                url = Constents.XML_CHILDREN;
+                break;
+            case 2:
+                url = Constents.XML_SATINE;
+                break;
+            case 3:
+                url = Constents.XML_NOSTALGIC;
+                break;
+            case 4:
+                url = Constents.XML_POPULAR;
+                break;
+            case 5:
+                url = Constents.XML_GAME;
+                break;
+            case 6:
+                url = Constents.XML_SENTIMENTAL;
+                break;
+        }
+        if (url.equals("")) {
+            return;
+        }
+        String urls = SDCardUtils.getIsHave(url.concat("/" + title + "_" + auther + ".xml"));
+        if (urls.equals("")) {
+            downLoadFile(xml, title + "_" + auther + ".xml", url);
+        } else {
+            getXmlData(urls);
+        }
+    }
+
+    /**
+     * 注册动态广播
+     */
+    private void setRegisterReceiver() {
+        receiver = new MyBroadcastReceiver();
+        IntentFilter iFilter = new IntentFilter(Constents.ACTION);
+        registerReceiver(receiver, iFilter);
+    }
+
+    private void initView() {
+        mPianoKeyView = (PianoKeyView) findViewById(R.id.piano_key);
+        mStaffView = (StaffView) findViewById(R.id.staffview);
+        mPullView = (PullView) findViewById(R.id.pullview);
+        mPlay = (ImageView) findViewById(R.id.play);
+        mSpeed = (ImageView) findViewById(R.id.speed);
+        mRewind = (ImageView) findViewById(R.id.rewind);
+        mProgessView = (PrgoressView) findViewById(R.id.prgoressView);
+    }
+
+
+    //    打分上传
+    private void addMusicHistory() {
+        Map<String, String> map = new HashMap<>();
+        map.put("music_id", "23");
+        map.put("music_title", "我在想你");
+        map.put("device_id", PreManger.instance().getMacId());
+        map.put("user_id", Constents.user_id);
+        map.put("score", "88");
+        map.put("auther", "刘海");
+        OkHttpUtils.postMap(HttpUrls.addMusicHistory, map, new IOkHttpCallBack() {
+            @Override
+            public void success(String result) {
+                MyLogUtils.e(TAG, "上传成功");
+            }
+        });
+    }
+
+    /**
+     * 显示成绩
+     */
+    private void showResultView(boolean isGood) {
+        final LinearLayout views = (LinearLayout) findViewById(R.id.main_piano);
+        LinearLayout view = (LinearLayout) LayoutInflater.from(this).inflate(R.layout.dialog_score, null);
+        TextView text = (TextView) view.findViewById(R.id.score_score);
+        if (!isGood) {
+            ImageView imageView = (ImageView) view.findViewById(R.id.score_img);
+            imageView.setBackgroundResource(R.mipmap.bad);
+            text.setBackgroundResource(R.mipmap.score_bad);
+        }
+        final WindowManager.LayoutParams lp = getWindow().getAttributes();
+        lp.alpha = 0.5f;
+        getWindow().setAttributes(lp);
+        popupWindow = new PopupWindow(view, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+        popupWindow.setBackgroundDrawable(new BitmapDrawable());
+        popupWindow.setFocusable(true);
+        popupWindow.showAtLocation(views, Gravity.TOP, 0, 114);
+        popupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
+            @Override
+            public void onDismiss() {
+                lp.alpha = 1f;
+                getWindow().setAttributes(lp);
+            }
+        });
+    }
+
+    //midi链接
+    @Override
+    public void onDeviceAttached(@NonNull UsbDevice usbDevice) {
+        MyLogUtils.e(TAG, "onDeviceAttached");
+        //此方法已经废弃
+    }
+
+    @Override
+    public void onMidiInputDeviceAttached(@NonNull MidiInputDevice midiInputDevice) {
+        MyLogUtils.e(TAG, "onMidiInputDeviceAttached");
+        //钢琴键盘可以将midi传入到手机
+        MyToast.ShowLong("设备ID：" + midiInputDevice.getUsbDevice().getDeviceId() + ",已链接");
+        KeyIsOk = true;
+    }
+
+    @Override
+    public void onMidiOutputDeviceAttached(@NonNull MidiOutputDevice midiOutputDevice) {
+        //手机可以将midi传入到钢琴键盘
+        MyLogUtils.e(TAG, "onMidiOutputDeviceAttached");
+        KeyIsOk = true;
+    }
+
+    //midi断开
+    @Override
+    public void onDeviceDetached(@NonNull UsbDevice usbDevice) {
+        MyLogUtils.e(TAG, "onDeviceDetached");
+        //此方法已经废弃
+    }
+
+    @Override
+    public void onMidiInputDeviceDetached(@NonNull MidiInputDevice midiInputDevice) {
+        MyLogUtils.e(TAG, "onMidiInputDeviceDetached");
+        //usb断开，钢琴键盘不可以将midi传入到手机
+        MyToast.ShowLong("设备ID：" + midiInputDevice.getUsbDevice().getDeviceId() + ",已断开");
+        KeyIsOk = false;
+    }
+
+    @Override
+    public void onMidiOutputDeviceDetached(@NonNull MidiOutputDevice midiOutputDevice) {
+        MyLogUtils.e(TAG, "onMidiOutputDeviceDetached");
+        //usb断开，手机不可以将midi传入到钢琴键盘
+        KeyIsOk = false;
+    }
+
+    @Override
+    public void onMidiMiscellaneousFunctionCodes(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2, int i3) {
+        MyLogUtils.e(TAG, "onMidiMiscellaneousFunctionCodes");
+    }
+
+    @Override
+    public void onMidiCableEvents(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2, int i3) {
+        MyLogUtils.e(TAG, "onMidiCableEvents");
+    }
+
+    @Override
+    public void onMidiSystemCommonMessage(@NonNull MidiInputDevice midiInputDevice, int i, byte[] bytes) {
+        MyLogUtils.e(TAG, "onMidiSystemCommonMessage");
+    }
+
+    @Override
+    public void onMidiSystemExclusive(@NonNull MidiInputDevice midiInputDevice, int i, byte[] bytes) {
+        MyLogUtils.e(TAG, "onMidiSystemExclusive");
+    }
+
+    /**
+     * 钢琴手指抬起
+     *
+     * @param midiInputDevice
+     * @param i
+     * @param i1
+     * @param i2
+     * @param i3
+     */
+    @Override
+    public void onMidiNoteOff(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2, int i3) {
+        MyLogUtils.e(TAG, "onMidiNoteOff" + "NoteOn cable: " + i + ",  channel: " + i1 + ", note: " + i2 + ", velocity: " + i3);
+        canclePrassHandler.sendEmptyMessage(i2);
+    }
+
+    /**
+     * 钢琴手指按下
+     *
+     * @param midiInputDevice 输入的设备
+     * @param i
+     * @param i1
+     * @param i2              键数代表键的位置
+     * @param i3
+     */
+    @Override
+    public void onMidiNoteOn(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2, int i3) {
+        MyLogUtils.e(TAG, "onMidiNoteOn" + "NoteOn cable: " + i + ",  channel: " + i1 + ", note: " + i2 + ", velocity: " + i3);
+        prassHandler.sendEmptyMessage(i2);
+
+    }
+
+    @Override
+    public void onMidiPolyphonicAftertouch(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2, int i3) {
+        MyLogUtils.e(TAG, "onMidiPolyphonicAftertouch");
+    }
+
+    @Override
+    public void onMidiControlChange(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2, int i3) {
+        MyLogUtils.e(TAG, "onMidiControlChange");
+    }
+
+    @Override
+    public void onMidiProgramChange(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2) {
+        MyLogUtils.e(TAG, "onMidiProgramChange");
+    }
+
+    @Override
+    public void onMidiChannelAftertouch(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2) {
+        MyLogUtils.e(TAG, "onMidiChannelAftertouch");
+    }
+
+    @Override
+    public void onMidiPitchWheel(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2) {
+        MyLogUtils.e(TAG, "onMidiPitchWheel");
+    }
+
+    @Override
+    public void onMidiSingleByte(@NonNull MidiInputDevice midiInputDevice, int i, int i1) {
+        MyLogUtils.e(TAG, "onMidiSingleByte");
+    }
+
+    @Override
+    public void onMidiTimeCodeQuarterFrame(@NonNull MidiInputDevice midiInputDevice, int i, int i1) {
+        MyLogUtils.e(TAG, "onMidiTimeCodeQuarterFrame");
+    }
+
+    @Override
+    public void onMidiSongSelect(@NonNull MidiInputDevice midiInputDevice, int i, int i1) {
+        MyLogUtils.e(TAG, "onMidiSongSelect");
+    }
+
+    @Override
+    public void onMidiSongPositionPointer(@NonNull MidiInputDevice midiInputDevice, int i, int i1) {
+        MyLogUtils.e(TAG, "onMidiSongPositionPointer");
+    }
+
+    @Override
+    public void onMidiTuneRequest(@NonNull MidiInputDevice midiInputDevice, int i) {
+        MyLogUtils.e(TAG, "onMidiTuneRequest");
+    }
+
+    @Override
+    public void onMidiTimingClock(@NonNull MidiInputDevice midiInputDevice, int i) {
+        MyLogUtils.e(TAG, "onMidiTimingClock");
+    }
+
+    @Override
+    public void onMidiStart(@NonNull MidiInputDevice midiInputDevice, int i) {
+        MyLogUtils.e(TAG, "onMidiStart");
+    }
+
+    @Override
+    public void onMidiContinue(@NonNull MidiInputDevice midiInputDevice, int i) {
+        MyLogUtils.e(TAG, "onMidiContinue");
+    }
+
+    @Override
+    public void onMidiStop(@NonNull MidiInputDevice midiInputDevice, int i) {
+        MyLogUtils.e(TAG, "onMidiStop");
+    }
+
+    @Override
+    public void onMidiActiveSensing(@NonNull MidiInputDevice midiInputDevice, int i) {
+        MyLogUtils.e(TAG, "onMidiActiveSensing");
+    }
+
+    @Override
+    public void onMidiReset(@NonNull MidiInputDevice midiInputDevice, int i) {
+        MyLogUtils.e(TAG, "onMidiReset");
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.play:
+                break;
+            case R.id.speed:
+                //快放
+                break;
+            case R.id.record:
+//                慢放
+                break;
+        }
+    }
+
+    class MyBroadcastReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (intent.getStringExtra(Constents.KEY)) {
+                case Constents.LOGOUT_FINISH:
+                    //activity直接退出
+                    PianoActivity.this.finish();
+                    break;
+                case Constents.NOTIME_5:
+                    //剩余5分钟
+                    if (KeyIsOk) {
+                        new ShowTimeDialog(PianoActivity.this, PianoActivity.this).showTimeView(findViewById(R.id.main_piano));
+                    }
+                    break;
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(receiver);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (KeyIsOk) {
+            switch (keyCode) {
+                case KeyEvent.KEYCODE_DPAD_LEFT:
+                    //左
+                    return true;
+                case KeyEvent.KEYCODE_ALT_RIGHT:
+                    //右
+                    return true;
+                case KeyEvent.KEYCODE_DPAD_CENTER:
+                    //确定
+                    if (mPlay.isSelected()) {
+//                暂停
+                        mPlay.setSelected(false);
+                        mPullView.stopPlay();
+//                    mStaffView.stopPlay();
+                        mProgessView.stopPlay();
+                    } else {
+//                播放
+                        mPlay.setSelected(true);
+                        mPullView.startPlay();
+//                    mStaffView.startPlay();
+                        mProgessView.startPlay();
+                    }
+                    return true;
+            }
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+}

@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">LowRecyclerViews</string>
+    <string name="no_data">没有数据哦</string>
+</resources>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/com_760px"
+    android:background="@mipmap/updata"
+    tools:context="com.yizu.intelligentpiano.view.UpdataActivity">
+
+    <!--<RelativeLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:background="#99000000">-->
+
+        <!--<TextView-->
+            <!--android:id="@+id/updata"-->
+            <!--android:layout_width="@dimen/com_913px"-->
+            <!--android:layout_height="@dimen/com_132px"-->
+            <!--android:layout_centerInParent="true"-->
+            <!--android:background="@drawable/shape"-->
+            <!--android:gravity="center"-->
+            <!--android:text="@string/updata"-->
+            <!--android:textColor="@color/blue"-->
+            <!--android:textSize="@dimen/com_32px" />-->
+    <!--</RelativeLayout>-->
+</RelativeLayout>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/com_760px"
+    android:background="@mipmap/login"
+    android:keepScreenOn="true"
+    android:orientation="horizontal"
+    tools:context="com.yizu.intelligentpiano.view.MainActivity">
+    <TextView
+        android:layout_width="@dimen/com_0dp"
+        android:layout_height="@dimen/com_0dp"
+        android:layout_weight="1"
+        />
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        >
+        <TextView
+            android:id="@+id/love_piano"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/love_piano"
+            android:textColor="@color/white"
+            android:textSize="@dimen/com_15sp" />
+
+        <TextView
+            android:id="@+id/login_button"
+            android:layout_width="@dimen/com_100dp"
+            android:layout_height="@dimen/com_30dp"
+            android:layout_marginTop="@dimen/com_72px"
+            android:background="@drawable/selector_button"
+            android:gravity="center"
+            android:text="默认登陆"
+            android:textColor="@drawable/selector_text"
+            android:textSize="@dimen/com_15sp"
+            android:visibility="gone" />
+    </LinearLayout>
+    <TextView
+        android:layout_width="@dimen/com_0dp"
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        />
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical">
+        <ImageView
+            android:id="@+id/dimension"
+            android:layout_width="@dimen/com_220px"
+            android:layout_height="@dimen/com_220px" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/com_22px"
+            android:text="@string/wx_login"
+            android:textColor="@color/white"
+            android:textSize="@dimen/com_10sp" />
+    </LinearLayout>
+    <TextView
+        android:layout_width="@dimen/com_0dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        />
+</LinearLayout>

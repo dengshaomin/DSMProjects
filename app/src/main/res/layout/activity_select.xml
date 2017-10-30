@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_select"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/com_760px"
+    android:background="@mipmap/login"
+    android:keepScreenOn="true"
+    tools:context="com.yizu.intelligentpiano.view.SelectActivity">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingBottom="@dimen/com_50px"
+        android:paddingLeft="@dimen/com_300px"
+        android:paddingRight="@dimen/com_300px"
+        android:paddingTop="@dimen/com_50px">
+
+        <LinearLayout
+            android:id="@+id/head_view"
+            android:layout_width="@dimen/com_600px"
+            android:layout_height="match_parent"
+            android:background="@drawable/selector_song"
+            android:orientation="vertical"
+            android:paddingBottom="@dimen/com_10px">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/com_200px"
+                android:background="@mipmap/icon"
+                android:padding="@dimen/com_40px">
+
+                <com.yizu.intelligentpiano.widget.XCRoundImageView
+                    android:id="@+id/user_icon"
+                    android:layout_width="@dimen/com_120px"
+                    android:layout_height="@dimen/com_120px"
+                    android:src="@mipmap/myicon" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_toEndOf="@id/user_icon"
+                    android:orientation="vertical"
+                    android:paddingLeft="@dimen/com_20px">
+
+                    <TextView
+                        android:id="@+id/user_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:lines="1"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/com_40px" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingTop="@dimen/com_10px">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/song_name"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/com_30px" />
+
+                        <TextView
+                            android:id="@+id/user_song"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:lines="1"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/com_30px" />
+
+                        <TextView
+                            android:id="@+id/user_songfunction"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/com_30px" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </RelativeLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/com_68px"
+                android:background="@color/none"
+                android:gravity="center"
+                android:text="@string/re"
+                android:textColor="@color/blue"
+                android:textSize="@dimen/com_20px" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/com_2px"
+                android:background="@color/gary" />
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/record"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/none"
+                android:scrollbars="none"></android.support.v7.widget.RecyclerView>
+
+        </LinearLayout>
+
+        <HorizontalScrollView
+            android:id="@+id/scrollView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="@dimen/com_90px"
+            android:layout_toRightOf="@id/head_view"
+            android:background="@color/none"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="@dimen/com_600px"
+                    android:layout_height="match_parent"
+                    android:layout_marginLeft="@dimen/com_80px"
+                    android:background="@drawable/selector_song"
+                    android:orientation="vertical"
+                    android:paddingBottom="@dimen/com_10px">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/com_50px"
+                        android:background="@drawable/shape_song"
+                        android:gravity="center_vertical"
+                        android:paddingLeft="@dimen/com_40px"
+                        android:paddingRight="@dimen/com_40px"
+                        android:text="@string/vedio"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/com_30px" />
+
+                    <android.support.v7.widget.RecyclerView
+                        android:id="@+id/recycler_video"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scrollbars="none"></android.support.v7.widget.RecyclerView>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="@dimen/com_600px"
+                    android:layout_height="match_parent"
+                    android:layout_marginLeft="@dimen/com_80px"
+                    android:background="@drawable/selector_song"
+                    android:orientation="vertical"
+                    android:paddingBottom="@dimen/com_10px">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/com_50px"
+                        android:background="@drawable/shape_song"
+                        android:gravity="center_vertical"
+                        android:paddingLeft="@dimen/com_40px"
+                        android:paddingRight="@dimen/com_40px"
+                        android:text="@string/song1"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/com_30px" />
+
+                    <android.support.v7.widget.RecyclerView
+                        android:id="@+id/recycler_song1"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scrollbars="none"></android.support.v7.widget.RecyclerView>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="@dimen/com_600px"
+                    android:layout_height="match_parent"
+                    android:layout_marginLeft="@dimen/com_80px"
+                    android:background="@drawable/selector_song"
+                    android:orientation="vertical"
+                    android:paddingBottom="@dimen/com_10px">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/com_50px"
+                        android:background="@drawable/shape_song"
+                        android:gravity="center_vertical"
+                        android:paddingLeft="@dimen/com_40px"
+                        android:paddingRight="@dimen/com_40px"
+                        android:text="@string/song2"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/com_30px" />
+
+                    <android.support.v7.widget.RecyclerView
+                        android:id="@+id/recycler_song2"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scrollbars="none"></android.support.v7.widget.RecyclerView>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="@dimen/com_600px"
+                    android:layout_height="match_parent"
+                    android:layout_marginLeft="@dimen/com_80px"
+                    android:background="@drawable/selector_song"
+                    android:orientation="vertical"
+                    android:paddingBottom="@dimen/com_10px">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/com_50px"
+                        android:background="@drawable/shape_song"
+                        android:gravity="center_vertical"
+                        android:paddingLeft="@dimen/com_40px"
+                        android:paddingRight="@dimen/com_40px"
+                        android:text="@string/song3"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/com_30px" />
+
+                    <android.support.v7.widget.RecyclerView
+                        android:id="@+id/recycler_song3"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scrollbars="none"></android.support.v7.widget.RecyclerView>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="@dimen/com_600px"
+                    android:layout_height="match_parent"
+                    android:layout_marginLeft="@dimen/com_80px"
+                    android:background="@drawable/selector_song"
+                    android:orientation="vertical"
+                    android:paddingBottom="@dimen/com_10px">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/com_50px"
+                        android:background="@drawable/shape_song"
+                        android:gravity="center_vertical"
+                        android:paddingLeft="@dimen/com_40px"
+                        android:paddingRight="@dimen/com_40px"
+                        android:text="@string/song4"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/com_30px" />
+
+                    <android.support.v7.widget.RecyclerView
+                        android:id="@+id/recycler_song4"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scrollbars="none"></android.support.v7.widget.RecyclerView>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="@dimen/com_600px"
+                    android:layout_height="match_parent"
+                    android:layout_marginLeft="@dimen/com_80px"
+                    android:background="@drawable/selector_song"
+                    android:orientation="vertical"
+                    android:paddingBottom="@dimen/com_10px">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/com_50px"
+                        android:background="@drawable/shape_song"
+                        android:gravity="center_vertical"
+                        android:paddingLeft="@dimen/com_40px"
+                        android:paddingRight="@dimen/com_40px"
+                        android:text="@string/song5"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/com_30px" />
+
+                    <android.support.v7.widget.RecyclerView
+                        android:id="@+id/recycler_song5"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scrollbars="none"></android.support.v7.widget.RecyclerView>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="@dimen/com_600px"
+                    android:layout_height="match_parent"
+                    android:layout_marginLeft="@dimen/com_80px"
+                    android:background="@drawable/selector_song"
+                    android:orientation="vertical"
+                    android:paddingBottom="@dimen/com_10px">
+
+                    <TextView
+                        android:id="@+id/song_title"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/com_50px"
+                        android:background="@drawable/shape_song"
+                        android:gravity="center_vertical"
+                        android:paddingLeft="@dimen/com_40px"
+                        android:paddingRight="@dimen/com_40px"
+                        android:text="@string/song6"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/com_30px" />
+
+                    <android.support.v7.widget.RecyclerView
+                        android:id="@+id/recycler_song6"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scrollbars="none"></android.support.v7.widget.RecyclerView>
+                </LinearLayout>
+            </LinearLayout>
+
+        </HorizontalScrollView>
+    </RelativeLayout>
+
+
+    <RelativeLayout
+        android:id="@+id/select_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/shape_select"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/com_20dp"
+                android:background="@drawable/shape_song"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="@dimen/com_20dp"
+                    android:layout_height="@dimen/com_20dp"
+                    android:padding="@dimen/com_5dp"
+                    android:src="@mipmap/muicss" />
+
+                <TextView
+                    android:id="@+id/dialog_songname"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/com_7sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:orientation="horizontal"
+                android:paddingBottom="@dimen/com_15dp"
+                android:paddingTop="@dimen/com_15dp">
+
+                <ImageView
+                    android:id="@+id/dialog_satisfied"
+                    android:layout_width="70dp"
+                    android:layout_height="70dp"
+                    android:layout_marginLeft="@dimen/com_30dp"
+                    android:layout_marginRight="@dimen/com_10dp"
+                    android:src="@drawable/selector_satisfied" />
+
+                <ImageView
+                    android:id="@+id/dialog_play"
+                    android:layout_width="70dp"
+                    android:layout_height="70dp"
+                    android:layout_marginLeft="@dimen/com_10dp"
+                    android:layout_marginRight="@dimen/com_30dp"
+                    android:src="@drawable/selector_play" />
+            </LinearLayout>
+        </LinearLayout>
+    </RelativeLayout>
+</RelativeLayout>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--<dimen name="com_240dp">760px</dimen>-->
+    <dimen name="com_240dp">240dp</dimen>
+    <dimen name="com_300dp">300dp</dimen>
+    <dimen name="com_40dp">40dp</dimen>
+    <dimen name="com_10dp">10dp</dimen>
+    <dimen name="com_5dp">5dp</dimen>
+    <dimen name="com_80dp">80dp</dimen>
+    <dimen name="com_210dp">210dp</dimen>
+    <dimen name="com_15sp">15sp</dimen>
+    <dimen name="com_100dp">100dp</dimen>
+    <dimen name="com_30dp">30dp</dimen>
+    <dimen name="com_20sp">20sp</dimen>
+    <dimen name="com_20dp">20dp</dimen>
+    <dimen name="com_7dp">7dp</dimen>
+    <dimen name="com_10sp">10sp</dimen>
+    <dimen name="com_200dp">200dp</dimen>
+    <dimen name="com_160dp">160dp</dimen>
+    <dimen name="com_140dp">140dp</dimen>
+    <dimen name="com_15dp">15dp</dimen>
+    <dimen name="com_60dp">60dp</dimen>
+    <dimen name="com_7sp">7sp</dimen>
+    <dimen name="com_3dp">3dp</dimen>
+    <dimen name="com_2dp">2dp</dimen>
+    <dimen name="com_1dp">1dp</dimen>
+    <dimen name="com_2px">2px</dimen>
+    <dimen name="com_5sp">5sp</dimen>
+    <dimen name="com_35dp">35dp</dimen>
+    <dimen name="com_50dp">50dp</dimen>
+    <dimen name="com_90dp">90dp</dimen>
+    <dimen name="com_25dp">25dp</dimen>
+    <dimen name="com_70dp">70dp</dimen>
+    <dimen name="com_0dp">0dp</dimen>
+    <dimen name="com_150dp">150dp</dimen>
+
+
+    <dimen name="com_760px">760px</dimen>
+    <dimen name="com_72px">72px</dimen>
+    <dimen name="com_22px">22px</dimen>
+    <dimen name="com_220px">220px</dimen>
+    <dimen name="com_913px">913px</dimen>
+    <dimen name="com_132px">132px</dimen>
+    <dimen name="com_32px">32px</dimen>
+    <dimen name="com_500px">500px</dimen>
+    <dimen name="com_600px">600px</dimen>
+    <dimen name="com_200px">200px</dimen>
+    <dimen name="com_40px">40px</dimen>
+    <dimen name="com_120px">120px</dimen>
+    <dimen name="com_20px">20px</dimen>
+    <dimen name="com_10px">10px</dimen>
+    <dimen name="com_30px">30px</dimen>
+    <dimen name="com_68px">68px</dimen>
+    <dimen name="com_90px">90px</dimen>
+    <dimen name="com_50px">50px</dimen>
+    <dimen name="com_100px">100px</dimen>
+    <dimen name="com_300px">300px</dimen>
+    <dimen name="com_80px">80px</dimen>
+</resources>
