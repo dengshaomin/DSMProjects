@@ -57,7 +57,7 @@ import jp.kshoji.driver.midi.device.MidiOutputDevice;
 /**
  * 钢琴演奏
  */
-public class PianoActivity extends AbstractSingleMidiActivity implements View.OnClickListener {
+public class PianoActivity extends AbstractSingleMidiActivity implements View.OnClickListener, ScoreHelper.ScoreCallBack {
     private static final String TAG = "PianoActivity";
     //    private PopupWindow popupWindow;
     private MyBroadcastReceiver receiver;
@@ -73,6 +73,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
     private ImageView mSpeed;
     //慢放
     private ImageView mRewind;
+    private TextView realyTimeScore;
 
     private int type = 0;
     //是否显示瀑布流
@@ -128,6 +129,11 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         timer.schedule(new PressTimerTask(), 2000);
         timer1 = new Timer();
         timer1.schedule(new UpTimerTask(), 3000);
+    }
+
+    @Override
+    public void callBack(int score) {
+        realyTimeScore.setText("当前得分：" + score + "分");
     }
 
     private class PressTimerTask extends TimerTask {
@@ -271,6 +277,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
     }
 
     private void initView() {
+        realyTimeScore = findViewById(R.id.realyTimeScore);
         mPianoKeyView = (PianoKeyView) findViewById(R.id.piano_key);
         mStaffView = (StaffView) findViewById(R.id.staffview);
         mPullView = (PullView) findViewById(R.id.pullview);
@@ -292,6 +299,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
                 showResultView(true,scores);
             }
         });
+        ScoreHelper.getInstance().setCallback(this);
     }
 
 
@@ -509,6 +517,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
             mPullView.stopPlay();
             mProgessView.stopPlay();
         } else {
+            ScoreHelper.getInstance().reset();
             mPullView.startPlay();
             mProgessView.startPlay();
         }
