@@ -18,9 +18,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.PopupWindow;
-import android.widget.Scroller;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.yizu.intelligentpiano.R;
@@ -40,7 +38,6 @@ import com.yizu.intelligentpiano.utils.MyToast;
 import com.yizu.intelligentpiano.utils.OkHttpUtils;
 import com.yizu.intelligentpiano.utils.PreManger;
 import com.yizu.intelligentpiano.utils.SDCardUtils;
-import com.yizu.intelligentpiano.utils.ShowTimeDialog;
 import com.yizu.intelligentpiano.utils.XmlPrareUtils;
 import com.yizu.intelligentpiano.widget.PianoKeyView;
 import com.yizu.intelligentpiano.widget.PrgoressView;
@@ -48,9 +45,7 @@ import com.yizu.intelligentpiano.widget.PullView;
 import com.yizu.intelligentpiano.widget.ScoreResultView;
 import com.yizu.intelligentpiano.widget.StaffView;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -64,12 +59,14 @@ import jp.kshoji.driver.midi.device.MidiOutputDevice;
  */
 public class PianoActivity extends AbstractSingleMidiActivity implements View.OnClickListener, ScoreHelper.ScoreCallBack {
     private static final String TAG = "PianoActivity";
-    private PopupWindow popupWindow;
+    //    private PopupWindow popupWindow;
     private MyBroadcastReceiver receiver;
     private PianoKeyView mPianoKeyView;
     private StaffView mStaffView;
     private PullView mPullView;
     private PrgoressView mProgessView;
+    private RelativeLayout mTime;
+    private RelativeLayout mScore;
     //播放
     private ImageView mPlay;
     //快进
@@ -207,26 +204,26 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
     }
 
     private void setData() {
-//        if (getIntent() != null) {
-//            String title = getIntent().getStringExtra("title");
-//            MyLogUtils.e(TAG, "title：" + title);
-//            String auther = getIntent().getStringExtra("auther");
-//            MyLogUtils.e(TAG, "auther：" + auther);
-//            String xml = getIntent().getStringExtra("xml");
-//            MyLogUtils.e(TAG, "xml：" + xml);
-//            type = getIntent().getIntExtra("type", 0);
-//            MyLogUtils.e(TAG, "type：" + type);
-//            isShowPull = getIntent().getBooleanExtra("isShowPull", true);
-//            MyLogUtils.e(TAG, "isShowPull：" + isShowPull);
-//            //设置是否显示瀑布流
-//            mPullView.isShow(isShowPull);
-//            initData(type, title, auther, xml);
-//        }
-        type = 3;
-        String title = "伤不起";
-        String auther = "邹浩";
-        String xml = "http://piano.sinotransfer.com/Uploads/Download/2017-09-20/59c21068ef4b5.xml";
-        initData(type, title, auther, xml);
+        if (getIntent() != null) {
+            String title = getIntent().getStringExtra("title");
+            MyLogUtils.e(TAG, "title：" + title);
+            String auther = getIntent().getStringExtra("auther");
+            MyLogUtils.e(TAG, "auther：" + auther);
+            String xml = getIntent().getStringExtra("xml");
+            MyLogUtils.e(TAG, "xml：" + xml);
+            type = getIntent().getIntExtra("type", 0);
+            MyLogUtils.e(TAG, "type：" + type);
+            isShowPull = getIntent().getBooleanExtra("isShowPull", true);
+            MyLogUtils.e(TAG, "isShowPull：" + isShowPull);
+            //设置是否显示瀑布流
+            mPullView.isShow(isShowPull);
+            initData(type, title, auther, xml);
+        }
+//        type = 3;
+//        String title = "伤不起";
+//        String auther = "邹浩";
+//        String xml = "http://piano.sinotransfer.com/Uploads/Download/2017-09-20/59c21068ef4b5.xml";
+//        initData(type, title, auther, xml);
     }
 
     /**
@@ -288,6 +285,8 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         mSpeed = (ImageView) findViewById(R.id.speed);
         mRewind = (ImageView) findViewById(R.id.rewind);
         mProgessView = (PrgoressView) findViewById(R.id.prgoressView);
+        mTime = findViewById(R.id.time);
+        mScore = findViewById(R.id.score_view);
         mProgessView.setiPlayState(new IPlayState() {
             @Override
             public void start() {
@@ -297,14 +296,14 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
             @Override
             public void end() {
                 int scores = ScoreHelper.getInstance().caLastScores();
-                showResultView(scores);
+                showResultView(true,scores);
             }
         });
         ScoreHelper.getInstance().setCallback(this);
     }
 
 
-    //    打分上传z
+    //    打分上传
     private void addMusicHistory() {
         Map<String, String> map = new HashMap<>();
         map.put("music_id", "23");
@@ -326,38 +325,14 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
     /**
      * 显示成绩
      */
-    private void showResultView(int score) {
-        final LinearLayout views = (LinearLayout) findViewById(R.id.main_piano);
-        if (popupWindow == null) {
-            scoreResultView = new ScoreResultView(this);
-            popupWindow = new PopupWindow(scoreResultView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
-            popupWindow.setBackgroundDrawable(new BitmapDrawable());
-            scoreResultView.setiDialog(new IDialog() {
-                @Override
-                public void sure() {
-                    startPlay();
-                }
-
-                @Override
-                public void cancel() {
-                    popupWindow.dismiss();
-                }
-            });
+    private void showResultView(boolean isGood, int scores) {
+        mScore.setVisibility(View.VISIBLE);
+        TextView text = findViewById(R.id.score_score);
+        if (!isGood) {
+            ImageView imageView = findViewById(R.id.score_img);
+            imageView.setBackgroundResource(R.mipmap.bad);
+            text.setBackgroundResource(R.mipmap.score_bad);
         }
-
-        final WindowManager.LayoutParams lp = getWindow().getAttributes();
-        lp.alpha = 0.5f;
-        getWindow().setAttributes(lp);
-        popupWindow.setFocusable(true);
-        scoreResultView.setViewData(score);
-        popupWindow.showAtLocation(views, Gravity.TOP, 0, 114);
-        popupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
-            @Override
-            public void onDismiss() {
-                lp.alpha = 1f;
-                getWindow().setAttributes(lp);
-            }
-        });
     }
 
     //midi链接
@@ -574,9 +549,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
                     break;
                 case Constents.NOTIME_5:
                     //剩余5分钟
-                    if (KeyIsOk) {
-                        new ShowTimeDialog(PianoActivity.this, PianoActivity.this).showTimeView(findViewById(R.id.main_piano));
-                    }
+                    mTime.setVisibility(View.VISIBLE);
                     break;
             }
         }
@@ -599,20 +572,25 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
                     //右
                     return true;
                 case KeyEvent.KEYCODE_DPAD_CENTER:
-                    //确定
-                    if (mPlay.isSelected()) {
-//                暂停
-                        mPlay.setSelected(false);
-                        mPullView.stopPlay();
-//                    mStaffView.stopPlay();
-                        mProgessView.stopPlay();
+                    if (mTime.getVisibility() == View.VISIBLE) {
+                        mTime.setVisibility(View.GONE);
                     } else {
+                        //确定
+                        if (mPlay.isSelected()) {
+//                暂停
+                            mPlay.setSelected(false);
+                            mPullView.stopPlay();
+//                    mStaffView.stopPlay();
+                            mProgessView.stopPlay();
+                        } else {
 //                播放
-                        mPlay.setSelected(true);
-                        mPullView.startPlay();
+                            mPlay.setSelected(true);
+                            mPullView.startPlay();
 //                    mStaffView.startPlay();
-                        mProgessView.startPlay();
+                            mProgessView.startPlay();
+                        }
                     }
+
                     return true;
             }
         }

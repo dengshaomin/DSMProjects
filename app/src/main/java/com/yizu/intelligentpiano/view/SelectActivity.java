@@ -4,27 +4,17 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.drawable.BitmapDrawable;
-import android.nfc.Tag;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.v7.widget.RecyclerView;
-import android.view.Gravity;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.liuxiaozhu.lowrecyclerviews.adapter.HListViewAdapter;
 import com.liuxiaozhu.lowrecyclerviews.adapter.ListViewAdapter;
 import com.liuxiaozhu.lowrecyclerviews.adapter.viewholder.BaseViewHoloder;
 import com.liuxiaozhu.lowrecyclerviews.callbacks.IPullLoading;
@@ -42,11 +32,8 @@ import com.yizu.intelligentpiano.utils.MyLogUtils;
 import com.yizu.intelligentpiano.utils.MyToast;
 import com.yizu.intelligentpiano.utils.OkHttpUtils;
 import com.yizu.intelligentpiano.utils.PreManger;
-import com.yizu.intelligentpiano.utils.ShowTimeDialog;
 
-import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -76,7 +63,7 @@ public class SelectActivity extends BaseActivity {
     private int vertical = -1;
 
     //显示时间的dialog
-    private ShowTimeDialog timeDialog;
+    private RelativeLayout timeDialog;
     //记录分页状态 0视频 1-6歌曲 7；打分
     private int[] pagingMap = {1, 1, 1, 1, 1, 1, 1, 1};
 
@@ -126,6 +113,8 @@ public class SelectActivity extends BaseActivity {
         recycler_song5 = (RecyclerView) findViewById(R.id.recycler_song5);
         recycler_song6 = (RecyclerView) findViewById(R.id.recycler_song6);
         scrollView = findViewById(R.id.scrollView);
+
+        timeDialog = findViewById(R.id.time);
 
         selectView = findViewById(R.id.select_view);
         popText = findViewById(R.id.dialog_songname);
@@ -429,8 +418,7 @@ public class SelectActivity extends BaseActivity {
                             } else if (time / 60 == 5) {
                                 //不足5分钟
                                 RelativeLayout view = (RelativeLayout) findViewById(R.id.main_select);
-                                timeDialog = new ShowTimeDialog(SelectActivity.this, SelectActivity.this);
-                                timeDialog.showTimeView(view);
+                                timeDialog.setVisibility(View.VISIBLE);
                                 MyLogUtils.e(TAG, "不足5分钟");
                             }
                         } else {
@@ -738,8 +726,8 @@ public class SelectActivity extends BaseActivity {
                 //确定
                 MyLogUtils.e(TAG, "确定");
                 MyLogUtils.e(TAG, "确定" + level);
-                if (timeDialog != null && timeDialog.isShowing()) {
-                    timeDialog.closeDialog();
+                if (timeDialog.getVisibility() == View.VISIBLE) {
+                    timeDialog.setVisibility(View.GONE);
                     MyLogUtils.e(TAG, "时间提示框消失");
                 } else if (level > 0) {
                     if (selectView.getVisibility() == View.VISIBLE) {
@@ -770,6 +758,9 @@ public class SelectActivity extends BaseActivity {
                         intent.putExtra("title", popData.getTitle());
                         intent.putExtra("auther", popData.getAuther());
                         intent.putExtra("xml", popData.getMusic_xml());
+                        if (popData.getMusic_xml() == null) {
+                            return true;
+                        }
                         startActivity(intent);
                     }
                 }
@@ -777,8 +768,8 @@ public class SelectActivity extends BaseActivity {
             case KeyEvent.KEYCODE_BACK:
                 //返回
                 MyLogUtils.e(TAG, "返回");
-                if (timeDialog != null && timeDialog.isShowing()) {
-                    timeDialog.closeDialog();
+                if (timeDialog.getVisibility() == View.VISIBLE) {
+                    timeDialog.setVisibility(View.GONE);
                 } else if (selectView.getVisibility() == View.VISIBLE) {
                     selectView.setVisibility(View.GONE);
                 } else if (isWXLogin) {
@@ -791,8 +782,8 @@ public class SelectActivity extends BaseActivity {
             case KeyEvent.KEYCODE_ENTER:
                 MyLogUtils.e(TAG, "确定");
                 MyLogUtils.e(TAG, "确定" + level);
-                if (timeDialog != null && timeDialog.isShowing()) {
-                    timeDialog.closeDialog();
+                if (timeDialog.getVisibility() == View.VISIBLE) {
+                    timeDialog.setVisibility(View.GONE);
                     MyLogUtils.e(TAG, "时间提示框消失");
                 } else if (level > 0) {
                     if (selectView.getVisibility() == View.VISIBLE) {
@@ -823,10 +814,14 @@ public class SelectActivity extends BaseActivity {
                         intent.putExtra("title", popData.getTitle());
                         intent.putExtra("auther", popData.getAuther());
                         intent.putExtra("xml", popData.getMusic_xml());
+
+                        MyLogUtils.e(TAG, "title" + popData.getTitle());
+                        MyLogUtils.e(TAG, "auther" + popData.getAuther());
+                        MyLogUtils.e(TAG, "xml" + popData.getMusic_xml());
                         startActivity(intent);
                     }
                 }
-                break;
+                return true;
         }
         return super.onKeyDown(keyCode, event);
     }
