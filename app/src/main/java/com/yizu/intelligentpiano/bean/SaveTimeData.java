@@ -14,7 +14,8 @@ public class SaveTimeData {
     private int octave;
     //音调 CDEFGAB
     private String step;
-    private boolean isRest = false;
+    //-1：白键左面黑键，1右面黑键
+    private int black = 0;
 
     //pullview使用,当前处于正确状态的按钮
     private boolean pressCorrect = false;
@@ -24,11 +25,12 @@ public class SaveTimeData {
     private boolean hasRecord;
 
 
-    public SaveTimeData(int mAddDuration, int duration, int octave, String step) {
+    public SaveTimeData(int mAddDuration, int duration, int octave, String step, int black) {
         this.mAddDuration = mAddDuration;
         this.duration = duration;
         this.octave = octave;
         this.step = step;
+        this.black = black;
     }
 
     public int getmAddDuration() {
@@ -55,14 +57,6 @@ public class SaveTimeData {
         this.step = step;
     }
 
-    public boolean isRest() {
-        return isRest;
-    }
-
-    public void setRest(boolean rest) {
-        isRest = rest;
-    }
-
     public int getDuration() {
         return duration;
     }
@@ -80,18 +74,27 @@ public class SaveTimeData {
     }
 
 
-
     public Integer getPhysicalKey() {
         return physicalKey;
     }
+
     public void setPhysicalKey(Integer physicalKey) {
         this.physicalKey = physicalKey;
     }
+
     public boolean isHasRecord() {
         return hasRecord;
     }
 
     public void setHasRecord(boolean hasRecord) {
         this.hasRecord = hasRecord;
+    }
+
+    public int getBlackNum() {
+        return black;
+    }
+
+    public void setBlackNum(int black) {
+        this.black = black;
     }
 }

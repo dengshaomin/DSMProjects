@@ -89,7 +89,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
             if (msg.what > 20 && msg.what < 109) {
                 mPianoKeyView.painoKeyPress(msg.what);
                 ScoreHelper.getInstance().caCorrectKey(msg.what, true);
-                timer.schedule(new PressTimerTask(), 3000);
+//                timer.schedule(new PressTimerTask(), 3000);
             }
             return true;
         }
@@ -100,7 +100,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
             if (msg.what > 20 && msg.what < 109) {
                 mPianoKeyView.painoKeyCanclePress(msg.what);
                 ScoreHelper.getInstance().caCorrectKey(msg.what, false);
-                timer1.schedule(new UpTimerTask(), 3000);
+//                timer1.schedule(new UpTimerTask(), 3000);
             }
             return true;
         }
@@ -120,18 +120,18 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         initView();
         setData();
         setListener();
-        sendTestPhysicKeys();
+//        sendTestPhysicKeys();
     }
 
-    Timer timer;
-    Timer timer1;
-
-    private void sendTestPhysicKeys() {
-        timer = new Timer();
-        timer.schedule(new PressTimerTask(), 2000);
-        timer1 = new Timer();
-        timer1.schedule(new UpTimerTask(), 3000);
-    }
+//    Timer timer;
+//    Timer timer1;
+//
+//    private void sendTestPhysicKeys() {
+//        timer = new Timer();
+//        timer.schedule(new PressTimerTask(), 2000);
+//        timer1 = new Timer();
+//        timer1.schedule(new UpTimerTask(), 3000);
+//    }
 
     @Override
     public void callBack(int score) {

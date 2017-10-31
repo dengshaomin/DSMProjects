@@ -1,5 +1,6 @@
 package com.yizu.intelligentpiano.widget;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -62,6 +63,7 @@ public class PullView extends View {
 
     private int mTimeError = -1;
 
+    @SuppressLint("HandlerLeak")
     private Handler handler = new Handler() {
         public void handleMessage(android.os.Message msg) {
             if (msg.what == 0x1233) {

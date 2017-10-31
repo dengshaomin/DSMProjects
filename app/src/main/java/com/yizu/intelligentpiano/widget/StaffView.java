@@ -9,6 +9,7 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ScaleDrawable;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
+import android.text.BoringLayout;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
@@ -180,6 +181,10 @@ public class StaffView extends View {
     private List<Tie> mTie;
     private List<Slur> mSlur;
     private List<Legato> legatos;
+
+    //保存整个谱子升降音的数组
+    private String[] fifth;
+    private boolean isUpfifth = false;
 
     public StaffView(Context context) {
         this(context, null);
@@ -1175,12 +1180,9 @@ public class StaffView extends View {
             canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_up,
                     mFristStaffWidth, twoStaff_fristLins_up, mLinsPaint);
         }
-        //升降调，-降银，省音
-        int fifths = Integer.parseInt(attributess.getKey().getFifths());
         //绘制音符
         drawSign(canvas, attributess.getClefList());
-        mFristStaffWidth += mTrebleWidth + mLinsRoomWidth2;
-        drawFifths(canvas, fifths);
+        //绘制节拍
         drawTimes(canvas, attributess.getTime());
     }
 
@@ -1255,10 +1257,14 @@ public class StaffView extends View {
                         //高音
                         drawTreble(canvas, mFristStaffWidth, mLayoutCenterWidth - mLinsRoomWidth2 - mTrebleHeight,
                                 mFristStaffWidth + mTrebleWidth, mLayoutCenterWidth - mLinsRoomWidth2);
+                        mFristStaffWidth += mTrebleWidth + mLinsRoomWidth2;
+                        drawFifths(canvas, true, true);
                         break;
                     case "F":
                         drawBass(canvas, mFristStaffWidth, twoStaff_fristLins_up - mLinsRoomWidth - mBassHeight,
                                 mFristStaffWidth + mTrebleWidth, twoStaff_fristLins_up - mLinsRoomWidth);
+                        mFristStaffWidth += mTrebleWidth + mLinsRoomWidth2;
+                        drawFifths(canvas, true, false);
                         break;
                 }
             } else {
@@ -1267,11 +1273,15 @@ public class StaffView extends View {
                         //高音
                         drawTreble(canvas, mFristStaffWidth, mLayoutCenterWidth + mLinsRoomWidth3,
                                 mFristStaffWidth + mTrebleWidth, mLayoutCenterWidth + mLinsRoomWidth3 + mTrebleHeight);
+                        mFristStaffWidth += mTrebleWidth + mLinsRoomWidth2;
+                        drawFifths(canvas, false, true);
                         break;
                     case "F":
                         //低音
                         drawBass(canvas, mFristStaffWidth, mLayoutCenterWidth + mLinsRoomWidth4,
                                 mFristStaffWidth + mBassWidth, mLayoutCenterWidth + mLinsRoomWidth4 + mBassHeight);
+                        mFristStaffWidth += mTrebleWidth + mLinsRoomWidth2;
+                        drawFifths(canvas, false, false);
                         break;
                 }
             }
@@ -1309,37 +1319,50 @@ public class StaffView extends View {
 
     /**
      * 绘制升降调
+     *
+     * @param canvas
+     * @param isfrist 是否是第一条五线谱
+     * @param isG     是否是高音
      */
-    private void drawFifths(Canvas canvas, int fifths) {
+    private void drawFifths(Canvas canvas, boolean isfrist, boolean isG) {
 //        MyLogUtils.e(TAG, "mFristStaffWidth:" + mFristStaffWidth);
-        if (fifths < 0) {
-            //降调
-            fifths = Math.abs(fifths);
-            while (fifths != 0) {
-                drawDownTune(canvas, mFristStaffWidth, mLayoutCenterWidth - mLinsRoomWidth * (7 + fifths % 2), mFristStaffWidth, mLayoutCenterWidth - mLinsRoomWidth * (4 + fifths % 2));
-                if (isTowStaff) {
-                    drawDownTune(canvas, mFristStaffWidth, mLayoutCenterWidth + mLinsRoomWidth * (5 - fifths % 2), mFristStaffWidth, mLayoutCenterWidth + mLinsRoomWidth * (8 - fifths % 2));
-                }
-                mFristStaffWidth += mLinsRoomWidth3;
-                fifths--;
-            }
-        } else {
-            //升调
-            while (fifths != 0) {
-                drawUpTune(canvas, mFristStaffWidth, mLayoutCenterWidth - mLinsRoomWidth * (7 + fifths % 2), mFristStaffWidth, mLayoutCenterWidth - mLinsRoomWidth * (4 + fifths % 2));
-                if (isTowStaff) {
-                    drawUpTune(canvas, mFristStaffWidth, mLayoutCenterWidth + mLinsRoomWidth * (5 - fifths % 2), mFristStaffWidth, mLayoutCenterWidth + mLinsRoomWidth * (8 - fifths % 2));
-                }
-                mFristStaffWidth += mLinsRoomWidth3;
-                fifths--;
-            }
+        if (fifth == null || fifth.length == 0) {
+            return;
         }
+        // TODO: 2017/10/31 升降音未处理处理
+        if (isUpfifth) {
+            //升调
+        } else {
+            //降调
+        }
+//        if (fifths < 0) {
+//            //降调
+//            fifths = Math.abs(fifths);
+//            while (fifths != 0) {
+//                drawDownTune(canvas, mFristStaffWidth, mLayoutCenterWidth - mLinsRoomWidth * (7 + fifths % 2), mFristStaffWidth, mLayoutCenterWidth - mLinsRoomWidth * (4 + fifths % 2));
+//                if (isTowStaff) {
+//                    drawDownTune(canvas, mFristStaffWidth, mLayoutCenterWidth + mLinsRoomWidth * (5 - fifths % 2), mFristStaffWidth, mLayoutCenterWidth + mLinsRoomWidth * (8 - fifths % 2));
+//                }
+//                mFristStaffWidth += mLinsRoomWidth3;
+//                fifths--;
+//            }
+//        } else {
+//            //升调
+//            while (fifths != 0) {
+//                drawUpTune(canvas, mFristStaffWidth, mLayoutCenterWidth - mLinsRoomWidth * (7 + fifths % 2), mFristStaffWidth, mLayoutCenterWidth - mLinsRoomWidth * (4 + fifths % 2));
+//                if (isTowStaff) {
+//                    drawUpTune(canvas, mFristStaffWidth, mLayoutCenterWidth + mLinsRoomWidth * (5 - fifths % 2), mFristStaffWidth, mLayoutCenterWidth + mLinsRoomWidth * (8 - fifths % 2));
+//                }
+//                mFristStaffWidth += mLinsRoomWidth3;
+//                fifths--;
+//            }
+//        }
 
 
     }
 
     /**
-     * 绘制降调
+     * 绘制升调
      */
     private void drawUpTune(Canvas canvas, float startX, float startY, float stopX, float stopY) {
         drawLins(canvas, startX, startY, stopX, stopY);
@@ -1704,6 +1727,9 @@ public class StaffView extends View {
         } else {
             pullData.clear();
         }
+        //将mAttributess置空
+        mAttributess = null;
+        fifth = null;
         //该音符之前的总duration
         int fristTimeDuration = 0;
         int secondTimeDuration = 0;
@@ -1718,8 +1744,9 @@ public class StaffView extends View {
 
             boolean isBackUp = false;
             for (int k = 0; k < staffData.get(j).getMeasure().size(); k++) {
-                if (j == 0 && k == 0) {
+                if (mAttributess == null && staffData.get(j).getMeasure().get(k).getAttributes() != null) {
                     mAttributess = staffData.get(j).getMeasure().get(k).getAttributes();
+                    initFifthData(mAttributess.getKey().getFifths());
                 } else {
                     if (staffData.get(j).getMeasure().get(k).getBackup() != null) {
                         isBackUp = true;
@@ -1734,7 +1761,7 @@ public class StaffView extends View {
                                     if (!notes.getChord()) {
                                         fristTimeDuration += Integer.valueOf(notes.getDuration());
                                     }
-                                    fristTime.add(new SaveTimeData(fristTimeDuration, Integer.valueOf(notes.getDuration()), Integer.valueOf(notes.getPitch().getOctave()), notes.getPitch().getStep()));
+                                    setPullView(fristTime, fristTimeDuration, notes);
                                 }
                             }
                         } else {
@@ -1749,7 +1776,7 @@ public class StaffView extends View {
                                     if (!notes.getChord()) {
                                         secondTimeDuration += Integer.valueOf(notes.getDuration());
                                     }
-                                    secondTime.add(new SaveTimeData(secondTimeDuration, Integer.valueOf(notes.getDuration()), Integer.valueOf(notes.getPitch().getOctave()), notes.getPitch().getStep()));
+                                    setPullView(secondTime, secondTimeDuration, notes);
                                 }
                             }
 
@@ -1763,6 +1790,414 @@ public class StaffView extends View {
             ScoreHelper.getInstance().setTotalNode(totalNodes);
         }
         invalidate();
+    }
+
+    /**
+     * 从新设置瀑布流数据
+     *
+     * @param list
+     * @param duration
+     * @param notes
+     */
+    private void setPullView(List<SaveTimeData> list, int duration, Notes notes) {
+        //键组
+        int octave = Integer.valueOf(notes.getPitch().getOctave());
+        //音域
+        String step = notes.getPitch().getStep();
+        String saveStep = step;
+        String alter = notes.getPitch().getAlter();//本音符是否生姜
+        int black = 0;
+
+        //处理单个音符的升降
+        if (octave == 0) {
+            switch (step) {
+                case "A":
+                    switch (alter) {
+                        case "1":
+                            black = 1;
+                            break;
+                        case "2":
+                            step = "B";
+                            break;
+                    }
+                    break;
+                case "B":
+                    switch (alter) {
+                        case "-2":
+                            step = "A";
+                            break;
+                        case "-1":
+                            black = -1;
+                            break;
+                        case "1":
+                            step = "C";
+                            octave++;
+                            break;
+                        case "2":
+                            step = "C";
+                            octave++;
+                            black = 1;
+                            break;
+                    }
+                    break;
+            }
+        } else {
+            switch (step) {
+                case "C":
+                    switch (alter) {
+                        case "-2":
+                            step = "B";
+                            octave--;
+                            black = -1;
+                            break;
+                        case "-1":
+                            step = "B";
+                            octave--;
+                            break;
+                        case "1":
+                            black = 1;
+                            break;
+                        case "2":
+                            step = "D";
+                            break;
+                    }
+                    break;
+                case "D":
+                    switch (alter) {
+                        case "-2":
+                            step = "C";
+                            break;
+                        case "-1":
+                            black = -1;
+                            break;
+                        case "1":
+                            black = 1;
+                            break;
+                        case "2":
+                            step = "E";
+                            break;
+                    }
+                    break;
+                case "E":
+                    switch (alter) {
+                        case "-2":
+                            step = "D";
+                            break;
+                        case "-1":
+                            black = -1;
+                            break;
+                        case "1":
+                            step = "F";
+                            break;
+                        case "2":
+                            step = "F";
+                            black = 1;
+                            break;
+                    }
+                    break;
+                case "F":
+                    switch (alter) {
+                        case "-2":
+                            step = "E";
+                            black = -1;
+                            break;
+                        case "-1":
+                            step = "E";
+                            break;
+                        case "1":
+                            black = 1;
+                            break;
+                        case "2":
+                            step = "G";
+                            break;
+                    }
+                    break;
+                case "G":
+                    switch (alter) {
+                        case "-2":
+                            step = "F";
+                            break;
+                        case "-1":
+                            black = -1;
+                            break;
+                        case "1":
+                            black = 1;
+                            break;
+                        case "2":
+                            step = "A";
+                            break;
+                    }
+                    break;
+                case "A":
+                    switch (alter) {
+                        case "-2":
+                            step = "G";
+                            break;
+                        case "-1":
+                            black = -1;
+                            break;
+                        case "1":
+                            black = 1;
+                            break;
+                        case "2":
+                            step = "B";
+                            break;
+                    }
+                    break;
+                case "B":
+                    switch (alter) {
+                        case "-2":
+                            step = "A";
+                            break;
+                        case "-1":
+                            black = -1;
+                            break;
+                        case "1":
+                            step = "C";
+                            octave++;
+                            break;
+                        case "2":
+                            step = "C";
+                            octave++;
+                            black = 1;
+                            break;
+                    }
+                    break;
+            }
+        }
+        //整条五线谱升降调
+        if (fifth != null) {
+            for (int i = 0; i < fifth.length; i++) {
+                if (fifth[i] == saveStep && !alter.equals("0")) {
+                    if (octave == 0) {
+                        switch (step) {
+                            case "A":
+                                if (isUpfifth) {
+                                    if (black == 1) {
+                                        step = "B";
+                                        black = 0;
+                                    } else {
+                                        black++;
+                                    }
+                                }
+                                break;
+                            case "B":
+                                if (isUpfifth) {
+                                    //升调
+                                    if (black == 0) {
+                                        octave = 1;
+                                        step = "C";
+                                        black = 0;
+                                    } else {
+                                        black++;
+                                    }
+                                } else {
+                                    if (black == -1) {
+                                        step = "A";
+                                        black = 0;
+                                    } else {
+                                        black--;
+                                    }
+                                }
+                                break;
+                        }
+                    } else {
+                        switch (step) {
+                            case "C":
+                                if (isUpfifth) {
+                                    //升调
+                                    if (black == 1) {
+                                        step = "D";
+                                        black = 0;
+                                    } else {
+                                        black++;
+                                    }
+                                } else {
+                                    if (black == 0) {
+                                        octave = 0;
+                                        step = "B";
+                                    } else {
+                                        black--;
+                                    }
+
+                                }
+                                break;
+                            case "D":
+                                if (isUpfifth) {
+                                    //升调
+                                    if (black == 1) {
+                                        step = "E";
+                                        black = 0;
+                                    } else {
+                                        black++;
+                                    }
+                                } else {
+                                    if (black == -1) {
+                                        step = "C";
+                                        black = 0;
+                                    } else {
+                                        black--;
+                                    }
+                                }
+                                break;
+                            case "E":
+                                if (isUpfifth) {
+                                    //升调
+                                    if (black == 0) {
+                                        step = "F";
+                                        black = 0;
+                                    } else {
+                                        black++;
+                                    }
+
+                                } else {
+                                    if (black == -1) {
+                                        step = "D";
+                                        black = 0;
+                                    } else {
+                                        black--;
+                                    }
+                                }
+                                break;
+                            case "F":
+                                if (isUpfifth) {
+                                    //升调
+                                    if (black == 1) {
+                                        step = "G";
+                                        black = 0;
+                                    } else {
+                                        black++;
+                                    }
+                                } else {
+                                    if (black == 0) {
+                                        step = "E";
+                                        black = 0;
+                                    } else {
+                                        black--;
+                                    }
+
+                                }
+                                break;
+                            case "G":
+                                if (isUpfifth) {
+                                    //升调
+                                    if (black == 1) {
+                                        step = "A";
+                                        black = 0;
+                                    } else {
+                                        black++;
+                                    }
+                                } else {
+                                    if (black == -1) {
+                                        step = "F";
+                                        black = 0;
+                                    } else {
+                                        black--;
+                                    }
+                                }
+                                break;
+                            case "A":
+                                if (isUpfifth) {
+                                    //升调
+                                    if (black == 1) {
+                                        step = "B";
+                                        black = 0;
+                                    } else {
+                                        black++;
+                                    }
+                                } else {
+                                    if (black == -1) {
+                                        step = "G";
+                                        black = 0;
+                                    } else {
+                                        black--;
+                                    }
+                                }
+                                break;
+                            case "B":
+                                if (isUpfifth) {
+                                    //升调
+                                    if (black == 0) {
+                                        octave++;
+                                        step = "C";
+                                        black = 0;
+                                    } else {
+                                        black++;
+                                    }
+                                } else {
+                                    if (black == -1) {
+                                        step = "A";
+                                        black = 0;
+                                    } else {
+                                        black--;
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+        list.add(new SaveTimeData(duration, Integer.valueOf(notes.getDuration()), octave, step, black));
+    }
+
+    /**
+     * 初始化整个五线谱的升降音
+     *
+     * @param fifths
+     */
+    private void initFifthData(String fifths) {
+        switch (fifths) {
+            case "1":
+                isUpfifth = true;
+                fifth = new String[]{"F"};
+                break;
+            case "2":
+                isUpfifth = true;
+                fifth = new String[]{"F", "C"};
+                break;
+            case "3":
+                isUpfifth = true;
+                fifth = new String[]{"F", "C", "G"};
+                break;
+            case "4":
+                isUpfifth = true;
+                fifth = new String[]{"F", "C", "G", "D"};
+                break;
+            case "5":
+                isUpfifth = true;
+                fifth = new String[]{"F", "C", "G", "D", "A"};
+                break;
+            case "6":
+                isUpfifth = true;
+                fifth = new String[]{"F", "C", "G", "D", "A", "E"};
+                break;
+            case "7":
+                isUpfifth = true;
+                fifth = new String[]{"F", "C", "G", "D", "A", "E", "B"};
+                break;
+            case "-1":
+                fifth = new String[]{"B"};
+                break;
+            case "-2":
+                fifth = new String[]{"B", "E"};
+                break;
+            case "-3":
+                fifth = new String[]{"B", "E", "A"};
+                break;
+            case "-4":
+                fifth = new String[]{"B", "E", "A", "D"};
+                break;
+            case "-5":
+                fifth = new String[]{"B", "E", "A", "D", "G"};
+                break;
+            case "-6":
+                fifth = new String[]{"B", "E", "A", "D", "G", "C"};
+                break;
+            case "-7":
+                fifth = new String[]{"B", "E", "A", "D", "G", "C", "F"};
+                break;
+        }
     }
 
 
