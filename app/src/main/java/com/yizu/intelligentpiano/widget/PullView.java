@@ -138,10 +138,10 @@ public class PullView extends View {
                 List<SaveTimeData> frist_hide = mData.get(i).getFrist();
                 List<SaveTimeData> second_hide = mData.get(i).getSecond();
                 for (int j = 0; j < frist_hide.size(); j++) {
-                    calculationPosiotion(canvas, frist_hide.get(j),i,j);
+                    calculationPosiotion(canvas, frist_hide.get(j), i, j);
                 }
                 for (int j = 0; j < second_hide.size(); j++) {
-                    calculationPosiotion(canvas, second_hide.get(j),i,j);
+                    calculationPosiotion(canvas, second_hide.get(j), i, j);
                 }
             }
         }
@@ -217,7 +217,7 @@ public class PullView extends View {
      * @param saveTimeData
      * @return
      */
-    private float calculationPosiotion(Canvas canvas, SaveTimeData saveTimeData,int i,int j) {
+    private float calculationPosiotion(Canvas canvas, SaveTimeData saveTimeData, int i, int j) {
         int octave = saveTimeData.getOctave();
         if (octave == 0) {
             switch (saveTimeData.getStep()) {
@@ -265,7 +265,9 @@ public class PullView extends View {
         mRectF.top = mScrollHeight + mTimeError - (saveTimeData.getmAddDuration() + saveTimeData.getDuration()) * mSpeedLenth;
         mRectF.bottom = mScrollHeight + mTimeError - saveTimeData.getmAddDuration() * mSpeedLenth;
         ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, getBottom());
-        canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, mPaint);
+        if (mRectF.bottom > getTop() && mRectF.top < getBottom()) {
+            canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, mPaint);
+        }
         return 0;
     }
 
