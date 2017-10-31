@@ -63,6 +63,7 @@ public class ScoreHelper {
 
     public void caCorrectKey(int physicKey, boolean press) {
         if (physicKeys == null) physicKeys = new ArrayList<>();
+        if (correctKeys == null) correctKeys = new ArrayList<>();
         if (press) {
             if (!physicKeys.contains(physicKey)) {
                 physicKeys.add(physicKey);
