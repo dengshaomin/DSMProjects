@@ -132,6 +132,7 @@ public class MainActivity extends BaseActivity {
             if (mPermisition != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1001);
             } else {
+                startActivity(new Intent(MainActivity.this,PianoActivity.class));
                 if (Constents.isNetworkConnected) {
                     updataAPP();
                 }

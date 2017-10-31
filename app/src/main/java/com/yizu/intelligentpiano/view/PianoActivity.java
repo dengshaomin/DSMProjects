@@ -67,6 +67,8 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
     private PrgoressView mProgessView;
     private RelativeLayout mTime;
     private RelativeLayout mScore;
+    private TextView scoreView, score_again, score_exit;
+    private ImageView score_img;
     //播放
     private ImageView mPlay;
     //快进
@@ -287,6 +289,22 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         mProgessView = (PrgoressView) findViewById(R.id.prgoressView);
         mTime = findViewById(R.id.time);
         mScore = findViewById(R.id.score_view);
+        scoreView = findViewById(R.id.score_score);
+        score_again = findViewById(R.id.score_again);
+        score_exit = findViewById(R.id.score_exit);
+        score_img = findViewById(R.id.score_img);
+        score_again.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startPlay();
+            }
+        });
+        score_exit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mScore.setVisibility(View.GONE);
+            }
+        });
         mProgessView.setiPlayState(new IPlayState() {
             @Override
             public void start() {
@@ -296,7 +314,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
             @Override
             public void end() {
                 int scores = ScoreHelper.getInstance().caLastScores();
-                showResultView(true,scores);
+                showResultView(scores);
             }
         });
         ScoreHelper.getInstance().setCallback(this);
@@ -325,14 +343,12 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
     /**
      * 显示成绩
      */
-    private void showResultView(boolean isGood, int scores) {
+    private void showResultView(int scores) {
         mScore.setVisibility(View.VISIBLE);
-        TextView text = findViewById(R.id.score_score);
-        if (!isGood) {
-            ImageView imageView = findViewById(R.id.score_img);
-            imageView.setBackgroundResource(R.mipmap.bad);
-            text.setBackgroundResource(R.mipmap.score_bad);
-        }
+        boolean isGood = scores > 90;
+        score_img.setBackgroundResource(isGood ? R.mipmap.good : R.mipmap.bad);
+        scoreView.setBackgroundResource(isGood ? R.mipmap.score_good : R.mipmap.score_bad);
+        scoreView.setText(scores + "");
     }
 
     //midi链接

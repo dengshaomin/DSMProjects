@@ -77,6 +77,7 @@ public class PrgoressView extends View {
                     }
                     invalidate();
                 } else {
+                    if(mMovePosiotion > mData.size() -1) return;
                     if (iPlayState != null) {
                         iPlayState.start();
                     }
