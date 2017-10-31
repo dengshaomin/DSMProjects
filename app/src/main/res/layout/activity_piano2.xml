@@ -111,11 +111,11 @@
             android:layout_height="@dimen/com_0dp"
             android:layout_weight="1">
 
-            <com.yizu.intelligentpiano.widget.PullView
+            <com.yizu.intelligentpiano.widget.PullSurfaceView
                 android:id="@+id/pullview"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/black"/>
+                />
 
             <LinearLayout
                 android:layout_width="wrap_content"

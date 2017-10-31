@@ -1,13 +1,17 @@
 package com.yizu.intelligentpiano.widget;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 
 import com.yizu.intelligentpiano.R;
@@ -27,7 +31,7 @@ import java.util.TimerTask;
  * All Rights Reserved by YiZu
  */
 
-public class PullView extends View {
+public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
     private final static String TAG = "PullView";
 
     //白键总数目
@@ -62,33 +66,28 @@ public class PullView extends View {
 
     private int mTimeError = -1;
 
-    private Handler handler = new Handler() {
-        public void handleMessage(android.os.Message msg) {
-            if (msg.what == 0x1233) {
-                mScrollHeight += mSpeedLenth / 10;
-                mTimer.schedule(new MyTimerTask(), mSpeedTime / 10);
-                invalidate();
-//                scrollTo(0, -mScrollHeight);
-            }
-        }
-    };
+    private int times;
+    private boolean isProgressViewStart;
 
 
-    public PullView(Context context) {
+    public PullSurfaceView(Context context) {
         this(context, null);
     }
 
-    public PullView(Context context, @Nullable AttributeSet attrs) {
+    public PullSurfaceView(Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public PullView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public PullSurfaceView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        holder = getHolder();//获取SurfaceHolder对象，同时指定callback
+        holder.addCallback(this);
         mPaint = new Paint();
         mPaint.setColor(getResources().getColor(R.color.blue));
         mPaint.setStyle(Paint.Style.FILL);
         mPaint.setAntiAlias(true);
         mRectF = new RectF();
+
     }
 
     @Override
@@ -110,35 +109,23 @@ public class PullView extends View {
         mTimeError = mLayoutHeight - mSpeedLenth * num;
     }
 
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-        if (mWhiteKeyWidth == 0) {
-            if (mPianoKeyView != null) {
-                mWhiteKeyWidth = mPianoKeyView.getmWhiteKeyWidth();
-                mBlackKeyWidth = mPianoKeyView.getmBlackKeyWidth();
-            } else {
-                return;
-            }
-        }
-        if (mData == null) {
-            return;
-        }
-
-        if (isShow) {
-            int size = mData.size();
-            for (int i = 0; i < size; i++) {
-                List<SaveTimeData> frist_hide = mData.get(i).getFrist();
-                List<SaveTimeData> second_hide = mData.get(i).getSecond();
-                for (int j = 0; j < frist_hide.size(); j++) {
-                    calculationPosiotion(canvas, frist_hide.get(j), i, j);
-                }
-                for (int j = 0; j < second_hide.size(); j++) {
-                    calculationPosiotion(canvas, second_hide.get(j), i, j);
-                }
-            }
-        }
-    }
+//    @Override
+//    protected void onDraw(Canvas canvas) {
+//        super.onDraw(canvas);
+//        if (mWhiteKeyWidth == 0) {
+//            if (mPianoKeyView != null) {
+//                mWhiteKeyWidth = mPianoKeyView.getmWhiteKeyWidth();
+//                mBlackKeyWidth = mPianoKeyView.getmBlackKeyWidth();
+//            } else {
+//                return;
+//            }
+//        }
+//        if (mData == null) {
+//            return;
+//        }
+//
+//
+//    }
 
     /**
      * 设置瀑布流数据
@@ -165,7 +152,15 @@ public class PullView extends View {
         mAttributess = attributess;
         mData = mStaffView.getPullData();
         ScoreHelper.getInstance().setTotalNode(mData.size());
-        invalidate();
+//        invalidate();
+        if (mWhiteKeyWidth == 0) {
+            if (mPianoKeyView != null) {
+                mWhiteKeyWidth = mPianoKeyView.getmWhiteKeyWidth();
+                mBlackKeyWidth = mPianoKeyView.getmBlackKeyWidth();
+            } else {
+                return;
+            }
+        }
     }
 
 
@@ -186,10 +181,8 @@ public class PullView extends View {
      */
     public void startPlay() {
         if (isShow) {
-            if (mTimer == null) {
-                mTimer = new Timer();
-            }
-            mTimer.schedule(new MyTimerTask(), mSpeedTime / 4);
+            mysurfaceviewThread = new MysurfaceviewThread();
+            mysurfaceviewThread.start();
         }
     }
 
@@ -272,29 +265,6 @@ public class PullView extends View {
         return 0;
     }
 
-    private PrgoressView progressView;
-
-    public void setProgressView(PrgoressView progressView) {
-//        this.progressView = progressView;
-//        progressView.setiPlayState(new IPlayState() {
-//            @Override
-//            public void start() {
-//                if (iPlayState != null) {
-//                    iPlayState.start();
-//                }
-//            }
-//
-//            @Override
-//            public void end() {
-//                stopPlay();
-//                mScrollHeight = 0;
-//                isProgressViewStart = false;
-//                if (iPlayState != null) {
-//                    iPlayState.end();
-//                }
-//            }
-//        });
-    }
 
     private IPlayState iPlayState;
 
@@ -306,14 +276,91 @@ public class PullView extends View {
         this.iPlayState = iPlayState;
     }
 
+
+    SurfaceHolder holder;
+    MysurfaceviewThread mysurfaceviewThread;
+
+
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+        // 当SurfaceView被创建时，将画图Thread启动起来。
+//        mysurfaceviewThread = new MysurfaceviewThread();
+//        mysurfaceviewThread.start();
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        // 当SurfaceView被销毁时，释放资源。
+        if (mysurfaceviewThread != null) {
+            mysurfaceviewThread.exit();
+            mysurfaceviewThread = null;
+        }
+    }
+
     /**
-     * 定时器
+     * 内部类 MysurfaceviewThread,该类主要实现对canvas的具体操作。
+     *
+     * @author xu duzhou
      */
-    class MyTimerTask extends TimerTask {
+    class MysurfaceviewThread extends Thread {
+        private boolean done = false;
+
+        public MysurfaceviewThread() {
+            super();
+            this.done = false;
+        }
+
+        public void exit() {
+            // 将done设置为true 使线程中的while循环结束。
+            done = true;
+            try {
+                join();
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+        }
 
         @Override
         public void run() {
-            handler.sendEmptyMessage(0x1233);
+            // TODO Auto-generated method stub
+            super.run();
+            SurfaceHolder surfaceHolder = holder;
+            while (!done) {
+                synchronized (surfaceHolder) {
+                    //锁定canvas
+                    Canvas canvas = surfaceHolder.lockCanvas();
+                    //canvas 执行一系列画的动作
+                    canvas.drawColor(Color.BLACK);
+                    //canvas 执行一系列画的动作
+                    if (isShow) {
+                        int size = mData.size();
+                        for (int i = 0; i < size; i++) {
+                            List<SaveTimeData> frist_hide = mData.get(i).getFrist();
+                            List<SaveTimeData> second_hide = mData.get(i).getSecond();
+                            for (int j = 0; j < frist_hide.size(); j++) {
+                                calculationPosiotion(canvas, frist_hide.get(j), i, j);
+                            }
+                            for (int j = 0; j < second_hide.size(); j++) {
+                                calculationPosiotion(canvas, second_hide.get(j), i, j);
+                            }
+                        }
+                    }
+                    //释放canvas对象，并发送到SurfaceView
+                    surfaceHolder.unlockCanvasAndPost(canvas);
+                }
+                try {
+                    Thread.sleep(mSpeedLenth / 10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                mScrollHeight += mSpeedLenth / 10;
+            }
         }
     }
 

@@ -10,6 +10,7 @@ import android.graphics.drawable.ScaleDrawable;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 
@@ -28,6 +29,7 @@ import com.yizu.intelligentpiano.bean.xml.Measure;
 import com.yizu.intelligentpiano.bean.xml.MeasureBase;
 import com.yizu.intelligentpiano.bean.xml.Notes;
 import com.yizu.intelligentpiano.constens.IFinish;
+import com.yizu.intelligentpiano.constens.ScoreHelper;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
 import com.yizu.intelligentpiano.utils.MyToast;
 
@@ -389,7 +391,8 @@ public class StaffView extends View {
                         drawNotes(canvas, nots, false, null);
                     }
                 } else if (base1.get(k).getBackup() != null) {
-                    mMoveLantehList_second.add(new Move(Integer.valueOf(base.get(k).getBackup().getDuration()), mScendStaffWidth));
+                    mMoveLantehList_second.add(new Move(Integer.valueOf(base1.get(k).getBackup().getDuration()),
+                            mScendStaffWidth));
                 }
             }
             drawMeasureLins(canvas, j, size - 1);
@@ -1704,7 +1707,10 @@ public class StaffView extends View {
         //该音符之前的总duration
         int fristTimeDuration = 0;
         int secondTimeDuration = 0;
+        //总node个数，用于计分
+        int totalNodes = 0;
         for (int j = 0; j < staffData.size(); j++) {
+            totalNodes += staffData.get(j).getMeasure().size();
             List<MeasureBase> list = new ArrayList<>();
             List<MeasureBase> list1 = new ArrayList<>();
             List<SaveTimeData> fristTime = new ArrayList<>();
@@ -1754,6 +1760,7 @@ public class StaffView extends View {
             mFristStaffData.add(new Measure(list));
             mSecondStaffData.add(new Measure(list1));
             pullData.add(new PullData(fristTime, secondTime));
+            ScoreHelper.getInstance().setTotalNode(totalNodes);
         }
         invalidate();
     }

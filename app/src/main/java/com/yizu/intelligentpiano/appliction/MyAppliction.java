@@ -36,6 +36,7 @@ public class MyAppliction extends Application {
 
     /**
      * 初始化云推送通道
+     *
      * @param applicationContext
      */
     private void initCloudChannel(Context applicationContext) {
@@ -46,6 +47,7 @@ public class MyAppliction extends Application {
             public void onSuccess(String response) {
                 MyLogUtils.d(TAG, "云推送通道初始化成功");
             }
+
             @Override
             public void onFailed(String errorCode, String errorMessage) {
                 MyLogUtils.d(TAG, "云推送通道初始化失败 -- errorcode:" + errorCode + " -- errorMessage:" + errorMessage);

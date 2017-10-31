@@ -65,6 +65,7 @@ public class PrgoressView extends View {
 
     private Handler handler = new Handler() {
         public void handleMessage(android.os.Message msg) {
+            if (mData == null) return;
             mMovePosiotion++;
             if (msg.what == 0x1231) {
                 if (mMovePosiotion == mData.size()) {
@@ -77,7 +78,7 @@ public class PrgoressView extends View {
                     }
                     invalidate();
                 } else {
-                    if(mMovePosiotion > mData.size() -1) return;
+                    if (mMovePosiotion > mData.size() - 1) return;
                     if (iPlayState != null) {
                         iPlayState.start();
                     }

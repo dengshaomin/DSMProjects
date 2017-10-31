@@ -2,6 +2,7 @@ package com.yizu.intelligentpiano.constens;
 
 import android.content.Context;
 import android.graphics.RectF;
+import android.util.Log;
 
 import com.yizu.intelligentpiano.bean.SaveTimeData;
 
@@ -51,6 +52,7 @@ public class ScoreHelper {
         if (rectF.bottom >= bottom && rectF.top <= bottom) {
             if (!saveTimeData.isPressCorrect()) {
                 hasGoneNodes++;
+                Log.e("code", "gone:" + hasGoneNodes);
                 saveTimeData.setPressCorrect(true);
                 saveTimeData.setPhysicalKey(getPhysicKey(saveTimeData));
                 correctKeys.add(saveTimeData);
@@ -109,6 +111,7 @@ public class ScoreHelper {
 
     public int caLastScores() {
 //        return (int) ((float) correctNodes / (float) totalNodes * 100);
+        Log.e("code", "last:" + hasGoneNodes);
         int score = caRealTimeScores();
         score = score > 100 ? 100 : score;
         return 0 < score ? score : 0;

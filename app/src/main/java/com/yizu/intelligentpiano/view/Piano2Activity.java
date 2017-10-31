@@ -4,17 +4,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.drawable.BitmapDrawable;
 import android.hardware.usb.UsbDevice;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
-import android.view.Gravity;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
@@ -22,11 +18,9 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.yizu.intelligentpiano.R;
-import com.yizu.intelligentpiano.bean.Songs;
 import com.yizu.intelligentpiano.bean.xml.XmlBean;
 import com.yizu.intelligentpiano.constens.Constents;
 import com.yizu.intelligentpiano.constens.HttpUrls;
-import com.yizu.intelligentpiano.constens.IDialog;
 import com.yizu.intelligentpiano.constens.IDwonLoader;
 import com.yizu.intelligentpiano.constens.IFinish;
 import com.yizu.intelligentpiano.constens.IOkHttpCallBack;
@@ -41,7 +35,7 @@ import com.yizu.intelligentpiano.utils.SDCardUtils;
 import com.yizu.intelligentpiano.utils.XmlPrareUtils;
 import com.yizu.intelligentpiano.widget.PianoKeyView;
 import com.yizu.intelligentpiano.widget.PrgoressView;
-import com.yizu.intelligentpiano.widget.PullView;
+import com.yizu.intelligentpiano.widget.PullSurfaceView;
 import com.yizu.intelligentpiano.widget.ScoreResultView;
 import com.yizu.intelligentpiano.widget.StaffView;
 
@@ -57,13 +51,13 @@ import jp.kshoji.driver.midi.device.MidiOutputDevice;
 /**
  * 钢琴演奏
  */
-public class PianoActivity extends AbstractSingleMidiActivity implements View.OnClickListener, ScoreHelper.ScoreCallBack {
+public class Piano2Activity extends AbstractSingleMidiActivity implements View.OnClickListener, ScoreHelper.ScoreCallBack {
     private static final String TAG = "PianoActivity";
     //    private PopupWindow popupWindow;
     private MyBroadcastReceiver receiver;
     private PianoKeyView mPianoKeyView;
     private StaffView mStaffView;
-    private PullView mPullView;
+    private PullSurfaceView mPullView;
     private PrgoressView mProgessView;
     private RelativeLayout mTime;
     private RelativeLayout mScore;
@@ -114,7 +108,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_piano);
+        setContentView(R.layout.activity_piano2);
 
         setRegisterReceiver();
         initView();
@@ -282,7 +276,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         realyTimeScore = findViewById(R.id.realyTimeScore);
         mPianoKeyView = (PianoKeyView) findViewById(R.id.piano_key);
         mStaffView = (StaffView) findViewById(R.id.staffview);
-        mPullView = (PullView) findViewById(R.id.pullview);
+        mPullView = (PullSurfaceView) findViewById(R.id.pullview);
         mPlay = (ImageView) findViewById(R.id.play);
         mSpeed = (ImageView) findViewById(R.id.speed);
         mRewind = (ImageView) findViewById(R.id.rewind);
@@ -293,7 +287,6 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         score_again = findViewById(R.id.score_again);
         score_exit = findViewById(R.id.score_exit);
         score_img = findViewById(R.id.score_img);
-        mPullView.setProgressView(mProgessView);
         score_again.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -366,8 +359,6 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
     }
 
 
-
-
     private boolean pullViewState = false;
 
     private void startPlay() {
@@ -403,7 +394,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
             switch (intent.getStringExtra(Constents.KEY)) {
                 case Constents.LOGOUT_FINISH:
                     //activity直接退出
-                    PianoActivity.this.finish();
+                    Piano2Activity.this.finish();
                     break;
                 case Constents.NOTIME_5:
                     //剩余5分钟
@@ -454,6 +445,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         }
         return super.onKeyDown(keyCode, event);
     }
+
     //midi链接
     @Override
     public void onDeviceAttached(@NonNull UsbDevice usbDevice) {
@@ -532,6 +524,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         MyLogUtils.e(TAG, "onMidiNoteOff" + "NoteOn cable: " + i + ",  channel: " + i1 + ", note: " + i2 + ", velocity: " + i3);
         canclePrassHandler.sendEmptyMessage(i2);
     }
+
     /**
      * 钢琴手指按下
      *
