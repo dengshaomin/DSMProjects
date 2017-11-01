@@ -407,7 +407,6 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                 // TODO: handle exception
             }
         }
-
         @Override
         public void run() {
             // TODO Auto-generated method stub
