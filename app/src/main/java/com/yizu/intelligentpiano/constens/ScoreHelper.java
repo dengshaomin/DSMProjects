@@ -52,7 +52,6 @@ public class ScoreHelper {
         if (rectF.bottom >= bottom && rectF.top <= bottom) {
             if (!saveTimeData.isPressCorrect()) {
                 hasGoneNodes++;
-                Log.e("code", "gone:" + hasGoneNodes);
                 saveTimeData.setPressCorrect(true);
                 saveTimeData.setPhysicalKey(getPhysicKey(saveTimeData));
                 correctKeys.add(saveTimeData);
