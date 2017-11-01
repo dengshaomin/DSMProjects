@@ -1830,8 +1830,7 @@ public class StaffView extends View {
                             black = -1;
                             break;
                         case "1":
-//                            step = "C";
-//                            octave++;
+                            black = 1;
                             break;
                         case "2":
                             step = "C";
@@ -1851,8 +1850,7 @@ public class StaffView extends View {
                             black = 0;
                             break;
                         case "-1":
-//                            step = "B";
-//                            octave--;
+                            black = -1;
                             break;
                         case "1":
                             black = 1;
@@ -1887,7 +1885,7 @@ public class StaffView extends View {
                             black = -1;
                             break;
                         case "1":
-//                            step = "F";
+                            black = 1;
                             break;
                         case "2":
                             step = "F";
@@ -1899,10 +1897,10 @@ public class StaffView extends View {
                     switch (alter) {
                         case "-2":
                             step = "E";
-                            black = 0;
+                            black = -0;
                             break;
                         case "-1":
-//                            step = "E";
+                            black = -1;
                             break;
                         case "1":
                             black = 1;
@@ -1953,13 +1951,12 @@ public class StaffView extends View {
                             black = -1;
                             break;
                         case "1":
-//                            step = "C";
-//                            octave++;
+                            black = 1;
                             break;
                         case "2":
                             step = "C";
                             octave++;
-                            black = 1;
+                            black = 0;
                             break;
                     }
                     break;
@@ -1984,7 +1981,7 @@ public class StaffView extends View {
                             case "B":
                                 if (isUpfifth) {
                                     //升调
-                                    if (black == 0) {
+                                    if (black == 1) {
                                         octave = 1;
                                         step = "C";
                                         black = 0;
@@ -2013,7 +2010,7 @@ public class StaffView extends View {
                                         black++;
                                     }
                                 } else {
-                                    if (black == 0) {
+                                    if (black == -1) {
                                         octave = 0;
                                         step = "B";
                                     } else {
@@ -2043,7 +2040,7 @@ public class StaffView extends View {
                             case "E":
                                 if (isUpfifth) {
                                     //升调
-                                    if (black == 0) {
+                                    if (black == 1) {
                                         step = "F";
                                         black = 0;
                                     } else {
@@ -2069,7 +2066,7 @@ public class StaffView extends View {
                                         black++;
                                     }
                                 } else {
-                                    if (black == 0) {
+                                    if (black == -1) {
                                         step = "E";
                                         black = 0;
                                     } else {
@@ -2117,7 +2114,7 @@ public class StaffView extends View {
                             case "B":
                                 if (isUpfifth) {
                                     //升调
-                                    if (black == 0) {
+                                    if (black == 1) {
                                         octave++;
                                         step = "C";
                                         black = 0;
