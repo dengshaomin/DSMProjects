@@ -1809,159 +1809,162 @@ public class StaffView extends View {
         int black = 0;
 
         //处理单个音符的升降
-        if (octave == 0) {
-            switch (step) {
-                case "A":
-                    switch (alter) {
-                        case "1":
-                            black = 1;
-                            break;
-                        case "2":
-                            step = "B";
-                            break;
-                    }
-                    break;
-                case "B":
-                    switch (alter) {
-                        case "-2":
-                            step = "A";
-                            break;
-                        case "-1":
-                            black = -1;
-                            break;
-                        case "1":
-                            black = 1;
-                            break;
-                        case "2":
-                            step = "C";
-                            octave++;
-                            black = 0;
-                            break;
-                    }
-                    break;
-            }
-        } else {
-            switch (step) {
-                case "C":
-                    switch (alter) {
-                        case "-2":
-                            step = "B";
-                            octave--;
-                            black = 0;
-                            break;
-                        case "-1":
-                            black = -1;
-                            break;
-                        case "1":
-                            black = 1;
-                            break;
-                        case "2":
-                            step = "D";
-                            break;
-                    }
-                    break;
-                case "D":
-                    switch (alter) {
-                        case "-2":
-                            step = "C";
-                            break;
-                        case "-1":
-                            black = -1;
-                            break;
-                        case "1":
-                            black = 1;
-                            break;
-                        case "2":
-                            step = "E";
-                            break;
-                    }
-                    break;
-                case "E":
-                    switch (alter) {
-                        case "-2":
-                            step = "D";
-                            break;
-                        case "-1":
-                            black = -1;
-                            break;
-                        case "1":
-                            black = 1;
-                            break;
-                        case "2":
-                            step = "F";
-                            black = 0;
-                            break;
-                    }
-                    break;
-                case "F":
-                    switch (alter) {
-                        case "-2":
-                            step = "E";
-                            black = -0;
-                            break;
-                        case "-1":
-                            black = -1;
-                            break;
-                        case "1":
-                            black = 1;
-                            break;
-                        case "2":
-                            step = "G";
-                            break;
-                    }
-                    break;
-                case "G":
-                    switch (alter) {
-                        case "-2":
-                            step = "F";
-                            break;
-                        case "-1":
-                            black = -1;
-                            break;
-                        case "1":
-                            black = 1;
-                            break;
-                        case "2":
-                            step = "A";
-                            break;
-                    }
-                    break;
-                case "A":
-                    switch (alter) {
-                        case "-2":
-                            step = "G";
-                            break;
-                        case "-1":
-                            black = -1;
-                            break;
-                        case "1":
-                            black = 1;
-                            break;
-                        case "2":
-                            step = "B";
-                            break;
-                    }
-                    break;
-                case "B":
-                    switch (alter) {
-                        case "-2":
-                            step = "A";
-                            break;
-                        case "-1":
-                            black = -1;
-                            break;
-                        case "1":
-                            black = 1;
-                            break;
-                        case "2":
-                            step = "C";
-                            octave++;
-                            black = 0;
-                            break;
-                    }
-                    break;
+        if (alter != null) {
+            if (octave == 0) {
+                switch (step) {
+                    case "A":
+                        switch (alter) {
+                            case "1":
+                                black = 1;
+                                break;
+                            case "2":
+                                step = "B";
+                                break;
+                        }
+                        break;
+                    case "B":
+                        switch (alter) {
+                            case "-2":
+                                step = "A";
+                                break;
+                            case "-1":
+                                black = -1;
+                                break;
+                            case "1":
+                                black = 1;
+                                break;
+                            case "2":
+                                step = "C";
+                                octave++;
+                                black = 0;
+                                break;
+                        }
+                        break;
+                }
+            } else {
+                switch (step) {
+                    case "C":
+                        switch (alter) {
+                            case "-2":
+                                step = "B";
+                                octave--;
+                                black = 0;
+                                break;
+                            case "-1":
+                                black = -1;
+                                break;
+                            case "1":
+                                black = 1;
+                                break;
+                            case "2":
+                                step = "D";
+                                break;
+                        }
+                        break;
+                    case "D":
+                        switch (alter) {
+                            case "-2":
+                                step = "C";
+                                break;
+                            case "-1":
+                                black = -1;
+                                break;
+                            case "1":
+                                black = 1;
+                                break;
+                            case "2":
+                                step = "E";
+                                break;
+                        }
+                        break;
+                    case "E":
+                        switch (alter) {
+                            case "-2":
+                                step = "D";
+                                break;
+                            case "-1":
+                                black = -1;
+                                break;
+                            case "1":
+                                black = 1;
+                                break;
+                            case "2":
+                                step = "F";
+                                black = 0;
+                                break;
+                        }
+                        break;
+                    case "F":
+                        switch (alter) {
+                            case "-2":
+                                step = "E";
+                                black = -0;
+                                break;
+                            case "-1":
+                                black = -1;
+                                break;
+                            case "1":
+                                black = 1;
+                                break;
+                            case "2":
+                                step = "G";
+                                break;
+                        }
+                        break;
+                    case "G":
+                        switch (alter) {
+                            case "-2":
+                                step = "F";
+                                break;
+                            case "-1":
+                                black = -1;
+                                break;
+                            case "1":
+                                black = 1;
+                                break;
+                            case "2":
+                                step = "A";
+                                break;
+                        }
+                        break;
+                    case "A":
+                        switch (alter) {
+                            case "-2":
+                                step = "G";
+                                break;
+                            case "-1":
+                                black = -1;
+                                break;
+                            case "1":
+                                black = 1;
+                                break;
+                            case "2":
+                                step = "B";
+                                break;
+                        }
+                        break;
+                    case "B":
+                        switch (alter) {
+                            case "-2":
+                                step = "A";
+                                break;
+                            case "-1":
+                                black = -1;
+                                break;
+                            case "1":
+                                black = 1;
+                                break;
+                            case "2":
+                                step = "C";
+                                octave++;
+                                black = 0;
+                                break;
+                        }
+                        break;
+                }
             }
         }
+
         //整条五线谱升降调
         if (fifth != null) {
             for (int i = 0; i < fifth.length; i++) {

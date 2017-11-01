@@ -216,46 +216,126 @@ public class PullView extends View {
      */
     private float calculationPosiotion(Canvas canvas, SaveTimeData saveTimeData, int i, int j) {
         int octave = saveTimeData.getOctave();
+        int black = saveTimeData.getBlackNum();
+        int keyNum = 0;
+        int key = (octave - 1) * 7;
+        int num = mWhiteKeyWidth * key;
+        key += 23;
         if (octave == 0) {
             switch (saveTimeData.getStep()) {
                 case "A":
-                    mRectF.left = 0;
-                    mRectF.right = mWhiteKeyWidth - mBlackKeyWidth / 2;
+                    if (black == 1) {
+                        keyNum = 22;
+                        mRectF.left = mWhiteKeyWidth - mBlackKeyWidth / 2;
+                        mRectF.right = mWhiteKeyWidth + mBlackKeyWidth / 2;
+                    } else {
+                        keyNum = 21;
+                        mRectF.left = 0;
+                        mRectF.right = mWhiteKeyWidth - mBlackKeyWidth / 2;
+                    }
                     break;
                 case "B":
-                    mRectF.left = mWhiteKeyWidth + mBlackKeyWidth / 2;
-                    mRectF.right = mWhiteKeyWidth * 2;
+                    if (black == -1) {
+                        keyNum = 22;
+                        mRectF.left = mWhiteKeyWidth - mBlackKeyWidth / 2;
+                        mRectF.right = mWhiteKeyWidth + mBlackKeyWidth / 2;
+                    } else {
+                        keyNum = 23;
+                        mRectF.left = mWhiteKeyWidth + mBlackKeyWidth / 2;
+                        mRectF.right = mWhiteKeyWidth * 2;
+                    }
                     break;
             }
         } else {
             switch (saveTimeData.getStep()) {
                 case "C":
-                    mRectF.left = mWhiteKeyWidth * 2 + mWhiteKeyWidth * (octave - 1) * 7;
-                    mRectF.right = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 2 + mWhiteKeyWidth * (octave - 1) * 7;
+                    if (black == 1) {
+                        keyNum = key + 2;
+                        mRectF.left = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 2 + num;
+                        mRectF.right = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
+                    } else {
+                        keyNum = key + 1;
+                        mRectF.left = mWhiteKeyWidth * 2 + num;
+                        mRectF.right = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 2 + num;
+                    }
                     break;
                 case "D":
-                    mRectF.left = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + mWhiteKeyWidth * (octave - 1) * 7;
-                    mRectF.right = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + mWhiteKeyWidth * (octave - 1) * 7;
+                    if (black == 1) {
+                        keyNum = key + 4;
+                        mRectF.left = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
+                        mRectF.right = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 2 + num;
+                    } else if (black == -1) {
+                        keyNum = key + 2;
+                        mRectF.left = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 2 + num;
+                        mRectF.right = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
+                    } else {
+                        keyNum = key + 3;
+                        mRectF.left = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
+                        mRectF.right = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
+                    }
                     break;
                 case "E":
-                    mRectF.left = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 2 + mWhiteKeyWidth * (octave - 1) * 7;
-                    mRectF.right = mWhiteKeyWidth * 5 + mWhiteKeyWidth * (octave - 1) * 7;
+                    if (black == -1) {
+                        keyNum = key + 4;
+                        mRectF.left = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
+                        mRectF.right = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 2 + num;
+                    } else {
+                        keyNum = key + 5;
+                        mRectF.left = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 2 + num;
+                        mRectF.right = mWhiteKeyWidth * 5 + num;
+                    }
                     break;
                 case "F":
-                    mRectF.left = mWhiteKeyWidth * 5 + mWhiteKeyWidth * (octave - 1) * 7;
-                    mRectF.right = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 2 + mWhiteKeyWidth * (octave - 1) * 7;
+                    if (black == 1) {
+                        keyNum = 7;
+                        mRectF.left = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 2 + num;
+                        mRectF.right = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
+                    } else {
+                        keyNum = 6;
+                        mRectF.left = mWhiteKeyWidth * 5 + num;
+                        mRectF.right = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 2 + num;
+                    }
                     break;
                 case "G":
-                    mRectF.left = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + mWhiteKeyWidth * (octave - 1) * 7;
-                    mRectF.right = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + mWhiteKeyWidth * (octave - 1) * 7;
+                    if (black == 1) {
+                        keyNum = 9;
+                        mRectF.left = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
+                        mRectF.right = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
+                    } else if (black == -1) {
+                        keyNum = 7;
+                        mRectF.left = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 2 + num;
+                        mRectF.right = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
+                    } else {
+                        keyNum = 8;
+                        mRectF.left = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
+                        mRectF.right = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
+                    }
                     break;
                 case "A":
-                    mRectF.left = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + mWhiteKeyWidth * (octave - 1) * 7;
-                    mRectF.right = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + mWhiteKeyWidth * (octave - 1) * 7;
+                    if (black == 1) {
+                        keyNum = 11;
+                        mRectF.left = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
+                        mRectF.right = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 2 + num;
+                    } else if (black == -1) {
+                        keyNum = 9;
+                        mRectF.left = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
+                        mRectF.right = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
+                    } else {
+                        keyNum = 10;
+                        mRectF.left = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
+                        mRectF.right = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
+                    }
                     break;
                 case "B":
-                    mRectF.left = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 2 + mWhiteKeyWidth * (octave - 1) * 7;
-                    mRectF.right = mWhiteKeyWidth * 9 + mWhiteKeyWidth * (octave - 1) * 7;
+                    if (black == -1) {
+                        keyNum = 11;
+                        mRectF.left = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
+                        mRectF.right = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 2 + num;
+                    } else {
+                        keyNum = 12;
+                        mRectF.left = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 2 + num;
+                        mRectF.right = mWhiteKeyWidth * 9 + num;
+                    }
                     break;
             }
         }

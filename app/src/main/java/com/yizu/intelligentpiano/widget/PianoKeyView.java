@@ -149,6 +149,7 @@ public class PianoKeyView extends View {
 
     /**
      * 获取白键宽度
+     *
      * @return
      */
     public int getmWhiteKeyWidth() {
@@ -157,6 +158,7 @@ public class PianoKeyView extends View {
 
     /**
      * 获取黑键宽度
+     *
      * @return
      */
     public int getmBlackKeyWidth() {
