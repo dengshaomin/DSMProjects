@@ -33,7 +33,7 @@ import java.util.TimerTask;
  */
 
 public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
-    private final static String TAG = "PullView";
+    private final static String TAG = "PullSurfaceView";
 
     //白键总数目
     private final static int WHITE_PIANO_KEY_NUMS = 52;
@@ -69,6 +69,8 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
 
     private int times;
     private boolean isProgressViewStart;
+
+    Canvas canvas;
 
 
     public PullSurfaceView(Context context) {
@@ -342,8 +344,8 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
 //            }
 //        }
         if (mRectF.bottom > getTop() && mRectF.top < getBottom()) {
-            canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, mPaint);
         }
+        canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, mPaint);
         return 0;
     }
 
@@ -417,25 +419,31 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
             while (!done) {
                 synchronized (surfaceHolder) {
                     //锁定canvas
-                    Canvas canvas = surfaceHolder.lockCanvas();
-                    //canvas 执行一系列画的动作
-                    canvas.drawColor(Color.BLACK);
-                    //canvas 执行一系列画的动作
-                    if (isShow) {
-                        int size = mData.size();
-                        for (int i = 0; i < size; i++) {
-                            List<SaveTimeData> frist_hide = mData.get(i).getFrist();
-                            List<SaveTimeData> second_hide = mData.get(i).getSecond();
-                            for (int j = 0; j < frist_hide.size(); j++) {
-                                calculationPosiotion(canvas, frist_hide.get(j), i, j);
-                            }
-                            for (int j = 0; j < second_hide.size(); j++) {
-                                calculationPosiotion(canvas, second_hide.get(j), i, j);
+                    if (canvas == null) {
+                        canvas = surfaceHolder.lockCanvas();
+                        //canvas 执行一系列画的动作
+                        canvas.drawColor(Color.BLACK);
+                        //canvas 执行一系列画的动作
+                        if (isShow) {
+                            int size = mData.size();
+                            for (int i = 0; i < size; i++) {
+                                List<SaveTimeData> frist_hide = mData.get(i).getFrist();
+                                List<SaveTimeData> second_hide = mData.get(i).getSecond();
+                                for (int j = 0; j < frist_hide.size(); j++) {
+                                    calculationPosiotion(canvas, frist_hide.get(j), i, j);
+                                }
+                                for (int j = 0; j < second_hide.size(); j++) {
+                                    calculationPosiotion(canvas, second_hide.get(j), i, j);
+                                }
                             }
                         }
+                        //释放canvas对象，并发送到SurfaceView
+                        surfaceHolder.unlockCanvasAndPost(canvas);
+                        MyLogUtils.e(TAG, "canvas");
+                    } else {
+                        canvas.translate(0, mScrollHeight);
+                        MyLogUtils.e(TAG, "translate" + mScrollHeight);
                     }
-                    //释放canvas对象，并发送到SurfaceView
-                    surfaceHolder.unlockCanvasAndPost(canvas);
                 }
                 try {
                     Thread.sleep(mSpeedLenth / 10);
@@ -443,8 +451,11 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                     e.printStackTrace();
                 }
                 mScrollHeight += mSpeedLenth / 10;
+
             }
         }
     }
+
+
 
 }
