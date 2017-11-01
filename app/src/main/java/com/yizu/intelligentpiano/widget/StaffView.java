@@ -1830,13 +1830,13 @@ public class StaffView extends View {
                             black = -1;
                             break;
                         case "1":
-                            step = "C";
-                            octave++;
+//                            step = "C";
+//                            octave++;
                             break;
                         case "2":
                             step = "C";
                             octave++;
-                            black = 1;
+                            black = 0;
                             break;
                     }
                     break;
@@ -1848,11 +1848,11 @@ public class StaffView extends View {
                         case "-2":
                             step = "B";
                             octave--;
-                            black = -1;
+                            black = 0;
                             break;
                         case "-1":
-                            step = "B";
-                            octave--;
+//                            step = "B";
+//                            octave--;
                             break;
                         case "1":
                             black = 1;
@@ -1887,11 +1887,11 @@ public class StaffView extends View {
                             black = -1;
                             break;
                         case "1":
-                            step = "F";
+//                            step = "F";
                             break;
                         case "2":
                             step = "F";
-                            black = 1;
+                            black = 0;
                             break;
                     }
                     break;
@@ -1899,10 +1899,10 @@ public class StaffView extends View {
                     switch (alter) {
                         case "-2":
                             step = "E";
-                            black = -1;
+                            black = 0;
                             break;
                         case "-1":
-                            step = "E";
+//                            step = "E";
                             break;
                         case "1":
                             black = 1;
@@ -1953,8 +1953,8 @@ public class StaffView extends View {
                             black = -1;
                             break;
                         case "1":
-                            step = "C";
-                            octave++;
+//                            step = "C";
+//                            octave++;
                             break;
                         case "2":
                             step = "C";
