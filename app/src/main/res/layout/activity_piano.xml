@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
-                android:id="@+id/main_piano"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/com_760px"
-                android:keepScreenOn="true"
-                tools:context="com.yizu.intelligentpiano.view.PianoActivity">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_piano"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/com_760px"
+    android:keepScreenOn="true"
+    tools:context="com.yizu.intelligentpiano.view.PianoActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -31,7 +31,7 @@
                     android:layout_height="@dimen/com_120px"
                     android:layout_marginLeft="@dimen/com_30px"
                     android:layout_marginRight="@dimen/com_30px"
-                    android:src="@mipmap/myicon"/>
+                    android:src="@mipmap/myicon" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -48,7 +48,7 @@
                         android:lines="1"
                         android:text="昵称"
                         android:textColor="@color/white"
-                        android:textSize="@dimen/com_30px"/>
+                        android:textSize="@dimen/com_30px" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -66,7 +66,7 @@
                             android:lines="1"
                             android:text="月亮之上"
                             android:textColor="@color/white"
-                            android:textSize="@dimen/com_30px"/>
+                            android:textSize="@dimen/com_30px" />
 
                         <TextView
                             android:id="@+id/user_songfunction"
@@ -74,7 +74,7 @@
                             android:layout_height="wrap_content"
                             android:text="80分"
                             android:textColor="@color/white"
-                            android:textSize="@dimen/com_30px"/>
+                            android:textSize="@dimen/com_30px" />
                     </LinearLayout>
 
                 </LinearLayout>
@@ -88,7 +88,7 @@
                 android:padding="@dimen/com_30px"
                 android:text="当前得分：89分"
                 android:textColor="@color/black"
-                android:textSize="@dimen/com_25px"/>
+                android:textSize="@dimen/com_25px" />
 
             <RelativeLayout
                 android:layout_width="match_parent"
@@ -97,12 +97,12 @@
                 <com.yizu.intelligentpiano.widget.StaffView
                     android:id="@+id/staffview"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"/>
+                    android:layout_height="match_parent" />
 
                 <com.yizu.intelligentpiano.widget.PrgoressView
                     android:id="@+id/prgoressView"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"/>
+                    android:layout_height="match_parent" />
             </RelativeLayout>
         </LinearLayout>
 
@@ -115,7 +115,7 @@
                 android:id="@+id/pullview"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/black"/>
+                android:background="@color/black" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -128,20 +128,20 @@
                     android:layout_width="@dimen/com_120px"
                     android:layout_height="match_parent"
                     android:padding="@dimen/com_30px"
-                    android:src="@mipmap/rewind"/>
+                    android:src="@mipmap/rewind" />
 
                 <ImageView
                     android:id="@+id/play"
                     android:layout_width="@dimen/com_120px"
                     android:layout_height="match_parent"
-                    android:src="@drawable/selecter_staff_play"/>
+                    android:src="@drawable/selecter_staff_play" />
 
                 <ImageView
                     android:id="@+id/speed"
                     android:layout_width="@dimen/com_120px"
                     android:layout_height="match_parent"
                     android:padding="@dimen/com_30px"
-                    android:src="@mipmap/speed"/>
+                    android:src="@mipmap/speed" />
             </LinearLayout>
         </RelativeLayout>
 
@@ -149,7 +149,7 @@
             android:id="@+id/piano_key"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/black"/>
+            android:background="@color/black" />
     </LinearLayout>
 
     <RelativeLayout
@@ -173,7 +173,7 @@
                 android:gravity="center"
                 android:text="@string/prompt"
                 android:textColor="@color/white"
-                android:textSize="@dimen/com_20px"/>
+                android:textSize="@dimen/com_20px" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -184,7 +184,7 @@
                 android:layout_marginTop="@dimen/com_76px"
                 android:text="@string/time"
                 android:textColor="@color/black"
-                android:textSize="@dimen/com_25px"/>
+                android:textSize="@dimen/com_25px" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -198,7 +198,7 @@
                 android:paddingTop="@dimen/com_20px"
                 android:text="知道了"
                 android:textColor="@drawable/selector_text"
-                android:textSize="@dimen/com_20px"/>
+                android:textSize="@dimen/com_20px" />
         </LinearLayout>
     </RelativeLayout>
 
@@ -207,8 +207,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"
-        android:visibility="gone"
-        >
+        android:visibility="gone">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -227,7 +226,7 @@
                     android:layout_height="@dimen/com_70px"
                     android:layout_marginLeft="@dimen/com_20px"
                     android:padding="@dimen/com_20px"
-                    android:src="@mipmap/muicss"/>
+                    android:src="@mipmap/muicss" />
 
                 <TextView
                     android:id="@+id/score_songname"
@@ -238,7 +237,7 @@
                     android:lines="1"
                     android:text="月亮之上-未知"
                     android:textColor="@color/white"
-                    android:textSize="@dimen/com_30px"/>
+                    android:textSize="@dimen/com_30px" />
             </LinearLayout>
 
             <RelativeLayout
@@ -251,7 +250,7 @@
                     android:layout_width="@dimen/com_240px"
                     android:layout_height="@dimen/com_60px"
                     android:layout_centerVertical="true"
-                    android:background="@mipmap/good"/>
+                    android:background="@mipmap/good" />
 
                 <TextView
                     android:id="@+id/score_score"
@@ -263,7 +262,7 @@
                     android:gravity="center"
                     android:text="99分"
                     android:textColor="@color/white"
-                    android:textSize="@dimen/com_30px"/>
+                    android:textSize="@dimen/com_30px" />
             </RelativeLayout>
 
             <LinearLayout
@@ -281,7 +280,7 @@
                     android:gravity="center"
                     android:text="@string/again"
                     android:textColor="@drawable/selector_text"
-                    android:textSize="@dimen/com_20px"/>
+                    android:textSize="@dimen/com_20px" />
 
                 <TextView
                     android:id="@+id/score_exit"
@@ -293,7 +292,7 @@
                     android:gravity="center"
                     android:text="@string/exit"
                     android:textColor="@drawable/selector_text"
-                    android:textSize="@dimen/com_20px"/>
+                    android:textSize="@dimen/com_20px" />
             </LinearLayout>
         </LinearLayout>
     </RelativeLayout>

@@ -1,5 +1,6 @@
 package com.yizu.intelligentpiano.widget;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -63,6 +64,7 @@ public class PrgoressView extends View {
      */
     private Timer mTimer;
 
+    @SuppressLint("HandlerLeak")
     private Handler handler = new Handler() {
         public void handleMessage(android.os.Message msg) {
             if (mData == null) return;
