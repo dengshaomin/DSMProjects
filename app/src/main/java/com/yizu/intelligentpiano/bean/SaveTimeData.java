@@ -20,7 +20,7 @@ public class SaveTimeData {
     //pullview使用,当前处于正确状态的按钮
     private boolean pressCorrect = false;
     //对应的物理keycode
-    private Integer physicalKey;
+    private int physicalKey;
     //是否已经被记录
     private boolean hasRecord;
 
@@ -74,11 +74,11 @@ public class SaveTimeData {
     }
 
 
-    public Integer getPhysicalKey() {
+    public int getPhysicalKey() {
         return physicalKey;
     }
 
-    public void setPhysicalKey(Integer physicalKey) {
+    public void setPhysicalKey(int physicalKey) {
         this.physicalKey = physicalKey;
     }
 

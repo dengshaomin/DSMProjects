@@ -25,6 +25,7 @@ public class ScoreHelper {
     private List<SaveTimeData> correctKeys;
     private List<Integer> physicKeys;
     private ScoreCallBack callback;
+    private int realScore;
 
     public ScoreCallBack getCallback() {
         return callback;
@@ -46,6 +47,14 @@ public class ScoreHelper {
     }
 
 
+    public int getRealScore() {
+        return realScore;
+    }
+
+    public void setRealScore(int realScore) {
+        this.realScore = realScore;
+    }
+
     public void setTotalNode(int totalNode) {
         totalNodes = totalNode;
     }
@@ -62,11 +71,15 @@ public class ScoreHelper {
         } else {
             saveTimeData.setPressCorrect(false);
             correctKeys.remove(saveTimeData);
-            if (callback != null) {
+            int score = caRealTimeScores();
+            if (score != realScore) {
+                realScore = score;
                 new Handler(Looper.getMainLooper()).post(new Runnable() {
                     @Override
                     public void run() {
-                        callback.callBack(caRealTimeScores());
+                        if (callback != null) {
+                            callback.callBack(realScore);
+                        }
                     }
                 });
             }
@@ -94,7 +107,7 @@ public class ScoreHelper {
             }
         }
         for (SaveTimeData saveTimeData : correctKeys) {
-            if (saveTimeData.getPhysicalKey() == physicKey) {
+            if (saveTimeData != null && saveTimeData.getPhysicalKey() == physicKey) {
                 if (press) {
                     saveTimeData.setHasRecord(true);
                     correctNodes++;
