@@ -63,12 +63,12 @@ public class ScoreHelper {
         if (correctKeys == null) correctKeys = new ArrayList<>();
         if (rectF.bottom >= bottom && rectF.top <= bottom) {
             if (!saveTimeData.isPressCorrect()) {
-                hasGoneNodes++;
                 saveTimeData.setPressCorrect(true);
 //                saveTimeData.setPhysicalKey(getPhysicKey(saveTimeData));
                 correctKeys.add(saveTimeData);
             }
-        } else {
+        } else if(rectF.top > bottom && correctKeys.contains(saveTimeData)){
+            hasGoneNodes++;
             saveTimeData.setPressCorrect(false);
             correctKeys.remove(saveTimeData);
             int score = caRealTimeScores();
