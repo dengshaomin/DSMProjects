@@ -76,6 +76,8 @@ public class Piano2Activity extends AbstractSingleMidiActivity implements View.O
     private boolean isShowPull = true;
     //是否处理按键
     private boolean KeyIsOk = false;
+    //实时得分
+    private int realyScore = 0;
 
     private Handler prassHandler = new Handler(new Handler.Callback() {
         @Override
@@ -129,6 +131,7 @@ public class Piano2Activity extends AbstractSingleMidiActivity implements View.O
 
     @Override
     public void callBack(int score) {
+        realyScore = score;
         realyTimeScore.setText("当前得分：" + score + "分");
     }
 
@@ -309,7 +312,7 @@ public class Piano2Activity extends AbstractSingleMidiActivity implements View.O
             @Override
             public void end() {
 //                int scores = ScoreHelper.getInstance().caLastScores();
-//                showResultView(scores);
+                showResultView(realyScore);
             }
         });
         mProgessView.setiPlayState(new IPlayState() {
@@ -320,8 +323,8 @@ public class Piano2Activity extends AbstractSingleMidiActivity implements View.O
 
             @Override
             public void end() {
-                int scores = ScoreHelper.getInstance().caLastScores();
-                showResultView(scores);
+//                int scores = ScoreHelper.getInstance().caLastScores();
+//                showResultView(scores);
             }
         });
         ScoreHelper.getInstance().setCallback(this);

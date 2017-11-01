@@ -2,6 +2,9 @@ package com.yizu.intelligentpiano.constens;
 
 import android.content.Context;
 import android.graphics.RectF;
+import android.graphics.drawable.Drawable;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import com.yizu.intelligentpiano.bean.SaveTimeData;
@@ -53,12 +56,20 @@ public class ScoreHelper {
             if (!saveTimeData.isPressCorrect()) {
                 hasGoneNodes++;
                 saveTimeData.setPressCorrect(true);
-                saveTimeData.setPhysicalKey(getPhysicKey(saveTimeData));
+//                saveTimeData.setPhysicalKey(getPhysicKey(saveTimeData));
                 correctKeys.add(saveTimeData);
             }
         } else {
             saveTimeData.setPressCorrect(false);
             correctKeys.remove(saveTimeData);
+            if (callback != null) {
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        callback.callBack(caRealTimeScores());
+                    }
+                });
+            }
         }
     }
 
@@ -68,9 +79,9 @@ public class ScoreHelper {
         if (press) {
             if (!physicKeys.contains(physicKey)) {
                 physicKeys.add(physicKey);
-                if (callback != null) {
-                    callback.callBack(caRealTimeScores());
-                }
+//                if (callback != null) {
+//                    callback.callBack(caRealTimeScores());
+//                }
             }
         } else {
             if (physicKeys.contains(physicKey)) {

@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.SurfaceHolder;
@@ -330,6 +331,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                     break;
             }
         }
+        saveTimeData.setPhysicalKey(keyNum);
         mRectF.top = mScrollHeight + mTimeError - (saveTimeData.getmAddDuration() + saveTimeData.getDuration()) * mSpeedLenth;
         mRectF.bottom = mScrollHeight + mTimeError - saveTimeData.getmAddDuration() * mSpeedLenth;
         ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, getBottom());
@@ -410,6 +412,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         public void run() {
             // TODO Auto-generated method stub
             super.run();
+//            Looper.prepare();
             SurfaceHolder surfaceHolder = holder;
             while (!done) {
                 synchronized (surfaceHolder) {

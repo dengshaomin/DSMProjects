@@ -82,7 +82,7 @@
 
             <TextView
                 android:id="@+id/realyTimeScore"
-                android:layout_width="wrap_content"
+                android:layout_width="100dp"
                 android:layout_height="match_parent"
                 android:gravity="center"
                 android:padding="@dimen/com_30px"
