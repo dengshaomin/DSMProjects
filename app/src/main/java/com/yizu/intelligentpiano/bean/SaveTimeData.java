@@ -22,7 +22,7 @@ public class SaveTimeData {
     //是否已经被记录
     private boolean hasRecord;
 //    //用于pullview记录到达pullview底部的状态 0:初始状态 1：第一次到达pullview底部 2：正在经过pullview 3:移出pullview
-//    private int arriveBottomState;
+    private int arriveBottomState;
 
     private boolean isRest = false;
 
@@ -122,11 +122,11 @@ public class SaveTimeData {
         this.black = black;
     }
 
-//    public int getArriveBottomState() {
-//        return arriveBottomState;
-//    }
-//
-//    public void setArriveBottomState(int arriveBottomState) {
-//        this.arriveBottomState = arriveBottomState;
-//    }
+    public int getArriveBottomState() {
+        return arriveBottomState;
+    }
+
+    public void setArriveBottomState(int arriveBottomState) {
+        this.arriveBottomState = arriveBottomState;
+    }
 }

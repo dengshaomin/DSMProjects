@@ -175,14 +175,14 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
      * @param saveTimeData
      * @return
      */
-    private void calculationPosiotion(Canvas canvas, SaveTimeData saveTimeData) {
+    private void calculationPosiotion(Canvas canvas, SaveTimeData saveTimeData, boolean firstLine) {
+        int octave = saveTimeData.getOctave();
+        int black = saveTimeData.getBlackNum();
+        int keyNum = 0;
+        int key = (octave - 1) * 7;
+        int num = mWhiteKeyWidth * key;
+        key += 23;
         if (!saveTimeData.isRest()) {
-            int octave = saveTimeData.getOctave();
-            int black = saveTimeData.getBlackNum();
-            int keyNum = 0;
-            int key = (octave - 1) * 7;
-            int num = mWhiteKeyWidth * key;
-            key += 23;
             if (octave == 0) {
                 switch (saveTimeData.getStep()) {
                     case "A":
@@ -301,17 +301,21 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                         break;
                 }
             }
+        }
 //            if (physicKeys == null) {
 //                physicKeys = new HashMap<>();
 //            }
 //            physicKeys.put(keyNum + "", physicKeys.containsKey(keyNum + "") ? (physicKeys.get(keyNum+"") + 1) : 1);
-            saveTimeData.setPhysicalKey(keyNum);
-            mRectF.top = mScrollHeight - (saveTimeData.getmAddDuration() + saveTimeData.getDuration()) * mSpeedLenth;
-            mRectF.bottom = mScrollHeight - saveTimeData.getmAddDuration() * mSpeedLenth;
-            ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, getBottom());
-            if (mRectF.bottom > getTop() && mRectF.top < getBottom()) {
-                canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, mPaint);
-            }
+        saveTimeData.setPhysicalKey(keyNum);
+        mRectF.top = mScrollHeight - (saveTimeData.getmAddDuration() + saveTimeData.getDuration()) * mSpeedLenth;
+        mRectF.bottom = mScrollHeight - saveTimeData.getmAddDuration() * mSpeedLenth;
+        ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, getBottom());
+        if (firstLine && saveTimeData.getArriveBottomState() == 1) {
+            //该数据对应的音符第一次达到pullview底部
+
+        }
+        if (mRectF.bottom > getTop() && mRectF.top < getBottom()) {
+            canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, mPaint);
         }
     }
 
@@ -405,11 +409,11 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                                                 judgeStaffBeat(botom, i);
                                             }
                                         }
-                                        calculationPosiotion(canvas, frist_hide.get(j));
+                                        calculationPosiotion(canvas, frist_hide.get(j), true);
 
                                     }
                                     for (int j = 0; j < second_hide.size(); j++) {
-                                        calculationPosiotion(canvas, second_hide.get(j));
+                                        calculationPosiotion(canvas, second_hide.get(j), false);
                                     }
                                 }
 //                                Integer most = 0;

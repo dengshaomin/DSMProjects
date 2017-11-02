@@ -62,12 +62,12 @@ public class ScoreHelper {
     public void setCorrectKey(RectF rectF, SaveTimeData saveTimeData, int bottom) {
         if (correctKeys == null) correctKeys = new ArrayList<>();
         if (rectF.bottom >= bottom && rectF.top <= bottom) {
-//            if (saveTimeData.getArriveBottomState() == 0) {
-//                saveTimeData.setArriveBottomState(1);
-//                correctKeys.add(saveTimeData);
-//            } else if (saveTimeData.getArriveBottomState() == 1) {
-//                saveTimeData.setArriveBottomState(2);
-//            }
+            if (saveTimeData.getArriveBottomState() == 0) {
+                saveTimeData.setArriveBottomState(1);
+                correctKeys.add(saveTimeData);
+            } else if (saveTimeData.getArriveBottomState() == 1) {
+                saveTimeData.setArriveBottomState(2);
+            }
             caRealTimeScores();
             int score = caRealTimeScores();
             if (score != realScore) {
