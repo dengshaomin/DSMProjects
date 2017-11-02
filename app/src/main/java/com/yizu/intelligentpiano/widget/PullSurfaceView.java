@@ -43,7 +43,6 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
 
     private int mLayoutWith;
     private int mLayoutHeight;
-    private boolean isShow = true;
     private Attributess mAttributess;
 
     private List<PullData> mData;
@@ -60,16 +59,14 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
     private Paint mPaint;
     private RectF mRectF;
 
-    private Timer mTimer;
 
     private int mScrollHeight = 0;
     int num;
 
     private int mTimeError = -1;
 
-    private int times;
-    private boolean isProgressViewStart;
 
+    private boolean playState;
 
     public PullSurfaceView(Context context) {
         this(context, null);
@@ -166,36 +163,15 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
 
 
     /**
-     * 是否显示(默认显示)
-     *
-     * @param show
-     */
-    public void isShow(boolean show) {
-        if (show) {
-            isShow = show;
-            invalidate();
-        }
-    }
-
-    /**
      * 开始播放
      */
-    public void startPlay() {
-        if (isShow) {
+    public void play() {
+        if (mysurfaceviewThread == null) {
             mysurfaceviewThread = new MysurfaceviewThread();
             mysurfaceviewThread.start();
-        }
-    }
-
-
-    /**
-     * 停止播放
-     */
-    public void stopPlay() {
-        if (isShow && mTimer != null) {
-//            if (progressView != null) progressView.stopPlay();
-            mTimer.cancel();
-            mTimer = new Timer();
+            playState = true;
+        } else {
+            playState = !playState;
         }
     }
 
@@ -372,18 +348,39 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         // 当SurfaceView被创建时，将画图Thread启动起来。
-//        mysurfaceviewThread = new MysurfaceviewThread();
-//        mysurfaceviewThread.start();
+        if (mysurfaceviewThread != null) {
+            playState = true;
+        }
+        int a = 1;
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         // 当SurfaceView被销毁时，释放资源。
+        playState = false;
+    }
+
+
+    private Canvas canvas;
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
         if (mysurfaceviewThread != null) {
-            mysurfaceviewThread.exit();
+            mysurfaceviewThread.interrupt();
             mysurfaceviewThread = null;
         }
+        playState = !playState;
     }
+
+    public void onResume() {
+        int a = 1;
+    }
+
+    public void onPause() {
+        playState = false;
+    }
+
 
     /**
      * 内部类 MysurfaceviewThread,该类主要实现对canvas的具体操作。
@@ -391,21 +388,9 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
      * @author xu duzhou
      */
     class MysurfaceviewThread extends Thread {
-        private boolean done = false;
 
         public MysurfaceviewThread() {
             super();
-            this.done = false;
-        }
-
-        public void exit() {
-            // 将done设置为true 使线程中的while循环结束。
-            done = true;
-            try {
-                join();
-            } catch (Exception e) {
-                // TODO: handle exception
-            }
         }
 
         @Override
@@ -414,35 +399,45 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
             super.run();
 //            Looper.prepare();
             SurfaceHolder surfaceHolder = holder;
-            while (!done) {
-                synchronized (surfaceHolder) {
-                    //锁定canvas
-                    Canvas canvas = surfaceHolder.lockCanvas();
-                    //canvas 执行一系列画的动作
-                    canvas.drawColor(Color.BLACK);
-                    //canvas 执行一系列画的动作
-                    if (isShow) {
-                        int size = mData.size();
-                        for (int i = 0; i < size; i++) {
-                            List<SaveTimeData> frist_hide = mData.get(i).getFrist();
-                            List<SaveTimeData> second_hide = mData.get(i).getSecond();
-                            for (int j = 0; j < frist_hide.size(); j++) {
-                                calculationPosiotion(canvas, frist_hide.get(j), i, j);
+            while (true) {
+                if (playState) {
+                    synchronized (surfaceHolder) {
+                        //锁定canvas
+                        try {
+                            canvas = surfaceHolder.lockCanvas();
+                            //canvas 执行一系列画的动作
+                            if (canvas != null) {
+                                canvas.drawColor(Color.BLACK);
+                                //canvas 执行一系列画的动作
+                                int size = mData.size();
+                                for (int i = 0; i < size; i++) {
+                                    List<SaveTimeData> frist_hide = mData.get(i).getFrist();
+                                    List<SaveTimeData> second_hide = mData.get(i).getSecond();
+                                    for (int j = 0; j < frist_hide.size(); j++) {
+                                        calculationPosiotion(canvas, frist_hide.get(j), i, j);
+                                    }
+                                    for (int j = 0; j < second_hide.size(); j++) {
+                                        calculationPosiotion(canvas, second_hide.get(j), i, j);
+                                    }
+                                }
+                                //释放canvas对象，并发送到SurfaceView
                             }
-                            for (int j = 0; j < second_hide.size(); j++) {
-                                calculationPosiotion(canvas, second_hide.get(j), i, j);
+                        } catch (Exception e) {
+
+                        } finally {
+                            if (canvas != null) {
+                                surfaceHolder.unlockCanvasAndPost(canvas);
                             }
                         }
+
                     }
-                    //释放canvas对象，并发送到SurfaceView
-                    surfaceHolder.unlockCanvasAndPost(canvas);
+                    try {
+                        Thread.sleep(mSpeedLenth / 10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    mScrollHeight += mSpeedLenth / 10;
                 }
-                try {
-                    Thread.sleep(mSpeedLenth / 10);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                mScrollHeight += mSpeedLenth / 10;
             }
         }
     }

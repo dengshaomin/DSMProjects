@@ -361,16 +361,26 @@ public class Piano2Activity extends AbstractSingleMidiActivity implements View.O
         scoreView.setText(scores + "");
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mPullView.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mPullView.onPause();
+    }
 
     private boolean pullViewState = false;
 
     private void startPlay() {
+        mPullView.play();
         if (pullViewState) {
-            mPullView.stopPlay();
             mProgessView.stopPlay();
         } else {
             ScoreHelper.getInstance().reset();
-            mPullView.startPlay();
             mProgessView.startPlay();
         }
         pullViewState = !pullViewState;
@@ -431,13 +441,13 @@ public class Piano2Activity extends AbstractSingleMidiActivity implements View.O
                         if (mPlay.isSelected()) {
 //                暂停
                             mPlay.setSelected(false);
-                            mPullView.stopPlay();
+                            mPullView.play();
 //                    mStaffView.stopPlay();
                             mProgessView.stopPlay();
                         } else {
 //                播放
                             mPlay.setSelected(true);
-                            mPullView.startPlay();
+                            mPullView.play();
 //                    mStaffView.startPlay();
                             mProgessView.startPlay();
                         }
