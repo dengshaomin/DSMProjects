@@ -67,9 +67,15 @@ public class ScoreHelper {
 //                saveTimeData.setPhysicalKey(getPhysicKey(saveTimeData));
                 correctKeys.add(saveTimeData);
             }
-        } else if(rectF.top > bottom && correctKeys.contains(saveTimeData)){
+            if (saveTimeData.getArriveBottomState() == 0) {
+                saveTimeData.setArriveBottomState(1);
+            } else if (saveTimeData.getArriveBottomState() == 1) {
+                saveTimeData.setArriveBottomState(2);
+            }
+        } else if (rectF.top > bottom && correctKeys.contains(saveTimeData)) {
             hasGoneNodes++;
             saveTimeData.setPressCorrect(false);
+            saveTimeData.setArriveBottomState(3);
             correctKeys.remove(saveTimeData);
             int score = caRealTimeScores();
             if (score != realScore) {

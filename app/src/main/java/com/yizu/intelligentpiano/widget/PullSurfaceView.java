@@ -107,23 +107,6 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         mTimeError = mLayoutHeight - mSpeedLenth * num;
     }
 
-//    @Override
-//    protected void onDraw(Canvas canvas) {
-//        super.onDraw(canvas);
-//        if (mWhiteKeyWidth == 0) {
-//            if (mPianoKeyView != null) {
-//                mWhiteKeyWidth = mPianoKeyView.getmWhiteKeyWidth();
-//                mBlackKeyWidth = mPianoKeyView.getmBlackKeyWidth();
-//            } else {
-//                return;
-//            }
-//        }
-//        if (mData == null) {
-//            return;
-//        }
-//
-//
-//    }
 
     /**
      * 设置瀑布流数据
@@ -182,7 +165,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
      * @param saveTimeData
      * @return
      */
-    private float calculationPosiotion(Canvas canvas, SaveTimeData saveTimeData, int i, int j) {
+    private float calculationPosiotion(Canvas canvas, SaveTimeData saveTimeData, boolean firstLine) {
         if (saveTimeData.isRest()) {
             int bottom = mScrollHeight + mTimeError - saveTimeData.getmAddDuration() * mSpeedLenth;
         } else {
@@ -314,12 +297,9 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
             mRectF.top = mScrollHeight + mTimeError - (saveTimeData.getmAddDuration() + saveTimeData.getDuration()) * mSpeedLenth;
             mRectF.bottom = mScrollHeight + mTimeError - saveTimeData.getmAddDuration() * mSpeedLenth;
             ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, getBottom());
-//        if (mRectF.bottom >= getBottom() && mRectF.top <= getBottom()) {
-//            if (!isProgressViewStart) {
-//                isProgressViewStart = true;
-//                progressView.startPlay();
-//            }
-//        }
+            if(saveTimeData.getArriveBottomState() ==1){
+                //该数据对应的音符第一次达到pullview底部
+            }
             if (mRectF.bottom > getTop() && mRectF.top < getBottom()) {
                 canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, mPaint);
             }
@@ -329,15 +309,6 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
     }
 
 
-    private IPlayState iPlayState;
-
-    public IPlayState getiPlayState() {
-        return iPlayState;
-    }
-
-    public void setiPlayState(IPlayState iPlayState) {
-        this.iPlayState = iPlayState;
-    }
 
 
     SurfaceHolder holder;
@@ -356,7 +327,6 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         if (mysurfaceviewThread != null) {
             playState = true;
         }
-        int a = 1;
     }
 
     @Override
@@ -419,10 +389,10 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                                     List<SaveTimeData> frist_hide = mData.get(i).getFrist();
                                     List<SaveTimeData> second_hide = mData.get(i).getSecond();
                                     for (int j = 0; j < frist_hide.size(); j++) {
-                                        calculationPosiotion(canvas, frist_hide.get(j), i, j);
+                                        calculationPosiotion(canvas, frist_hide.get(j),true);
                                     }
                                     for (int j = 0; j < second_hide.size(); j++) {
-                                        calculationPosiotion(canvas, second_hide.get(j), i, j);
+                                        calculationPosiotion(canvas, second_hide.get(j), false);
                                     }
                                 }
                                 //释放canvas对象，并发送到SurfaceView

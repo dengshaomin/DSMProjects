@@ -315,6 +315,7 @@ public class Piano2Activity extends AbstractSingleMidiActivity implements View.O
                 showResultView(realyScore);
             }
         });
+
 //        mProgessView.setiPlayState(new IPlayState() {
 //            @Override
 //            public void start() {
