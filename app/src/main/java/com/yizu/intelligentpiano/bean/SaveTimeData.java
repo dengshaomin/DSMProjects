@@ -17,8 +17,6 @@ public class SaveTimeData {
     //-1：白键左面黑键，1右面黑键
     private int black = 0;
 
-    //pullview使用,当前处于正确状态的按钮
-    private boolean pressCorrect = false;
     //对应的物理keycode
     private int physicalKey;
     //是否已经被记录
@@ -82,13 +80,6 @@ public class SaveTimeData {
         this.duration = duration;
     }
 
-    public boolean isPressCorrect() {
-        return pressCorrect;
-    }
-
-    public void setPressCorrect(boolean pressCorrect) {
-        this.pressCorrect = pressCorrect;
-    }
 
 
     public int getPhysicalKey() {
