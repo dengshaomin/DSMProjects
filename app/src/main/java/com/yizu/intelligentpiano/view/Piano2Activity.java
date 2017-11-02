@@ -138,14 +138,14 @@ public class Piano2Activity extends AbstractSingleMidiActivity implements View.O
     private class PressTimerTask extends TimerTask {
         @Override
         public void run() {
-            prassHandler.sendEmptyMessage(31);
+            prassHandler.sendEmptyMessage(52);
         }
     }
 
     private class UpTimerTask extends TimerTask {
         @Override
         public void run() {
-            canclePrassHandler.sendEmptyMessage(31);
+            canclePrassHandler.sendEmptyMessage(52);
         }
     }
 
@@ -190,9 +190,9 @@ public class Piano2Activity extends AbstractSingleMidiActivity implements View.O
         mStaffView.setStaffData(bean.getList(), new IFinish() {
             @Override
             public void success() {
-                //更新PullView的数据
-                mPullView.setPullData(mStaffView, mPianoKeyView);
                 mProgessView.setPrgoressData(mStaffView);
+                //更新PullView的数据
+                mPullView.setPullData(mStaffView, mPianoKeyView,mProgessView);
             }
         });
 
@@ -303,30 +303,31 @@ public class Piano2Activity extends AbstractSingleMidiActivity implements View.O
                 mScore.setVisibility(View.GONE);
             }
         });
-        mPullView.setiPlayState(new IPlayState() {
-            @Override
-            public void start() {
+//        mPullView.setiPlayState(new IPlayState() {
+//            @Override
+//            public void start() {
+//
+//            }
+//
+//            @Override
+//            public void end() {
+////                int scores = ScoreHelper.getInstance().caLastScores();
+//                showResultView(realyScore);
+//            }
+//        });
 
-            }
-
-            @Override
-            public void end() {
-//                int scores = ScoreHelper.getInstance().caLastScores();
-                showResultView(realyScore);
-            }
-        });
-        mProgessView.setiPlayState(new IPlayState() {
-            @Override
-            public void start() {
-
-            }
-
-            @Override
-            public void end() {
-//                int scores = ScoreHelper.getInstance().caLastScores();
-//                showResultView(scores);
-            }
-        });
+//        mProgessView.setiPlayState(new IPlayState() {
+//            @Override
+//            public void start() {
+//
+//            }
+//
+//            @Override
+//            public void end() {
+////                int scores = ScoreHelper.getInstance().caLastScores();
+////                showResultView(scores);
+//            }
+//        });
         ScoreHelper.getInstance().setCallback(this);
     }
 
@@ -361,18 +362,28 @@ public class Piano2Activity extends AbstractSingleMidiActivity implements View.O
         scoreView.setText(scores + "");
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mPullView.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mPullView.onPause();
+    }
 
     private boolean pullViewState = false;
 
     private void startPlay() {
-        if (pullViewState) {
-            mPullView.stopPlay();
-            mProgessView.stopPlay();
-        } else {
-            ScoreHelper.getInstance().reset();
-            mPullView.startPlay();
-            mProgessView.startPlay();
-        }
+        mPullView.play();
+//        if (pullViewState) {
+//            mProgessView.stopPlay();
+//        } else {
+//            ScoreHelper.getInstance().reset();
+//            mProgessView.startPlay();
+//        }
         pullViewState = !pullViewState;
     }
 
@@ -431,15 +442,15 @@ public class Piano2Activity extends AbstractSingleMidiActivity implements View.O
                         if (mPlay.isSelected()) {
 //                暂停
                             mPlay.setSelected(false);
-                            mPullView.stopPlay();
+                            mPullView.play();
 //                    mStaffView.stopPlay();
-                            mProgessView.stopPlay();
+//                            mProgessView.stopPlay();
                         } else {
 //                播放
                             mPlay.setSelected(true);
-                            mPullView.startPlay();
+                            mPullView.play();
 //                    mStaffView.startPlay();
-                            mProgessView.startPlay();
+//                            mProgessView.startPlay();
                         }
                     }
 

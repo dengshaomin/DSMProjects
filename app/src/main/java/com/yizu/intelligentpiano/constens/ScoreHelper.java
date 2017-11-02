@@ -62,15 +62,13 @@ public class ScoreHelper {
     public void setCorrectKey(RectF rectF, SaveTimeData saveTimeData, int bottom) {
         if (correctKeys == null) correctKeys = new ArrayList<>();
         if (rectF.bottom >= bottom && rectF.top <= bottom) {
-            if (!saveTimeData.isPressCorrect()) {
-                saveTimeData.setPressCorrect(true);
-//                saveTimeData.setPhysicalKey(getPhysicKey(saveTimeData));
-                correctKeys.add(saveTimeData);
-            }
-        } else if(rectF.top > bottom && correctKeys.contains(saveTimeData)){
-            hasGoneNodes++;
-            saveTimeData.setPressCorrect(false);
-            correctKeys.remove(saveTimeData);
+//            if (saveTimeData.getArriveBottomState() == 0) {
+//                saveTimeData.setArriveBottomState(1);
+//                correctKeys.add(saveTimeData);
+//            } else if (saveTimeData.getArriveBottomState() == 1) {
+//                saveTimeData.setArriveBottomState(2);
+//            }
+            caRealTimeScores();
             int score = caRealTimeScores();
             if (score != realScore) {
                 realScore = score;
@@ -83,6 +81,11 @@ public class ScoreHelper {
                     }
                 });
             }
+        } else if (rectF.top > bottom && correctKeys.contains(saveTimeData)) {
+            hasGoneNodes++;
+            Log.e("code", hasGoneNodes + "");
+//            saveTimeData.setArriveBottomState(3);
+            correctKeys.remove(saveTimeData);
         }
     }
 
@@ -106,20 +109,20 @@ public class ScoreHelper {
                 }
             }
         }
-        for (SaveTimeData saveTimeData : correctKeys) {
-            if (saveTimeData != null && saveTimeData.getPhysicalKey() == physicKey) {
-                if (press) {
-                    saveTimeData.setHasRecord(true);
-                    correctNodes++;
-                } else {
-                }
-            }
 
-        }
     }
 
     private int caRealTimeScores() {
         if (hasGoneNodes == 0) return 100;
+        for (SaveTimeData saveTimeData : correctKeys) {
+            for (int i = 0; i < physicKeys.size(); i++) {
+                if (physicKeys.get(i) == saveTimeData.getPhysicalKey()) {
+                    correctNodes++;
+                    physicKeys.remove(i);
+                    break;
+                }
+            }
+        }
         return (int) ((float) correctNodes / (float) hasGoneNodes * 100);
     }
 
@@ -141,7 +144,7 @@ public class ScoreHelper {
     }
 
     public void reset() {
-        totalNodes = correctNodes = hasGoneNodes = 0;
+        realScore = totalNodes = correctNodes = hasGoneNodes = 0;
         correctKeys = new ArrayList<>();
         physicKeys = new ArrayList<>();
     }

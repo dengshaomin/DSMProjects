@@ -61,7 +61,7 @@ public class StaffView extends View {
     private int mLayoutWidth;
     private int mLayoutHeight;
     private int mLayoutCenterWidth;
-    //是否在第二条五线谱上
+    //true：二条五线谱上
     private boolean isTowStaff = false;
     //是否绘制符尾（八分音符以后的倾斜符尾）
     private boolean isDrawTial = true;
@@ -71,6 +71,7 @@ public class StaffView extends View {
     private List<Measure> mFristStaffData;
     //第二条线的数据
     private List<Measure> mSecondStaffData;
+    private List<Integer> mBackUPData;
 
     private Attributess mAttributess;
 
@@ -161,22 +162,20 @@ public class StaffView extends View {
     /**
      * 钢琴移动相关
      */
-    //第一条五线谱一个音符移动的距离和duration（进度条）
-    private List<Move> mMoveLantehList_Frist;
-    //第二条五线谱一个音符移动的距离 （进度条）
-    private List<Move> mMoveLantehList_second;
+//    //第一条五线谱一个音符移动的距离和duration（进度条）
+//    private List<Move> mMoveLantehList_Frist;
+//    //第二条五线谱一个音符移动的距离 （进度条）
+//    private List<Move> mMoveLantehList_second;
     //是否保存五线谱移动的数据
     private boolean isSaveData = false;
-    //每个duration多少毫秒
-    private int mSpeedTime = 0;
+
     //默认每分钟88拍
     private int DEFAULT_TIME_NUM = 88;
     //进图条所处的位置
     private int mMovePosiotion = 0;
     //五线谱偏移的位置
     private int mLenth = 0;
-    //每小节多少Duration
-    private int measureDurationNum = 0;
+
     private IFinish iFinish;
     private List<Tie> mTie;
     private List<Slur> mSlur;
@@ -185,6 +184,16 @@ public class StaffView extends View {
     //保存整个谱子升降音的数组
     private String[] fifth;
     private boolean isUpfifth = false;
+
+
+    //每小节多少Duration
+    private int measureDurationNum = 0;
+    //每个druction的长度20像素
+    private int mSpeedLenth = 20;
+    //每个duration多少毫秒
+    private int mSpeedTime = 0;
+    //每一小节第一条五线谱的第一个音符的长度
+    private List<Integer> fristSingLenth = new ArrayList<>();
 
     public StaffView(Context context) {
         this(context, null);
@@ -340,7 +349,8 @@ public class StaffView extends View {
      */
     private void initStaff(Canvas canvas) {
         if (mAttributess != null) {
-            initData();
+            mFristStaffWidth = mLinsRoomWidth2;
+            mScendStaffWidth = mFristStaffWidth;
             //初始化五线谱(条数)
             drawStaffLines(mAttributess, canvas);
             //绘制音符
@@ -360,8 +370,11 @@ public class StaffView extends View {
         int size = mFristStaffData.size();
         for (int j = 0; j < size; j++) {
             mFristStaffWidth = Math.max(mFristStaffWidth, mScendStaffWidth);
-            mFristStaffWidth += mLinsRoomWidth4;
             mScendStaffWidth = mFristStaffWidth;
+            if (isSaveData) {
+//                保存每一小节第一一条五线谱的以一个元素的位置
+                fristSingLenth.add(mFristStaffWidth);
+            }
             List<MeasureBase> base = mFristStaffData.get(j).getMeasure();
             List<MeasureBase> base1 = mSecondStaffData.get(j).getMeasure();
             int baseSize = base.size();
@@ -370,37 +383,29 @@ public class StaffView extends View {
             for (int k = 0; k < baseSize; k++) {
                 Notes nots = base.get(k).getNotes();
                 if (nots != null) {
-                    if (isSaveData) {
-                        mMoveLantehList_Frist.add(new Move(Integer.valueOf(nots.getDuration()), mFristStaffWidth));
-                    }
                     if (k + 1 < base.size()) {
                         drawNotes(canvas, nots, true, base.get(k + 1).getNotes());
                     } else {
                         drawNotes(canvas, nots, true, null);
                     }
-                } else if (base.get(k).getBackup() != null) {
-                    mMoveLantehList_Frist.add(new Move(Integer.valueOf(base.get(k).getBackup().getDuration()), mFristStaffWidth));
                 }
-
             }
+            if (isTowStaff) mScendStaffWidth = mFristStaffWidth - mBackUPData.get(j) * mSpeedLenth;
             //第二条五线谱
             for (int k = 0; k < base1Size; k++) {
                 Notes nots = base1.get(k).getNotes();
                 if (nots != null) {
-                    if (isSaveData) {
-                        mMoveLantehList_second.add(new Move(Integer.valueOf(nots.getDuration()), mScendStaffWidth));
-                    }
                     if (k + 1 < base1.size()) {
                         drawNotes(canvas, nots, false, base1.get(k + 1).getNotes());
                     } else {
                         drawNotes(canvas, nots, false, null);
                     }
-                } else if (base1.get(k).getBackup() != null) {
-                    mMoveLantehList_second.add(new Move(Integer.valueOf(base1.get(k).getBackup().getDuration()),
-                            mScendStaffWidth));
                 }
             }
             drawMeasureLins(canvas, j, size - 1);
+            mFristStaffWidth += mSpeedLenth;
+            mScendStaffWidth += mSpeedLenth;
+
         }
     }
 
@@ -439,22 +444,6 @@ public class StaffView extends View {
         }
     }
 
-    private void initData() {
-        if (mSpeedTime == 0) {
-            mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions()) * 4);
-            mSpeedTime = mSpeedTime * 4;
-        }
-        if (measureDurationNum == 0) {
-            measureDurationNum = Integer.valueOf(mAttributess.getDivisions()) * Integer.valueOf(mAttributess.getTime().getBeats());
-        }
-        mFristStaffWidth = mLinsRoomWidth2;
-        mScendStaffWidth = mFristStaffWidth;
-        if (isSaveData) {
-            mMoveLantehList_Frist = new ArrayList<>();
-            mMoveLantehList_second = new ArrayList<>();
-        }
-    }
-
 
     /**
      * 绘制音符
@@ -489,9 +478,9 @@ public class StaffView extends View {
         } else {
             //每个音符按3个间的宽度来算
             if (isFristStaff) {
-                mFristStaffWidth += mLinsRoomWidth * (3 + Integer.valueOf(notes.getDuration()));
+                mFristStaffWidth += Integer.valueOf(notes.getDuration()) * mSpeedLenth;
             } else {
-                mScendStaffWidth += mLinsRoomWidth * (3 + Integer.valueOf(notes.getDuration()));
+                mScendStaffWidth += Integer.valueOf(notes.getDuration()) * mSpeedLenth;
             }
         }
     }
@@ -1171,19 +1160,24 @@ public class StaffView extends View {
      * @param canvas
      */
     private void drawStaffLines(Attributess attributess, Canvas canvas) {
-        if (attributess.getStaves().equals("2")) {
-            isTowStaff = true;
+        if (isTowStaff) {
             canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_up,
                     mFristStaffWidth, twoStaff_fristLins_down, mLinsPaint);
         } else {
-            isTowStaff = false;
             canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_up,
                     mFristStaffWidth, twoStaff_fristLins_up, mLinsPaint);
         }
         //绘制音符
         drawSign(canvas, attributess.getClefList());
+        int wigth = Math.max(mFristStaffWidth, mScendStaffWidth);
+        mFristStaffWidth = wigth;
+        mScendStaffWidth = wigth;
         //绘制节拍
         drawTimes(canvas, attributess.getTime());
+
+        mFristStaffWidth = Math.max(mFristStaffWidth, mScendStaffWidth);
+        mFristStaffWidth += mSpeedLenth;
+        mScendStaffWidth = mFristStaffWidth;
     }
 
     /**
@@ -1248,6 +1242,7 @@ public class StaffView extends View {
      */
     private void drawSign(Canvas canvas, List<Clef> clefList) {
         mFristStaffWidth += mLinsRoomWidth2;
+        mScendStaffWidth = mFristStaffWidth;
 //        MyLogUtils.e(TAG, "mFristStaffWidth:" + mFristStaffWidth);
         //两条五线谱
         for (int j = 0; j < clefList.size(); j++) {
@@ -1271,16 +1266,16 @@ public class StaffView extends View {
                 switch (clefList.get(j).getSign()) {
                     case "G":
                         //高音
-                        drawTreble(canvas, mFristStaffWidth, mLayoutCenterWidth + mLinsRoomWidth3,
-                                mFristStaffWidth + mTrebleWidth, mLayoutCenterWidth + mLinsRoomWidth3 + mTrebleHeight);
-                        mFristStaffWidth += mTrebleWidth + mLinsRoomWidth2;
+                        drawTreble(canvas, mScendStaffWidth, mLayoutCenterWidth + mLinsRoomWidth3,
+                                mScendStaffWidth + mTrebleWidth, mLayoutCenterWidth + mLinsRoomWidth3 + mTrebleHeight);
+                        mScendStaffWidth += mTrebleWidth + mLinsRoomWidth2;
                         drawFifths(canvas, false, true);
                         break;
                     case "F":
                         //低音
-                        drawBass(canvas, mFristStaffWidth, mLayoutCenterWidth + mLinsRoomWidth4,
-                                mFristStaffWidth + mBassWidth, mLayoutCenterWidth + mLinsRoomWidth4 + mBassHeight);
-                        mFristStaffWidth += mTrebleWidth + mLinsRoomWidth2;
+                        drawBass(canvas, mScendStaffWidth, mLayoutCenterWidth + mLinsRoomWidth4,
+                                mScendStaffWidth + mBassWidth, mLayoutCenterWidth + mLinsRoomWidth4 + mBassHeight);
+                        mScendStaffWidth += mTrebleWidth + mLinsRoomWidth2;
                         drawFifths(canvas, false, false);
                         break;
                 }
@@ -1357,7 +1352,11 @@ public class StaffView extends View {
 //                fifths--;
 //            }
 //        }
-
+        if (isfrist) {
+            mFristStaffWidth += mLinsRoomWidth2;
+        } else {
+            mScendStaffWidth += mLinsRoomWidth2;
+        }
 
     }
 
@@ -1745,23 +1744,46 @@ public class StaffView extends View {
             boolean isBackUp = false;
             for (int k = 0; k < staffData.get(j).getMeasure().size(); k++) {
                 if (mAttributess == null && staffData.get(j).getMeasure().get(k).getAttributes() != null) {
+                    //五线谱信息
                     mAttributess = staffData.get(j).getMeasure().get(k).getAttributes();
+                    //处理整条五线谱的升降音
                     initFifthData(mAttributess.getKey().getFifths());
+                    if (mAttributess.getStaves().equals("2")) {
+                        isTowStaff = true;
+                        if (mBackUPData == null) {
+                            mBackUPData = new ArrayList<>();
+                        } else {
+                            mBackUPData.clear();
+                        }
+                    } else {
+                        isTowStaff = false;
+                    }
+                } else if (staffData.get(j).getMeasure().get(k).getSound() != null && !staffData.get(j).getMeasure().get(k).getSound().equals("")) {
+//                    建议拍数
+                    DEFAULT_TIME_NUM = Integer.valueOf(staffData.get(j).getMeasure().get(k).getSound());
                 } else {
                     if (staffData.get(j).getMeasure().get(k).getBackup() != null) {
                         isBackUp = true;
+//                        往前移动backup个距离
+                        secondTimeDuration = fristTimeDuration - Integer.valueOf(staffData.get(j).getMeasure().get(k).getBackup().getDuration());
+                        //保存backup数据
+                        mBackUPData.add(Integer.valueOf(staffData.get(j).getMeasure().get(k).getBackup().getDuration()));
                     } else {
                         if (!isBackUp) {
                             list.add(staffData.get(j).getMeasure().get(k));
                             Notes notes = staffData.get(j).getMeasure().get(k).getNotes();
                             if (notes != null) {
                                 if (notes.getRest()) {
+                                    if (fristTime.size() == 0) {
+                                        fristTime.add(new SaveTimeData(fristTimeDuration, Integer.valueOf(notes.getDuration()), true));
+                                    }
                                     fristTimeDuration += Integer.valueOf(notes.getDuration());
                                 } else if (notes.getPitch() != null) {
+                                    //重新设置瀑布流数据
+                                    setPullView(fristTime, fristTimeDuration, notes);
                                     if (!notes.getChord()) {
                                         fristTimeDuration += Integer.valueOf(notes.getDuration());
                                     }
-                                    setPullView(fristTime, fristTimeDuration, notes);
                                 }
                             }
                         } else {
@@ -1771,12 +1793,13 @@ public class StaffView extends View {
                             Notes notes = staffData.get(j).getMeasure().get(k).getNotes();
                             if (notes != null) {
                                 if (notes.getRest()) {
+//                                    secondTime.add(new SaveTimeData(secondTimeDuration, Integer.valueOf(notes.getDuration()), true));
                                     secondTimeDuration += Integer.valueOf(notes.getDuration());
                                 } else if (notes.getPitch() != null) {
+                                    setPullView(secondTime, secondTimeDuration, notes);
                                     if (!notes.getChord()) {
                                         secondTimeDuration += Integer.valueOf(notes.getDuration());
                                     }
-                                    setPullView(secondTime, secondTimeDuration, notes);
                                 }
                             }
 
@@ -1787,8 +1810,12 @@ public class StaffView extends View {
             mFristStaffData.add(new Measure(list));
             mSecondStaffData.add(new Measure(list1));
             pullData.add(new PullData(fristTime, secondTime));
-            ScoreHelper.getInstance().setTotalNode(totalNodes);
         }
+        ScoreHelper.getInstance().setTotalNode(totalNodes);
+        //每个duraction的时间
+        mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions()));
+        //每一小节的duraction数量
+        measureDurationNum = Integer.valueOf(mAttributess.getDivisions()) * Integer.valueOf(mAttributess.getTime().getBeats());
         invalidate();
     }
 
@@ -2209,13 +2236,13 @@ public class StaffView extends View {
         return pullData;
     }
 
-    public List<Move> getmMoveLantehList_Frist() {
-        return mMoveLantehList_Frist;
-    }
-
-    public List<Move> getmMoveLantehList_second() {
-        return mMoveLantehList_second;
-    }
+//    public List<Move> getmMoveLantehList_Frist() {
+//        return mMoveLantehList_Frist;
+//    }
+//
+//    public List<Move> getmMoveLantehList_second() {
+//        return mMoveLantehList_second;
+//    }
 
     public int getmSpeedTime() {
         return mSpeedTime;
@@ -2235,5 +2262,35 @@ public class StaffView extends View {
 
     public boolean isTowStaff() {
         return isTowStaff;
+    }
+
+    public List<Integer> getFristSingLenth() {
+        return fristSingLenth;
+    }
+
+    public void setFristSingLenth(List<Integer> fristSingLenth) {
+        this.fristSingLenth = fristSingLenth;
+    }
+
+    public int getmSpeedLenth() {
+        return mSpeedLenth;
+    }
+
+    /**
+     * 拍子
+     *
+     * @return
+     */
+    public int getTimes() {
+        return DEFAULT_TIME_NUM;
+    }
+
+    /**
+     * 五线谱移动
+     *
+     * @param lenth
+     */
+    public void remove(int lenth) {
+        scrollTo(lenth, 0);
     }
 }

@@ -10,12 +10,13 @@ public class MeasureBase {
     private Backup backup;
     private Attributess attributes;
     private Barline barline;
+    //拍子数
+    private String sound;
 
     //未知属性(里面的属性暂时不知道)
     private Direction direction;
     private Forward forward;
     private Transpose transpose;
-
 
 
     public Notes getNotes() {
@@ -72,5 +73,13 @@ public class MeasureBase {
 
     public void setTranspose(Transpose transpose) {
         this.transpose = transpose;
+    }
+
+    public String getSound() {
+        return sound;
+    }
+
+    public void setSound(String sound) {
+        this.sound = sound;
     }
 }

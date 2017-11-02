@@ -67,8 +67,8 @@ public class PullView extends View {
     private Handler handler = new Handler() {
         public void handleMessage(android.os.Message msg) {
             if (msg.what == 0x1233) {
-                mScrollHeight += mSpeedLenth / 10;
-                mTimer.schedule(new MyTimerTask(), mSpeedTime / 10);
+                mScrollHeight += mSpeedLenth / 4;
+                mTimer.schedule(new MyTimerTask(), mSpeedTime / 4);
                 invalidate();
 //                scrollTo(0, -mScrollHeight);
             }

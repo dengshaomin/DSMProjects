@@ -7,10 +7,12 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.nfc.Tag;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -19,11 +21,14 @@ import com.yizu.intelligentpiano.R;
 import com.yizu.intelligentpiano.bean.PullData;
 import com.yizu.intelligentpiano.bean.SaveTimeData;
 import com.yizu.intelligentpiano.bean.xml.Attributess;
+import com.yizu.intelligentpiano.constens.IFinish;
 import com.yizu.intelligentpiano.constens.IPlayState;
 import com.yizu.intelligentpiano.constens.ScoreHelper;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -43,7 +48,6 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
 
     private int mLayoutWith;
     private int mLayoutHeight;
-    private boolean isShow = true;
     private Attributess mAttributess;
 
     private List<PullData> mData;
@@ -59,17 +63,19 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
 
     private Paint mPaint;
     private RectF mRectF;
-
-    private Timer mTimer;
+    private PrgoressView mPrgoressView;
+    private StaffView mStaffView;
 
     private int mScrollHeight = 0;
-    int num;
+//    int num;
 
-    private int mTimeError = -1;
+    private boolean playState;
 
-    private int times;
-    private boolean isProgressViewStart;
+    private int staffMove = 0;
+    private boolean isMoveStaff = false;
 
+    List<Integer> fristSingLenth;
+    private Handler handler = new Handler(Looper.getMainLooper());
 
     public PullSurfaceView(Context context) {
         this(context, null);
@@ -98,59 +104,43 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         mLayoutWith = MeasureSpec.getSize(widthMeasureSpec);
         mLayoutHeight = MeasureSpec.getSize(heightMeasureSpec);
         MyLogUtils.e(TAG, "mLayoutHeight：" + mLayoutHeight);
-        if (mAttributess == null) {
-            return;
-        }
-        //一个小结的duration总数量
-        num = Integer.valueOf(mAttributess.getDivisions()) * Integer.valueOf(mAttributess.getTime().getBeats());
-//        计算每个duration的距离
-        mSpeedLenth = mLayoutHeight / num;
-
-        mSpeedTime = (60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions())));
-        mTimeError = mLayoutHeight - mSpeedLenth * num;
-    }
-
-//    @Override
-//    protected void onDraw(Canvas canvas) {
-//        super.onDraw(canvas);
-//        if (mWhiteKeyWidth == 0) {
-//            if (mPianoKeyView != null) {
-//                mWhiteKeyWidth = mPianoKeyView.getmWhiteKeyWidth();
-//                mBlackKeyWidth = mPianoKeyView.getmBlackKeyWidth();
-//            } else {
-//                return;
-//            }
-//        }
-//        if (mData == null) {
+//        if (mAttributess == null) {
 //            return;
 //        }
-//
-//
-//    }
+//        //一个小结的duration总数量
+//        num = Integer.valueOf(mAttributess.getDivisions()) * Integer.valueOf(mAttributess.getTime().getBeats());
+////        计算每个duration的距离
+//        mSpeedLenth = mLayoutHeight / num;
+//        mSpeedTime = (60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions())));
+    }
+
 
     /**
      * 设置瀑布流数据
      *
      * @param mStaffView
      * @param mPianoKeyView
+     * @param mProgessView
      */
-    public void setPullData(StaffView mStaffView, PianoKeyView mPianoKeyView) {
+    public void setPullData(StaffView mStaffView, PianoKeyView mPianoKeyView, PrgoressView mProgessView) {
         MyLogUtils.e(TAG, "setPullData");
-        if (mPianoKeyView == null) {
-            return;
-        }
+        if (mPianoKeyView == null) return;
         Attributess attributess = mStaffView.getmAttributess();
-        if (attributess == null) {
-            MyLogUtils.e(TAG, "attributess为空");
-            return;
-        }
-        if (mStaffView.getPullData() == null) {
-            MyLogUtils.e(TAG, "data为空");
-            return;
-        }
-
+        if (attributess == null) return;
+        if (mStaffView.getPullData() == null) return;
+        if (mProgessView == null) return;
+        if (mStaffView.getFristSingLenth() == null) return;
+        this.mStaffView = mStaffView;
+        this.mPrgoressView = mProgessView;
         this.mPianoKeyView = mPianoKeyView;
+        fristSingLenth = mStaffView.getFristSingLenth();
         mAttributess = attributess;
+        //每个duration多少像素(十分之一)
+        mSpeedLenth = mStaffView.getmSpeedLenth();
+        //每个duration多少毫秒（十分之一）
+        mSpeedTime = mStaffView.getmSpeedTime();
+        //默认每分钟88拍
+        DEFAULT_TIME_NUM = mStaffView.getTimes();
         mData = mStaffView.getPullData();
         ScoreHelper.getInstance().setTotalNode(mData.size());
 //        invalidate();
@@ -166,36 +156,15 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
 
 
     /**
-     * 是否显示(默认显示)
-     *
-     * @param show
-     */
-    public void isShow(boolean show) {
-        if (show) {
-            isShow = show;
-            invalidate();
-        }
-    }
-
-    /**
      * 开始播放
      */
-    public void startPlay() {
-        if (isShow) {
+    public void play() {
+        if (mysurfaceviewThread == null) {
             mysurfaceviewThread = new MysurfaceviewThread();
             mysurfaceviewThread.start();
-        }
-    }
-
-
-    /**
-     * 停止播放
-     */
-    public void stopPlay() {
-        if (isShow && mTimer != null) {
-//            if (progressView != null) progressView.stopPlay();
-            mTimer.cancel();
-            mTimer = new Timer();
+            playState = true;
+        } else {
+            playState = !playState;
         }
     }
 
@@ -206,159 +175,147 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
      * @param saveTimeData
      * @return
      */
-    private float calculationPosiotion(Canvas canvas, SaveTimeData saveTimeData, int i, int j) {
-        int octave = saveTimeData.getOctave();
-        int black = saveTimeData.getBlackNum();
-        int keyNum = 0;
-        int key = (octave - 1) * 7;
-        int num = mWhiteKeyWidth * key;
-        key += 23;
-
-        if (octave == 0) {
-            switch (saveTimeData.getStep()) {
-                case "A":
-                    if (black == 1) {
-                        keyNum = 22;
-                        mRectF.left = mWhiteKeyWidth - mBlackKeyWidth / 2;
-                        mRectF.right = mWhiteKeyWidth + mBlackKeyWidth / 2;
-                    } else {
-                        keyNum = 21;
-                        mRectF.left = 0;
-                        mRectF.right = mWhiteKeyWidth - mBlackKeyWidth / 2;
-                    }
-                    break;
-                case "B":
-                    if (black == -1) {
-                        keyNum = 22;
-                        mRectF.left = mWhiteKeyWidth - mBlackKeyWidth / 2;
-                        mRectF.right = mWhiteKeyWidth + mBlackKeyWidth / 2;
-                    } else {
-                        keyNum = 23;
-                        mRectF.left = mWhiteKeyWidth + mBlackKeyWidth / 2;
-                        mRectF.right = mWhiteKeyWidth * 2;
-                    }
-                    break;
+    private void calculationPosiotion(Canvas canvas, SaveTimeData saveTimeData) {
+        if (!saveTimeData.isRest()) {
+            int octave = saveTimeData.getOctave();
+            int black = saveTimeData.getBlackNum();
+            int keyNum = 0;
+            int key = (octave - 1) * 7;
+            int num = mWhiteKeyWidth * key;
+            key += 23;
+            if (octave == 0) {
+                switch (saveTimeData.getStep()) {
+                    case "A":
+                        if (black == 1) {
+                            keyNum = 22;
+                            mRectF.left = mWhiteKeyWidth - mBlackKeyWidth / 2;
+                            mRectF.right = mWhiteKeyWidth + mBlackKeyWidth / 2;
+                        } else {
+                            keyNum = 21;
+                            mRectF.left = 0;
+                            mRectF.right = mWhiteKeyWidth - mBlackKeyWidth / 2;
+                        }
+                        break;
+                    case "B":
+                        if (black == -1) {
+                            keyNum = 22;
+                            mRectF.left = mWhiteKeyWidth - mBlackKeyWidth / 2;
+                            mRectF.right = mWhiteKeyWidth + mBlackKeyWidth / 2;
+                        } else {
+                            keyNum = 23;
+                            mRectF.left = mWhiteKeyWidth + mBlackKeyWidth / 2;
+                            mRectF.right = mWhiteKeyWidth * 2;
+                        }
+                        break;
+                }
+            } else {
+                switch (saveTimeData.getStep()) {
+                    case "C":
+                        if (black == 1) {
+                            keyNum = key + 2;
+                            mRectF.left = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 2 + num;
+                            mRectF.right = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
+                        } else {
+                            keyNum = key + 1;
+                            mRectF.left = mWhiteKeyWidth * 2 + num;
+                            mRectF.right = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 2 + num;
+                        }
+                        break;
+                    case "D":
+                        if (black == 1) {
+                            keyNum = key + 4;
+                            mRectF.left = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
+                            mRectF.right = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 2 + num;
+                        } else if (black == -1) {
+                            keyNum = key + 2;
+                            mRectF.left = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 2 + num;
+                            mRectF.right = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
+                        } else {
+                            keyNum = key + 3;
+                            mRectF.left = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
+                            mRectF.right = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
+                        }
+                        break;
+                    case "E":
+                        if (black == -1) {
+                            keyNum = key + 4;
+                            mRectF.left = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
+                            mRectF.right = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 2 + num;
+                        } else {
+                            keyNum = key + 5;
+                            mRectF.left = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 2 + num;
+                            mRectF.right = mWhiteKeyWidth * 5 + num;
+                        }
+                        break;
+                    case "F":
+                        if (black == 1) {
+                            keyNum = 7;
+                            mRectF.left = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 2 + num;
+                            mRectF.right = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
+                        } else {
+                            keyNum = 6;
+                            mRectF.left = mWhiteKeyWidth * 5 + num;
+                            mRectF.right = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 2 + num;
+                        }
+                        break;
+                    case "G":
+                        if (black == 1) {
+                            keyNum = 9;
+                            mRectF.left = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
+                            mRectF.right = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
+                        } else if (black == -1) {
+                            keyNum = 7;
+                            mRectF.left = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 2 + num;
+                            mRectF.right = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
+                        } else {
+                            keyNum = 8;
+                            mRectF.left = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
+                            mRectF.right = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
+                        }
+                        break;
+                    case "A":
+                        if (black == 1) {
+                            keyNum = 11;
+                            mRectF.left = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
+                            mRectF.right = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 2 + num;
+                        } else if (black == -1) {
+                            keyNum = 9;
+                            mRectF.left = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
+                            mRectF.right = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
+                        } else {
+                            keyNum = 10;
+                            mRectF.left = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
+                            mRectF.right = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
+                        }
+                        break;
+                    case "B":
+                        if (black == -1) {
+                            keyNum = 11;
+                            mRectF.left = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
+                            mRectF.right = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 2 + num;
+                        } else {
+                            keyNum = 12;
+                            mRectF.left = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 2 + num;
+                            mRectF.right = mWhiteKeyWidth * 9 + num;
+                        }
+                        break;
+                }
             }
-        } else {
-            switch (saveTimeData.getStep()) {
-                case "C":
-                    if (black == 1) {
-                        keyNum = key + 2;
-                        mRectF.left = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 2 + num;
-                        mRectF.right = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
-                    } else {
-                        keyNum = key + 1;
-                        mRectF.left = mWhiteKeyWidth * 2 + num;
-                        mRectF.right = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 2 + num;
-                    }
-                    break;
-                case "D":
-                    if (black == 1) {
-                        keyNum = key + 4;
-                        mRectF.left = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
-                        mRectF.right = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 2 + num;
-                    } else if (black == -1) {
-                        keyNum = key + 2;
-                        mRectF.left = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 2 + num;
-                        mRectF.right = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
-                    } else {
-                        keyNum = key + 3;
-                        mRectF.left = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
-                        mRectF.right = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
-                    }
-                    break;
-                case "E":
-                    if (black == -1) {
-                        keyNum = key + 4;
-                        mRectF.left = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
-                        mRectF.right = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 2 + num;
-                    } else {
-                        keyNum = key + 5;
-                        mRectF.left = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 2 + num;
-                        mRectF.right = mWhiteKeyWidth * 5 + num;
-                    }
-                    break;
-                case "F":
-                    if (black == 1) {
-                        keyNum = 7;
-                        mRectF.left = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 2 + num;
-                        mRectF.right = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
-                    } else {
-                        keyNum = 6;
-                        mRectF.left = mWhiteKeyWidth * 5 + num;
-                        mRectF.right = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 2 + num;
-                    }
-                    break;
-                case "G":
-                    if (black == 1) {
-                        keyNum = 9;
-                        mRectF.left = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
-                        mRectF.right = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
-                    } else if (black == -1) {
-                        keyNum = 7;
-                        mRectF.left = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 2 + num;
-                        mRectF.right = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
-                    } else {
-                        keyNum = 8;
-                        mRectF.left = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
-                        mRectF.right = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
-                    }
-                    break;
-                case "A":
-                    if (black == 1) {
-                        keyNum = 11;
-                        mRectF.left = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
-                        mRectF.right = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 2 + num;
-                    } else if (black == -1) {
-                        keyNum = 9;
-                        mRectF.left = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
-                        mRectF.right = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
-                    } else {
-                        keyNum = 10;
-                        mRectF.left = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
-                        mRectF.right = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
-                    }
-                    break;
-                case "B":
-                    if (black == -1) {
-                        keyNum = 11;
-                        mRectF.left = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
-                        mRectF.right = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 2 + num;
-                    } else {
-                        keyNum = 12;
-                        mRectF.left = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 2 + num;
-                        mRectF.right = mWhiteKeyWidth * 9 + num;
-                    }
-                    break;
-            }
-        }
-        saveTimeData.setPhysicalKey(keyNum);
-        mRectF.top = mScrollHeight + mTimeError - (saveTimeData.getmAddDuration() + saveTimeData.getDuration()) * mSpeedLenth;
-        mRectF.bottom = mScrollHeight + mTimeError - saveTimeData.getmAddDuration() * mSpeedLenth;
-        ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, getBottom());
-//        if (mRectF.bottom >= getBottom() && mRectF.top <= getBottom()) {
-//            if (!isProgressViewStart) {
-//                isProgressViewStart = true;
-//                progressView.startPlay();
+//            if (physicKeys == null) {
+//                physicKeys = new HashMap<>();
 //            }
-//        }
-        if (mRectF.bottom > getTop() && mRectF.top < getBottom()) {
-            canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, mPaint);
+//            physicKeys.put(keyNum + "", physicKeys.containsKey(keyNum + "") ? (physicKeys.get(keyNum+"") + 1) : 1);
+            saveTimeData.setPhysicalKey(keyNum);
+            mRectF.top = mScrollHeight - (saveTimeData.getmAddDuration() + saveTimeData.getDuration()) * mSpeedLenth;
+            mRectF.bottom = mScrollHeight - saveTimeData.getmAddDuration() * mSpeedLenth;
+            ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, getBottom());
+            if (mRectF.bottom > getTop() && mRectF.top < getBottom()) {
+                canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, mPaint);
+            }
         }
-        return 0;
     }
 
-
-    private IPlayState iPlayState;
-
-    public IPlayState getiPlayState() {
-        return iPlayState;
-    }
-
-    public void setiPlayState(IPlayState iPlayState) {
-        this.iPlayState = iPlayState;
-    }
-
+//    private Map<String, Integer> physicKeys;
 
     SurfaceHolder holder;
     MysurfaceviewThread mysurfaceviewThread;
@@ -373,18 +330,38 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         // 当SurfaceView被创建时，将画图Thread启动起来。
-//        mysurfaceviewThread = new MysurfaceviewThread();
-//        mysurfaceviewThread.start();
+        if (mysurfaceviewThread != null) {
+            playState = true;
+        }
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         // 当SurfaceView被销毁时，释放资源。
+        playState = false;
+    }
+
+
+    private Canvas canvas;
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
         if (mysurfaceviewThread != null) {
-            mysurfaceviewThread.exit();
+            mysurfaceviewThread.interrupt();
             mysurfaceviewThread = null;
         }
+        playState = !playState;
     }
+
+    public void onResume() {
+        int a = 1;
+    }
+
+    public void onPause() {
+        playState = false;
+    }
+
 
     /**
      * 内部类 MysurfaceviewThread,该类主要实现对canvas的具体操作。
@@ -392,21 +369,9 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
      * @author xu duzhou
      */
     class MysurfaceviewThread extends Thread {
-        private boolean done = false;
 
         public MysurfaceviewThread() {
             super();
-            this.done = false;
-        }
-
-        public void exit() {
-            // 将done设置为true 使线程中的while循环结束。
-            done = true;
-            try {
-                join();
-            } catch (Exception e) {
-                // TODO: handle exception
-            }
         }
 
         @Override
@@ -415,35 +380,110 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
             super.run();
 //            Looper.prepare();
             SurfaceHolder surfaceHolder = holder;
-            while (!done) {
-                synchronized (surfaceHolder) {
-                    //锁定canvas
-                    Canvas canvas = surfaceHolder.lockCanvas();
-                    //canvas 执行一系列画的动作
-                    canvas.drawColor(Color.BLACK);
-                    //canvas 执行一系列画的动作
-                    if (isShow) {
-                        int size = mData.size();
-                        for (int i = 0; i < size; i++) {
-                            List<SaveTimeData> frist_hide = mData.get(i).getFrist();
-                            List<SaveTimeData> second_hide = mData.get(i).getSecond();
-                            for (int j = 0; j < frist_hide.size(); j++) {
-                                calculationPosiotion(canvas, frist_hide.get(j), i, j);
+            while (true) {
+                if (playState) {
+                    synchronized (surfaceHolder) {
+                        //锁定canvas
+                        try {
+                            canvas = surfaceHolder.lockCanvas();
+                            //canvas 执行一系列画的动作
+                            if (canvas != null) {
+                                canvas.drawColor(Color.BLACK);
+                                //canvas 执行一系列画的动作
+                                int size = mData.size();
+                                for (int i = 0; i < size; i++) {
+                                    List<SaveTimeData> frist_hide = mData.get(i).getFrist();
+                                    List<SaveTimeData> second_hide = mData.get(i).getSecond();
+                                    for (int j = 0; j < frist_hide.size(); j++) {
+                                        if (j == 0) {
+                                            SaveTimeData data = frist_hide.get(0);
+                                            if (frist_hide.get(0).isRest()) {
+                                                int botom = mScrollHeight - data.getmAddDuration() * mSpeedLenth;
+                                                judgeStaffBeat(botom, i);
+                                            } else {
+                                                int botom = mScrollHeight - data.getmAddDuration() * mSpeedLenth;
+                                                judgeStaffBeat(botom, i);
+                                            }
+                                        }
+                                        calculationPosiotion(canvas, frist_hide.get(j));
+
+                                    }
+                                    for (int j = 0; j < second_hide.size(); j++) {
+                                        calculationPosiotion(canvas, second_hide.get(j));
+                                    }
+                                }
+//                                Integer most = 0;
+//                                for (String key : physicKeys.keySet()) {
+//                                    if (physicKeys.get(key) > most) {
+//                                        most = physicKeys.get(key);
+//                                    }
+//                                }
+//                                for (String key : physicKeys.keySet()) {
+//                                    if (physicKeys.get(key) == most) {
+//                                        most = physicKeys.get(key);
+//                                        Log.e("code", key + "==" + most);
+//                                        break;
+//                                    }
+//                                }
+
+                                //释放canvas对象，并发送到SurfaceView
                             }
-                            for (int j = 0; j < second_hide.size(); j++) {
-                                calculationPosiotion(canvas, second_hide.get(j), i, j);
+                        } catch (Exception e) {
+
+                        } finally {
+                            if (canvas != null) {
+                                surfaceHolder.unlockCanvasAndPost(canvas);
                             }
                         }
+
                     }
-                    //释放canvas对象，并发送到SurfaceView
-                    surfaceHolder.unlockCanvasAndPost(canvas);
+                    try {
+                        Thread.sleep(mSpeedTime);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    mScrollHeight += mSpeedLenth;
+                    if (isMoveStaff) {
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                staffMove += mSpeedLenth;
+                                mStaffView.remove(staffMove);
+                            }
+                        });
+                    }
                 }
-                try {
-                    Thread.sleep(mSpeedLenth / 10);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                mScrollHeight += mSpeedLenth / 10;
+            }
+        }
+    }
+
+    /**
+     * 判断staff是否校准
+     *
+     * @param botom 休止符号
+     * @param i
+     */
+    private void judgeStaffBeat(int botom, int i) {
+        if (botom - mLayoutHeight >= 0 && botom - mLayoutHeight < mSpeedLenth) {
+            MyLogUtils.e(TAG, "进度条更新");
+            if (i == 0) {
+                MyLogUtils.e(TAG, "进度条显示");
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        isMoveStaff = true;
+                        mPrgoressView.setIsShow(true);
+                    }
+                });
+            } else {
+                staffMove = fristSingLenth.get(i);
+                MyLogUtils.e(TAG, "staffMove" + staffMove);
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mStaffView.remove(staffMove);
+                    }
+                });
             }
         }
     }

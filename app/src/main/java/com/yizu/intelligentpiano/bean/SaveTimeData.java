@@ -17,12 +17,14 @@ public class SaveTimeData {
     //-1：白键左面黑键，1右面黑键
     private int black = 0;
 
-    //pullview使用,当前处于正确状态的按钮
-    private boolean pressCorrect = false;
     //对应的物理keycode
     private int physicalKey;
     //是否已经被记录
     private boolean hasRecord;
+//    //用于pullview记录到达pullview底部的状态 0:初始状态 1：第一次到达pullview底部 2：正在经过pullview 3:移出pullview
+//    private int arriveBottomState;
+
+    private boolean isRest = false;
 
 
     public SaveTimeData(int mAddDuration, int duration, int octave, String step, int black) {
@@ -31,6 +33,19 @@ public class SaveTimeData {
         this.octave = octave;
         this.step = step;
         this.black = black;
+    }
+
+    /**
+     * 保存休止符号
+     *
+     * @param mAddDuration
+     * @param duration
+     * @param isRest
+     */
+    public SaveTimeData(int mAddDuration, int duration, boolean isRest) {
+        this.mAddDuration = mAddDuration;
+        this.duration = duration;
+        this.isRest = isRest;
     }
 
     public int getmAddDuration() {
@@ -65,13 +80,6 @@ public class SaveTimeData {
         this.duration = duration;
     }
 
-    public boolean isPressCorrect() {
-        return pressCorrect;
-    }
-
-    public void setPressCorrect(boolean pressCorrect) {
-        this.pressCorrect = pressCorrect;
-    }
 
 
     public int getPhysicalKey() {
@@ -97,4 +105,28 @@ public class SaveTimeData {
     public void setBlackNum(int black) {
         this.black = black;
     }
+
+    public boolean isRest() {
+        return isRest;
+    }
+
+    public void setRest(boolean rest) {
+        isRest = rest;
+    }
+
+    public int getBlack() {
+        return black;
+    }
+
+    public void setBlack(int black) {
+        this.black = black;
+    }
+
+//    public int getArriveBottomState() {
+//        return arriveBottomState;
+//    }
+//
+//    public void setArriveBottomState(int arriveBottomState) {
+//        this.arriveBottomState = arriveBottomState;
+//    }
 }
