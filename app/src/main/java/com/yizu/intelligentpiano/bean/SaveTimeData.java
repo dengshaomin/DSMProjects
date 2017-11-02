@@ -26,6 +26,55 @@ public class SaveTimeData {
 
     private boolean isRest = false;
 
+    private float top;
+    private float bottom;
+    private float left;
+
+    public float getLeft() {
+        return left;
+    }
+
+    public void setLeft(float left) {
+        this.left = left;
+    }
+
+    public float getRight() {
+        return right;
+    }
+
+    public void setRight(float right) {
+        this.right = right;
+    }
+
+    private float right
+
+            ;
+    private boolean hasCac;
+
+
+    public float getTop() {
+        return top;
+    }
+
+    public void setTop(float top) {
+        this.top = top;
+    }
+
+    public float getBottom() {
+        return bottom;
+    }
+
+    public void setBottom(float bottom) {
+        this.bottom = bottom;
+    }
+
+    public boolean isHasCac() {
+        return hasCac;
+    }
+
+    public void setHasCac(boolean hasCac) {
+        this.hasCac = hasCac;
+    }
 
     public SaveTimeData(int mAddDuration, int duration, int octave, String step, int black) {
         this.mAddDuration = mAddDuration;

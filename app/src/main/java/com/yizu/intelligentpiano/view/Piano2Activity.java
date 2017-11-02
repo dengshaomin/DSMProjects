@@ -303,31 +303,19 @@ public class Piano2Activity extends AbstractSingleMidiActivity implements View.O
                 mScore.setVisibility(View.GONE);
             }
         });
-//        mPullView.setiPlayState(new IPlayState() {
-//            @Override
-//            public void start() {
-//
-//            }
-//
-//            @Override
-//            public void end() {
-////                int scores = ScoreHelper.getInstance().caLastScores();
-//                showResultView(realyScore);
-//            }
-//        });
+        mPullView.setiPlayState(new IPlayState() {
+            @Override
+            public void start() {
 
-//        mProgessView.setiPlayState(new IPlayState() {
-//            @Override
-//            public void start() {
-//
-//            }
-//
-//            @Override
-//            public void end() {
-////                int scores = ScoreHelper.getInstance().caLastScores();
-////                showResultView(scores);
-//            }
-//        });
+            }
+
+            @Override
+            public void end() {
+//                int scores = ScoreHelper.getInstance().caLastScores();
+                showResultView(realyScore);
+            }
+        });
+
         ScoreHelper.getInstance().setCallback(this);
     }
 
