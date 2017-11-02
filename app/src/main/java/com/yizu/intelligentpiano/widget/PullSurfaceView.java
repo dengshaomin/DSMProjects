@@ -213,6 +213,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         int key = (octave - 1) * 7;
         int num = mWhiteKeyWidth * key;
         key += 23;
+
         if (octave == 0) {
             switch (saveTimeData.getStep()) {
                 case "A":
