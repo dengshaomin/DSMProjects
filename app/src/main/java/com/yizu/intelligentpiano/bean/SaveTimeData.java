@@ -23,6 +23,7 @@ public class SaveTimeData {
     private int physicalKey;
     //是否已经被记录
     private boolean hasRecord;
+    private boolean isRest = false;
 
 
     public SaveTimeData(int mAddDuration, int duration, int octave, String step, int black) {
@@ -31,6 +32,19 @@ public class SaveTimeData {
         this.octave = octave;
         this.step = step;
         this.black = black;
+    }
+
+    /**
+     * 保存休止符号
+     *
+     * @param mAddDuration
+     * @param duration
+     * @param isRest
+     */
+    public SaveTimeData(int mAddDuration, int duration, boolean isRest) {
+        this.mAddDuration = mAddDuration;
+        this.duration = duration;
+        this.isRest = isRest;
     }
 
     public int getmAddDuration() {
@@ -96,5 +110,13 @@ public class SaveTimeData {
 
     public void setBlackNum(int black) {
         this.black = black;
+    }
+
+    public boolean isRest() {
+        return isRest;
+    }
+
+    public void setRest(boolean rest) {
+        isRest = rest;
     }
 }

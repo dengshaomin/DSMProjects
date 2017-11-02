@@ -193,6 +193,9 @@ public class XmlPrareUtils {
                     measureBase = new MeasureBase();
                     attributess = new Attributess();
                     break;
+                case "sound":
+                    measureBase.setSound(xmlPullParser.getAttributeValue(null, "tempo"));
+                    break;
                 case "divisions":
                     attributess.setDivisions(xmlPullParser.nextText());
                     break;

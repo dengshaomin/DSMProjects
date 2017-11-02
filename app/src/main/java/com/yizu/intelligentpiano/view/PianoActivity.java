@@ -319,18 +319,18 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
 //                showResultView(scores);
             }
         });
-        mProgessView.setiPlayState(new IPlayState() {
-            @Override
-            public void start() {
-
-            }
-
-            @Override
-            public void end() {
-                int scores = ScoreHelper.getInstance().caLastScores();
-                showResultView(scores);
-            }
-        });
+//        mProgessView.setiPlayState(new IPlayState() {
+//            @Override
+//            public void start() {
+//
+//            }
+//
+//            @Override
+//            public void end() {
+//                int scores = ScoreHelper.getInstance().caLastScores();
+//                showResultView(scores);
+//            }
+//        });
         ScoreHelper.getInstance().setCallback(this);
     }
 
@@ -366,18 +366,16 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
     }
 
 
-
-
     private boolean pullViewState = false;
 
     private void startPlay() {
         if (pullViewState) {
             mPullView.stopPlay();
-            mProgessView.stopPlay();
+//            mProgessView.stopPlay();
         } else {
             ScoreHelper.getInstance().reset();
             mPullView.startPlay();
-            mProgessView.startPlay();
+//            mProgessView.startPlay();
         }
         pullViewState = !pullViewState;
     }
@@ -439,13 +437,13 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
                             mPlay.setSelected(false);
                             mPullView.stopPlay();
 //                    mStaffView.stopPlay();
-                            mProgessView.stopPlay();
+//                            mProgessView.stopPlay();
                         } else {
 //                播放
                             mPlay.setSelected(true);
                             mPullView.startPlay();
 //                    mStaffView.startPlay();
-                            mProgessView.startPlay();
+//                            mProgessView.startPlay();
                         }
                     }
 
@@ -454,6 +452,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         }
         return super.onKeyDown(keyCode, event);
     }
+
     //midi链接
     @Override
     public void onDeviceAttached(@NonNull UsbDevice usbDevice) {
@@ -532,6 +531,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         MyLogUtils.e(TAG, "onMidiNoteOff" + "NoteOn cable: " + i + ",  channel: " + i1 + ", note: " + i2 + ", velocity: " + i3);
         canclePrassHandler.sendEmptyMessage(i2);
     }
+
     /**
      * 钢琴手指按下
      *
