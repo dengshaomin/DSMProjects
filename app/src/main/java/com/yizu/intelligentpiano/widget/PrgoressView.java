@@ -46,56 +46,7 @@ public class PrgoressView extends View {
     private int mLinsRoomWidth;
     private int twoStaff_fristLins_up;
     private boolean isTowStaff;
-//    private int mMovePosiotion = -1;
-//    private int mLenth = 0;
-//    private int padding = 0;
-//    private IPlayState iPlayState;
-//
-//    public IPlayState getiPlayState() {
-//        return iPlayState;
-//    }
-//
-//    public void setiPlayState(IPlayState iPlayState) {
-//        this.iPlayState = iPlayState;
-//    }
-
-//    /**
-//     * 定时器
-//     */
-//    private Timer mTimer;
-//
-//    @SuppressLint("HandlerLeak")
-//    private Handler handler = new Handler() {
-//        public void handleMessage(android.os.Message msg) {
-//            if (mData == null) return;
-//            mMovePosiotion++;
-//            if (msg.what == 0x1231) {
-//                if (mMovePosiotion == mData.size()) {
-//                    mMovePosiotion = -1;
-//                    padding = 0;
-//                    mStaffView.scrollTo(0, 0);
-//                    mLenth = 0;
-//                    if (iPlayState != null) {
-//                        iPlayState.end();
-//                    }
-//                    invalidate();
-//                } else {
-//                    if (mMovePosiotion > mData.size() - 1) return;
-//                    if (iPlayState != null) {
-//                        iPlayState.start();
-//                    }
-//                    if (mData.get(mMovePosiotion).getLenth() / (mLayoutWidth - 100) == padding) {
-//                    } else {
-//                        mLenth = mData.get(mMovePosiotion).getLenth() - mLinsRoomWidth * 2;
-//                        padding++;
-//                        mStaffView.scrollTo((int) mLenth, 0);
-//                    }
-//                    mTimer.schedule(new MyTimerTask(), mSpeedTime * mData.get(mMovePosiotion).getDuration());
-//                    invalidate();
-//                }
-//            }
-//        }
-//    };
+    private boolean isShow = false;
 
     public PrgoressView(Context context) {
         this(context, null);
@@ -131,12 +82,8 @@ public class PrgoressView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         MyLogUtils.e(TAG, "onDraw");
-//        if (mMovePosiotion == -1) {
-//            return;
-//        }
-//        if (mStaffView != null && mData != null) {
-//            setBlueProgresBar(canvas, mData.get(mMovePosiotion).getLenth() - mLenth);
-//        }
+
+        if (!isShow) return;
         if (mStaffView != null && mStaffView.getFristSingLenth().size() > 1) {
             setBlueProgresBar(canvas, mStaffView.getFristSingLenth().get(0));
         }
@@ -151,6 +98,7 @@ public class PrgoressView extends View {
         if (mProgessRectF == null) {
             mProgessRectF = new RectF();
         }
+
         mProgessRectF.left = mLeft;
         mProgessRectF.top = 10;
 //        mProgessRectF.right = mLeft + mLinsRoomWidth * 3;
@@ -164,58 +112,21 @@ public class PrgoressView extends View {
         canvas.drawRoundRect(mProgessRectF, 90, 90, mBluePaint);
     }
 
-
-//    /**
-//     * 定时器
-//     */
-//    private class MyTimerTask extends TimerTask {
-//        @Override
-//        public void run() {
-//            handler.sendEmptyMessage(0x1231);
-//        }
-//    }
-
-
-//    /**
-//     * 开始滚动
-//     */
-//    public void startPlay() {
-//        mMovePosiotion = -1;
-//        MyLogUtils.e(TAG, "开始播放");
-//        if (mTimer == null) {
-//            mTimer = new Timer();
-//        }
-//        //开始播放，延时一小节的时间
-//        mTimer.schedule(new MyTimerTask(), measureDurationNum * mSpeedTime);
-//    }
-
-//    /**
-//     * 结束滚动
-//     */
-//    public void stopPlay() {
-//        if (mTimer != null) {
-//            MyLogUtils.e(TAG, "停止播放");
-//            mTimer.cancel();
-//            mTimer = new Timer();
-//        }
-//    }
-
     public void setPrgoressData(StaffView staffView) {
         if (staffView == null) return;
         mStaffView = staffView;
-//        measureDurationNum = mStaffView.getMeasureDurationNum();
-//        mSpeedTime = mStaffView.getmSpeedTime();
-////        if (mStaffView.getmMoveLantehList_Frist().size() > mStaffView.getmMoveLantehList_second().size()) {
-////            mData = mStaffView.getmMoveLantehList_Frist();
-////        } else {
-////            mData = mStaffView.getmMoveLantehList_second();
-////        }
-////        mMoveLantehList_Frist = mStaffView.getmMoveLantehList_Frist();
-////        mMoveLantehList_second = mStaffView.getmMoveLantehList_second();
         mLinsRoomWidth = mStaffView.getmLinsRoomWidth();
         twoStaff_fristLins_up = mStaffView.getTwoStaff_fristLins_up();
         isTowStaff = mStaffView.isTowStaff();
-//        ScoreHelper.getInstance().setTotalNode(mData.size());
-//        invalidate();
+    }
+
+    /**
+     * 设置是否显示进度条
+     *
+     * @param show
+     */
+    public void setIsShow(boolean show) {
+        isShow = show;
+        invalidate();
     }
 }

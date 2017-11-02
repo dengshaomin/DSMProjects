@@ -190,9 +190,9 @@ public class Piano2Activity extends AbstractSingleMidiActivity implements View.O
         mStaffView.setStaffData(bean.getList(), new IFinish() {
             @Override
             public void success() {
-                //更新PullView的数据
-                mPullView.setPullData(mStaffView, mPianoKeyView);
                 mProgessView.setPrgoressData(mStaffView);
+                //更新PullView的数据
+                mPullView.setPullData(mStaffView, mPianoKeyView,mProgessView);
             }
         });
 
@@ -303,18 +303,18 @@ public class Piano2Activity extends AbstractSingleMidiActivity implements View.O
                 mScore.setVisibility(View.GONE);
             }
         });
-        mPullView.setiPlayState(new IPlayState() {
-            @Override
-            public void start() {
-
-            }
-
-            @Override
-            public void end() {
-//                int scores = ScoreHelper.getInstance().caLastScores();
-                showResultView(realyScore);
-            }
-        });
+//        mPullView.setiPlayState(new IPlayState() {
+//            @Override
+//            public void start() {
+//
+//            }
+//
+//            @Override
+//            public void end() {
+////                int scores = ScoreHelper.getInstance().caLastScores();
+//                showResultView(realyScore);
+//            }
+//        });
 
 //        mProgessView.setiPlayState(new IPlayState() {
 //            @Override

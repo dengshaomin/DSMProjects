@@ -1774,7 +1774,9 @@ public class StaffView extends View {
                             Notes notes = staffData.get(j).getMeasure().get(k).getNotes();
                             if (notes != null) {
                                 if (notes.getRest()) {
-                                    fristTime.add(new SaveTimeData(fristTimeDuration, Integer.valueOf(notes.getDuration()), true));
+                                    if (fristTime.size() == 0) {
+                                        fristTime.add(new SaveTimeData(fristTimeDuration, Integer.valueOf(notes.getDuration()), true));
+                                    }
                                     fristTimeDuration += Integer.valueOf(notes.getDuration());
                                 } else if (notes.getPitch() != null) {
                                     //重新设置瀑布流数据
@@ -1791,7 +1793,7 @@ public class StaffView extends View {
                             Notes notes = staffData.get(j).getMeasure().get(k).getNotes();
                             if (notes != null) {
                                 if (notes.getRest()) {
-                                    secondTime.add(new SaveTimeData(secondTimeDuration, Integer.valueOf(notes.getDuration()), true));
+//                                    secondTime.add(new SaveTimeData(secondTimeDuration, Integer.valueOf(notes.getDuration()), true));
                                     secondTimeDuration += Integer.valueOf(notes.getDuration());
                                 } else if (notes.getPitch() != null) {
                                     setPullView(secondTime, secondTimeDuration, notes);
@@ -2268,5 +2270,27 @@ public class StaffView extends View {
 
     public void setFristSingLenth(List<Integer> fristSingLenth) {
         this.fristSingLenth = fristSingLenth;
+    }
+
+    public int getmSpeedLenth() {
+        return mSpeedLenth;
+    }
+
+    /**
+     * 拍子
+     *
+     * @return
+     */
+    public int getTimes() {
+        return DEFAULT_TIME_NUM;
+    }
+
+    /**
+     * 五线谱移动
+     *
+     * @param lenth
+     */
+    public void remove(int lenth) {
+        scrollTo(lenth, 0);
     }
 }
