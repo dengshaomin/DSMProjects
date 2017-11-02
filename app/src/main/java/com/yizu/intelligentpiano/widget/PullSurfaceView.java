@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -23,7 +24,9 @@ import com.yizu.intelligentpiano.constens.IPlayState;
 import com.yizu.intelligentpiano.constens.ScoreHelper;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -293,6 +296,10 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                         break;
                 }
             }
+//            if (physicKeys == null) {
+//                physicKeys = new HashMap<>();
+//            }
+//            physicKeys.put(keyNum + "", physicKeys.containsKey(keyNum + "") ? (physicKeys.get(keyNum+"") + 1) : 1);
             saveTimeData.setPhysicalKey(keyNum);
             mRectF.top = mScrollHeight + mTimeError - (saveTimeData.getmAddDuration() + saveTimeData.getDuration()) * mSpeedLenth;
             mRectF.bottom = mScrollHeight + mTimeError - saveTimeData.getmAddDuration() * mSpeedLenth;
@@ -308,6 +315,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         return 0;
     }
 
+//    private Map<String, Integer> physicKeys;
 
     SurfaceHolder holder;
     MysurfaceviewThread mysurfaceviewThread;
@@ -398,6 +406,20 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                                         calculationPosiotion(canvas, second_hide.get(j), false);
                                     }
                                 }
+//                                Integer most = 0;
+//                                for (String key : physicKeys.keySet()) {
+//                                    if (physicKeys.get(key) > most) {
+//                                        most = physicKeys.get(key);
+//                                    }
+//                                }
+//                                for (String key : physicKeys.keySet()) {
+//                                    if (physicKeys.get(key) == most) {
+//                                        most = physicKeys.get(key);
+//                                        Log.e("code", key + "==" + most);
+//                                        break;
+//                                    }
+//                                }
+
                                 //释放canvas对象，并发送到SurfaceView
                             }
                         } catch (Exception e) {

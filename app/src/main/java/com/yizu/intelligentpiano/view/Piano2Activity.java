@@ -138,14 +138,14 @@ public class Piano2Activity extends AbstractSingleMidiActivity implements View.O
     private class PressTimerTask extends TimerTask {
         @Override
         public void run() {
-            prassHandler.sendEmptyMessage(31);
+            prassHandler.sendEmptyMessage(52);
         }
     }
 
     private class UpTimerTask extends TimerTask {
         @Override
         public void run() {
-            canclePrassHandler.sendEmptyMessage(31);
+            canclePrassHandler.sendEmptyMessage(52);
         }
     }
 
