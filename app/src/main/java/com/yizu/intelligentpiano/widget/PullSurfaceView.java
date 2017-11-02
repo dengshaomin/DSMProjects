@@ -297,7 +297,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
             mRectF.top = mScrollHeight + mTimeError - (saveTimeData.getmAddDuration() + saveTimeData.getDuration()) * mSpeedLenth;
             mRectF.bottom = mScrollHeight + mTimeError - saveTimeData.getmAddDuration() * mSpeedLenth;
             ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, getBottom());
-            if(saveTimeData.getArriveBottomState() ==1){
+            if (firstLine && saveTimeData.getArriveBottomState() == 1) {
                 //该数据对应的音符第一次达到pullview底部
             }
             if (mRectF.bottom > getTop() && mRectF.top < getBottom()) {
@@ -307,8 +307,6 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
 
         return 0;
     }
-
-
 
 
     SurfaceHolder holder;
@@ -337,6 +335,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
 
 
     private Canvas canvas;
+    private IPlayState iPlayState;
 
     @Override
     protected void onDetachedFromWindow() {
@@ -354,6 +353,10 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
 
     public void onPause() {
         playState = false;
+    }
+
+    public void setiPlayState(IPlayState iPlayState) {
+        this.iPlayState = iPlayState;
     }
 
 
@@ -389,7 +392,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                                     List<SaveTimeData> frist_hide = mData.get(i).getFrist();
                                     List<SaveTimeData> second_hide = mData.get(i).getSecond();
                                     for (int j = 0; j < frist_hide.size(); j++) {
-                                        calculationPosiotion(canvas, frist_hide.get(j),true);
+                                        calculationPosiotion(canvas, frist_hide.get(j), true);
                                     }
                                     for (int j = 0; j < second_hide.size(); j++) {
                                         calculationPosiotion(canvas, second_hide.get(j), false);
