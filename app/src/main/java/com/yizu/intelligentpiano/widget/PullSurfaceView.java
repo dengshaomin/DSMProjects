@@ -162,7 +162,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
     }
 
 
-    private void caAllPosition(){
+    private void caAllPosition() {
         int size = mData.size();
 
         for (int i = 0; i < size; i++) {
@@ -180,17 +180,48 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                         judgeStaffBeat(botom, i);
                     }
                 }
-                    calculationPosiotion(canvas, frist_hide.get(j), true, (i == size - 1 &&
-                            lastNodeFlag) ? (j ==
-                            frist_hide.size() - 1 ? true : false) : false);
+                calculationPosiotion(canvas, frist_hide.get(j), true, (i == size - 1 &&
+                        lastNodeFlag) ? (j ==
+                        frist_hide.size() - 1 ? true : false) : false);
 
             }
             for (int j = 0; j < second_hide.size(); j++) {
-                    calculationPosiotion(canvas, second_hide.get(j), false, (i == size - 1
-                            && !lastNodeFlag) ? (j == second_hide.size() - 1 ? true : false) : false);
+                calculationPosiotion(canvas, second_hide.get(j), false, (i == size - 1
+                        && !lastNodeFlag) ? (j == second_hide.size() - 1 ? true : false) : false);
             }
         }
+        float minY = 0;
+        int minI = 0;
+        boolean firstLine = false;
+        int minJ = 0;
+        for (int i = 0; i < size; i++) {
+            List<SaveTimeData> frist_hide = mData.get(i).getFrist();
+            List<SaveTimeData> second_hide = mData.get(i).getSecond();
+            for (int j = 0; j < frist_hide.size(); j++) {
+                if (frist_hide.get(j).getTop() < minY) {
+                    minY = frist_hide.get(j).getTop();
+                    minI = i;
+                    minJ = j;
+                    firstLine = true;
+                }
+
+            }
+            for (int j = 0; j < second_hide.size(); j++) {
+                if (second_hide.get(j).getTop() < minY) {
+                    minY = second_hide.get(j).getTop();
+                    minI = i;
+                    minJ = j;
+                    firstLine = false;
+                }
+            }
+        }
+        if (firstLine) {
+            mData.get(minI).getFrist().get(minJ).setLastNode(true);
+        } else {
+            mData.get(minI).getSecond().get(minJ).setLastNode(true);
+        }
     }
+
     /**
      * 开始播放
      */
@@ -205,16 +236,16 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
     }
 
 
-
 //    private Map<String, Integer> physicKeys;
 
     SurfaceHolder holder;
     MysurfaceviewThread mysurfaceviewThread;
 
 
-    private void allFinish(){
+    private void allFinish() {
 
     }
+
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         // TODO Auto-generated method stub
@@ -257,6 +288,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
     }
 
     private IPlayState iPlayState;
+
     public void setiPlayState(IPlayState iPlayState) {
         this.iPlayState = iPlayState;
     }
@@ -296,14 +328,14 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                                     List<SaveTimeData> second_hide = mData.get(i).getSecond();
                                     boolean lastNodeFlag = frist_hide.size() > second_hide.size();
                                     for (int j = 0; j < frist_hide.size(); j++) {
-                                            move(frist_hide.get(j),true,(i == size - 1 &&
-                                                    lastNodeFlag) ? (j ==
-                                                    frist_hide.size() - 1 ? true : false) : false);
+                                        move(frist_hide.get(j), true, (i == size - 1 &&
+                                                lastNodeFlag) ? (j ==
+                                                frist_hide.size() - 1 ? true : false) : false);
 
                                     }
                                     for (int j = 0; j < second_hide.size(); j++) {
-                                            move(second_hide.get(j),false, (i == size - 1
-                                                    && !lastNodeFlag) ? (j == second_hide.size() - 1 ? true : false) : false);
+                                        move(second_hide.get(j), false, (i == size - 1
+                                                && !lastNodeFlag) ? (j == second_hide.size() - 1 ? true : false) : false);
                                     }
                                 }
 //                                Integer most = 0;
@@ -321,7 +353,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
 //                                }
 
                                 //释放canvas对象，并发送到SurfaceView
-                                if (canvas != null ) {
+                                if (canvas != null) {
                                     surfaceHolder.unlockCanvasAndPost(canvas);
                                 }
                                 Thread.sleep(speed);
@@ -354,6 +386,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
             }
         }
     }
+
     /**
      * 计算每个音符的位置
      *
@@ -361,7 +394,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
      * @param saveTimeData
      * @return
      */
-    private void calculationPosiotion(Canvas canvas, SaveTimeData saveTimeData, boolean firstLine,boolean lastNode) {
+    private void calculationPosiotion(Canvas canvas, SaveTimeData saveTimeData, boolean firstLine, boolean lastNode) {
         int octave = saveTimeData.getOctave();
         int black = saveTimeData.getBlackNum();
         int keyNum = 0;
@@ -503,14 +536,9 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         saveTimeData.setHasCac(true);
     }
 
-    Bitmap bitmap;
-
-    private void move(SaveTimeData saveTimeData,boolean firstLine,boolean lastNode){
-        if(bitmap == null){
-            bitmap = BitmapFactory.decodeResource(getResources(),R.mipmap.ic_launcher);
-        }
-        saveTimeData.setTop(saveTimeData.getTop() +speed*moveDistance);
-        saveTimeData.setBottom(saveTimeData.getBottom() +speed*moveDistance);
+    private void move(SaveTimeData saveTimeData, boolean firstLine, boolean lastNode) {
+        saveTimeData.setTop(saveTimeData.getTop() + speed * moveDistance);
+        saveTimeData.setBottom(saveTimeData.getBottom() + speed * moveDistance);
         mRectF.left = saveTimeData.getLeft();
         mRectF.top = saveTimeData.getTop();
         mRectF.right = saveTimeData.getRight();
@@ -522,22 +550,24 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
 
         }
         if (mRectF.bottom > getTop() && mRectF.top < getBottom()) {
-            canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, saveTimeData.isRest()?
-                    resetPaint:mPaint);
+            canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, saveTimeData.isRest() ?
+                    resetPaint : mPaint);
         }
-        if(lastNode && mRectF.top > getBottom()){
+        if (saveTimeData.isLastNode() && mRectF.top > getBottom()) {
             //谱子结束
             onDetachedFromWindow();
-            if(iPlayState != null){
+            if (iPlayState != null) {
                 iPlayState.end();
             }
             return;
         }
     }
+
     //每次刷新移动的距离
     private final int moveDistance = 20;
     //刷新速度
     private final int speed = 5;
+
     /**
      * 判断staff是否校准
      *

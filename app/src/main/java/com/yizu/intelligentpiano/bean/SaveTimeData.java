@@ -29,6 +29,16 @@ public class SaveTimeData {
     private float top;
     private float bottom;
     private float left;
+    //是否谱子的最后一个音符
+    private boolean isLastNode;
+
+    public boolean isLastNode() {
+        return isLastNode;
+    }
+
+    public void setLastNode(boolean lastNode) {
+        isLastNode = lastNode;
+    }
 
     public float getLeft() {
         return left;
