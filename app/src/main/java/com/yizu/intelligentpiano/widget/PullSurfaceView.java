@@ -184,7 +184,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
             for (int j = 0; j < second_hide.size(); j++) {
                 calculationPosiotion(canvas, second_hide.get(j), false, (i == size - 1
                         && !lastNodeFlag) ? (j == second_hide.size() - 1 ? true : false) : false);
-                frist_hide.get(j).setLastNode(false);
+                second_hide.get(j).setLastNode(false);
             }
         }
         float minY = 0;
