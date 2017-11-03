@@ -371,6 +371,7 @@ public class StaffView extends View {
         for (int j = 0; j < size; j++) {
             mFristStaffWidth = Math.max(mFristStaffWidth, mScendStaffWidth);
             mScendStaffWidth = mFristStaffWidth;
+//            MyLogUtils.e(TAG, "posiotion：" + j + "lenth：" + mFristStaffWidth);
             if (isSaveData) {
 //                保存每一小节第一一条五线谱的以一个元素的位置
                 fristSingLenth.add(mFristStaffWidth);
@@ -1774,7 +1775,7 @@ public class StaffView extends View {
                             Notes notes = staffData.get(j).getMeasure().get(k).getNotes();
                             if (notes != null) {
                                 if (notes.getRest()) {
-                                        fristTime.add(new SaveTimeData(fristTimeDuration, Integer.valueOf(notes.getDuration()), true));
+                                    fristTime.add(new SaveTimeData(fristTimeDuration, Integer.valueOf(notes.getDuration()), true));
                                     fristTimeDuration += Integer.valueOf(notes.getDuration());
                                 } else if (notes.getPitch() != null) {
                                     //重新设置瀑布流数据
@@ -2290,5 +2291,6 @@ public class StaffView extends View {
      */
     public void remove(int lenth) {
         scrollTo(lenth, 0);
+        MyLogUtils.e(TAG, "lenth" + lenth);
     }
 }
