@@ -1,36 +1,26 @@
 package com.yizu.intelligentpiano.widget;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
-import android.nfc.Tag;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
 
 import com.yizu.intelligentpiano.R;
 import com.yizu.intelligentpiano.bean.PullData;
 import com.yizu.intelligentpiano.bean.SaveTimeData;
 import com.yizu.intelligentpiano.bean.xml.Attributess;
-import com.yizu.intelligentpiano.constens.IFinish;
 import com.yizu.intelligentpiano.constens.IPlayState;
 import com.yizu.intelligentpiano.constens.ScoreHelper;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * Created by liuxiaozhu on 2017/10/19.
