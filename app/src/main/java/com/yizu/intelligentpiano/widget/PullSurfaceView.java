@@ -149,27 +149,32 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
             }
         }
         caAllPosition();
+        //每次刷新移动的距离
+        moveDistance = mSpeedLenth;
+        //刷新速度
+        speed = mSpeedTime;
     }
 
-
+    /**
+     * 计算所有位置
+     */
     private void caAllPosition() {
         int size = mData.size();
-
         for (int i = 0; i < size; i++) {
             List<SaveTimeData> frist_hide = mData.get(i).getFrist();
             List<SaveTimeData> second_hide = mData.get(i).getSecond();
             boolean lastNodeFlag = frist_hide.size() > second_hide.size();
             for (int j = 0; j < frist_hide.size(); j++) {
-                if (j == 0) {
-                    SaveTimeData data = frist_hide.get(0);
-                    if (frist_hide.get(0).isRest()) {
-                        int botom = mScrollHeight - data.getmAddDuration() * mSpeedLenth;
-                        judgeStaffBeat(botom, i);
-                    } else {
-                        int botom = mScrollHeight - data.getmAddDuration() * mSpeedLenth;
-                        judgeStaffBeat(botom, i);
-                    }
-                }
+//                if (j == 0) {
+//                    SaveTimeData data = frist_hide.get(0);
+//                    if (frist_hide.get(0).isRest()) {
+//                        int botom = mScrollHeight - data.getmAddDuration() * mSpeedLenth;
+//                        judgeStaffBeat(botom, i);
+//                    } else {
+//                        int botom = mScrollHeight - data.getmAddDuration() * mSpeedLenth;
+//                        judgeStaffBeat(botom, i);
+//                    }
+//                }
                 calculationPosiotion(canvas, frist_hide.get(j), true, (i == size - 1 &&
                         lastNodeFlag) ? (j ==
                         frist_hide.size() - 1 ? true : false) : false);
@@ -322,12 +327,12 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                                     for (int j = 0; j < frist_hide.size(); j++) {
                                         move(frist_hide.get(j), true, (i == size - 1 &&
                                                 lastNodeFlag) ? (j ==
-                                                frist_hide.size() - 1 ? true : false) : false);
+                                                frist_hide.size() - 1 ? true : false) : false, i, j);
 
                                     }
                                     for (int j = 0; j < second_hide.size(); j++) {
                                         move(second_hide.get(j), false, (i == size - 1
-                                                && !lastNodeFlag) ? (j == second_hide.size() - 1 ? true : false) : false);
+                                                && !lastNodeFlag) ? (j == second_hide.size() - 1 ? true : false) : false, i, j);
                                     }
                                 }
 //                                Integer most = 0;
@@ -347,6 +352,15 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                                 //释放canvas对象，并发送到SurfaceView
                                 if (canvas != null) {
                                     surfaceHolder.unlockCanvasAndPost(canvas);
+                                }
+                                if (isMoveStaff) {
+                                    handler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+//                                            staff += moveDistance;
+                                            mStaffView.remove(staff);
+                                        }
+                                    });
                                 }
                                 Thread.sleep(speed);
                             }
@@ -532,27 +546,55 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         saveTimeData.setHasCac(true);
     }
 
-    private void move(SaveTimeData saveTimeData, boolean firstLine, boolean lastNode) {
-        saveTimeData.setTop(saveTimeData.getTop() + speed * moveDistance);
-        saveTimeData.setBottom(saveTimeData.getBottom() + speed * moveDistance);
+    private int staff = 0;
+
+    /**
+     * 移动无线谱
+     *
+     * @param saveTimeData
+     * @param firstLine
+     * @param lastNode
+     * @param i
+     * @param j
+     */
+    private void move(final SaveTimeData saveTimeData, final boolean firstLine, boolean lastNode, final int i, final int j) {
+        saveTimeData.setTop(saveTimeData.getTop() + moveDistance);
+        saveTimeData.setBottom(saveTimeData.getBottom() + moveDistance);
         mRectF.left = saveTimeData.getLeft();
         mRectF.top = saveTimeData.getTop();
         mRectF.right = saveTimeData.getRight();
         mRectF.bottom = saveTimeData.getBottom();
         canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, mPaint);
         ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, getBottom());
-        if (firstLine && saveTimeData.getArriveBottomState() == 1) {
-            //该数据对应的音符第一次达到pullview底部
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (firstLine && saveTimeData.getArriveBottomState() == 1) {
+                    //该数据对应的音符第一次达到pullview底部
+                    if (j == 0) {
+                        if (i == 0) {
+//                            staff = fristSingLenth.get(i) - moveDistance;
+//                            MyLogUtils.e(TAG, "i：" + i + "j" + j);
+                            isMoveStaff = true;
+                            mPrgoressView.setIsShow(true);
+                        } else {
+                            staff = fristSingLenth.get(i) - fristSingLenth.get(0);
+//                            staff = fristSingLenth.get(i) - moveDistance ;
+//                            MyLogUtils.e(TAG, "i：" + i + "j" + j);
+//                            mStaffView.remove(fristSingLenth.get(i));
+                        }
+                    }
 
-        }
-        if (mRectF.bottom > getTop() && mRectF.top <= getBottom()) {
+                }
+            }
+        });
+        if (mRectF.bottom > getTop() && mRectF.top < getBottom()) {
             canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, saveTimeData.isRest() ?
                     resetPaint : mPaint);
         }
         if (saveTimeData.isLastNode() && mRectF.top > getBottom()) {
             //谱子结束
             if (mysurfaceviewThread != null) {
-                mysurfaceviewThread.end();
                 mysurfaceviewThread.interrupt();
                 mysurfaceviewThread = null;
             }
@@ -562,45 +604,30 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
             }
             //重新计算坐标，以方便用户点击再次开始
             caAllPosition();
-
             return;
         }
     }
 
-    //每次刷新移动的距离
-    private final int moveDistance = 5;
-    //刷新速度
-    private final int speed = 5;
-
     /**
-     * 判断staff是否校准
-     *
-     * @param botom 休止符号
-     * @param i
+     * 初始化所有数据
      */
-    private void judgeStaffBeat(int botom, int i) {
-        if (botom - mLayoutHeight >= 0 && botom - mLayoutHeight < mSpeedLenth) {
-            MyLogUtils.e(TAG, "进度条更新");
-            if (i == 0) {
-                MyLogUtils.e(TAG, "进度条显示");
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        isMoveStaff = true;
-                        mPrgoressView.setIsShow(true);
-                    }
-                });
-            } else {
-                staffMove = fristSingLenth.get(i);
-                MyLogUtils.e(TAG, "staffMove" + staffMove);
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        mStaffView.remove(staffMove);
-                    }
-                });
+    private void initAllData() {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                //进度条屏蔽
+                isMoveStaff = false;
+                mPrgoressView.setIsShow(false);
+                mStaffView.remove(0);
+                // TODO: 2017/11/3 pullView没有处理
             }
-        }
+        });
     }
+
+    //每次刷新移动的距离
+    private int moveDistance = 20;
+    //刷新速度
+    private int speed = 5;
+
 
 }
