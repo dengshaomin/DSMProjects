@@ -562,7 +562,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
     }
 
     //每次刷新移动的距离
-    private final int moveDistance = 5;
+    private final int moveDistance = 20;
     //刷新速度
     private final int speed = 5;
 

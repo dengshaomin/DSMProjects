@@ -21,8 +21,10 @@ public class SaveTimeData {
     private int physicalKey;
     //是否已经被记录
     private boolean hasRecord;
-//    //用于pullview记录到达pullview底部的状态 0:初始状态 1：第一次到达pullview底部 2：正在经过pullview 3:移出pullview
+    //    //用于pullview记录到达pullview底部的状态 0:初始状态 1：第一次到达pullview底部 2：正在经过pullview 3:移出pullview
     private int arriveBottomState;
+//    private int top;
+//    private int bottom;
 
     private boolean isRest = false;
 
@@ -56,9 +58,7 @@ public class SaveTimeData {
         this.right = right;
     }
 
-    private float right
-
-            ;
+    private float right;
     private boolean hasCac;
 
 
@@ -140,7 +140,6 @@ public class SaveTimeData {
     }
 
 
-
     public int getPhysicalKey() {
         return physicalKey;
     }
@@ -188,4 +187,20 @@ public class SaveTimeData {
     public void setArriveBottomState(int arriveBottomState) {
         this.arriveBottomState = arriveBottomState;
     }
+
+//    public int getTop() {
+//        return top;
+//    }
+//
+//    public void setTop(int top) {
+//        this.top = top;
+//    }
+//
+//    public int getBottom() {
+//        return bottom;
+//    }
+//
+//    public void setBottom(int bottom) {
+//        this.bottom = bottom;
+//    }
 }
