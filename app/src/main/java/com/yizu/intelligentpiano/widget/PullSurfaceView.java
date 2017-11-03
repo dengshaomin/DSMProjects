@@ -539,7 +539,6 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, getBottom());
         if (firstLine && saveTimeData.getArriveBottomState() == 1) {
             //该数据对应的音符第一次达到pullview底部
-
         }
         if (mRectF.bottom > getTop() && mRectF.top < getBottom()) {
             canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, saveTimeData.isRest() ?
@@ -562,7 +561,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
     }
 
     //每次刷新移动的距离
-    private final int moveDistance = 20;
+    private final int moveDistance = 5;
     //刷新速度
     private final int speed = 5;
 
