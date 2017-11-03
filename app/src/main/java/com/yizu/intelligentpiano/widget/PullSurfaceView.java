@@ -377,6 +377,10 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                 }
             }
         }
+
+        public void end() {
+
+        }
     }
 
     /**
@@ -541,13 +545,14 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
             //该数据对应的音符第一次达到pullview底部
 
         }
-        if (mRectF.bottom > getTop() && mRectF.top < getBottom()) {
+        if (mRectF.bottom > getTop() && mRectF.top <= getBottom()) {
             canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, saveTimeData.isRest() ?
                     resetPaint : mPaint);
         }
         if (saveTimeData.isLastNode() && mRectF.top > getBottom()) {
             //谱子结束
             if (mysurfaceviewThread != null) {
+                mysurfaceviewThread.end();
                 mysurfaceviewThread.interrupt();
                 mysurfaceviewThread = null;
             }
@@ -557,12 +562,13 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
             }
             //重新计算坐标，以方便用户点击再次开始
             caAllPosition();
+
             return;
         }
     }
 
     //每次刷新移动的距离
-    private final int moveDistance = 20;
+    private final int moveDistance = 5;
     //刷新速度
     private final int speed = 5;
 
