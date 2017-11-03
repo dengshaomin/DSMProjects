@@ -183,11 +183,13 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                 calculationPosiotion(canvas, frist_hide.get(j), true, (i == size - 1 &&
                         lastNodeFlag) ? (j ==
                         frist_hide.size() - 1 ? true : false) : false);
+                frist_hide.get(j).setLastNode(false);
 
             }
             for (int j = 0; j < second_hide.size(); j++) {
                 calculationPosiotion(canvas, second_hide.get(j), false, (i == size - 1
                         && !lastNodeFlag) ? (j == second_hide.size() - 1 ? true : false) : false);
+                frist_hide.get(j).setLastNode(false);
             }
         }
         float minY = 0;
@@ -559,6 +561,8 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
             if (iPlayState != null) {
                 iPlayState.end();
             }
+            //重新计算坐标，以方便用户点击再次开始
+            caAllPosition();
             return;
         }
     }
