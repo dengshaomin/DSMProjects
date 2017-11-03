@@ -539,6 +539,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, getBottom());
         if (firstLine && saveTimeData.getArriveBottomState() == 1) {
             //该数据对应的音符第一次达到pullview底部
+
         }
         if (mRectF.bottom > getTop() && mRectF.top < getBottom()) {
             canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, saveTimeData.isRest() ?
