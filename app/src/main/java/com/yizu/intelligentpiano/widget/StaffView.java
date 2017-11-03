@@ -2,6 +2,7 @@ package com.yizu.intelligentpiano.widget;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
@@ -13,6 +14,9 @@ import android.text.BoringLayout;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.Surface;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 
 import com.yizu.intelligentpiano.R;
@@ -44,7 +48,7 @@ import java.util.List;
  * 五线谱
  */
 
-public class StaffView extends View {
+public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
 
     private final static String TAG = "StaffView";
 
@@ -206,6 +210,8 @@ public class StaffView extends View {
     public StaffView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         mContext = context;
+        holder = getHolder();//获取SurfaceHolder对象，同时指定callback
+        holder.addCallback(this);
         initPaint();
     }
 
@@ -336,11 +342,78 @@ public class StaffView extends View {
         mBeamPaint.setStrokeWidth(mLinsRoomWidth / 2);
     }
 
+    SurfaceHolder holder;
+    MysurfaceviewThread mysurfaceviewThread;
+
     @Override
-    protected void onDraw(Canvas canvas) {
-        MyLogUtils.e(TAG, "onDraw");
-        initStaff(canvas);
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+        // TODO Auto-generated method stub
+
     }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+        // 当SurfaceView被创建时，将画图Thread启动起来。
+        if (mysurfaceviewThread == null) {
+            mysurfaceviewThread = new MysurfaceviewThread();
+            moveState = true;
+            mysurfaceviewThread.start();
+        }
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        // 当SurfaceView被销毁时，释放资源。
+    }
+
+
+    private Canvas canvas;
+    private boolean moveState;
+
+    class MysurfaceviewThread extends Thread {
+
+        public MysurfaceviewThread() {
+            super();
+        }
+
+        @Override
+        public void run() {
+            // TODO Auto-generated method stub
+            super.run();
+//            Looper.prepare();
+            SurfaceHolder surfaceHolder = holder;
+            while (true) {
+                if (moveState) {
+                    synchronized (surfaceHolder) {
+                        moveState = !moveState;
+                        //锁定canvas
+                        try {
+                            canvas = surfaceHolder.lockCanvas();
+                            //canvas 执行一系列画的动作
+                            if (canvas != null) {
+                                canvas.drawColor(Color.WHITE);
+                                //canvas 执行一系列画的动作
+                                initStaff(canvas);
+                                //释放canvas对象，并发送到SurfaceView
+                                surfaceHolder.unlockCanvasAndPost(canvas);
+                            }
+                        } catch (Exception e) {
+                        } finally {
+                        }
+
+                    }
+                }
+            }
+
+        }
+    }
+
+
+//    @Override
+//    protected void onDraw(Canvas canvas) {
+//        MyLogUtils.e(TAG, "onDraw");
+//
+//    }
 
     /**
      * 绘制五线谱
@@ -349,7 +422,7 @@ public class StaffView extends View {
      */
     private void initStaff(Canvas canvas) {
         if (mAttributess != null) {
-            mFristStaffWidth = mLinsRoomWidth2;
+            mFristStaffWidth = mLinsRoomWidth2 - moveDistance;
             mScendStaffWidth = mFristStaffWidth;
             //初始化五线谱(条数)
             drawStaffLines(mAttributess, canvas);
@@ -2284,13 +2357,21 @@ public class StaffView extends View {
         return DEFAULT_TIME_NUM;
     }
 
+    private int moveDistance;
+
     /**
      * 五线谱移动
      *
      * @param lenth
      */
     public void remove(int lenth) {
-        scrollTo(lenth, 0);
+        moveDistance += lenth;
+        if (mysurfaceviewThread == null) {
+            mysurfaceviewThread = new MysurfaceviewThread();
+            mysurfaceviewThread.start();
+        }
+        moveState = true;
+//        scrollTo(lenth, 0);
         MyLogUtils.e(TAG, "lenth" + lenth);
     }
 }

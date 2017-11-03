@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -64,7 +65,10 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
 
     private int staffMove = 0;
     private boolean isMoveStaff = false;
-
+    //每次刷新移动的距离
+    private int moveDistance = 10;
+    //刷新速度
+    private final int speed = 5;
     List<Integer> fristSingLenth;
     private Handler handler = new Handler(Looper.getMainLooper());
 
@@ -150,9 +154,9 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         }
         caAllPosition();
         //每次刷新移动的距离
-        moveDistance = mSpeedLenth;
+//        moveDistance = mSpeedLenth;
         //刷新速度
-        speed = mSpeedTime;
+//        speed = mSpeedTime;
     }
 
     /**
@@ -312,7 +316,7 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                 if (playState) {
                     synchronized (surfaceHolder) {
                         //锁定canvas
-                        try {
+//                        try {
                             canvas = surfaceHolder.lockCanvas();
                             //canvas 执行一系列画的动作
                             if (canvas != null) {
@@ -335,59 +339,28 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                                                 && !lastNodeFlag) ? (j == second_hide.size() - 1 ? true : false) : false, i, j);
                                     }
                                 }
-//                                Integer most = 0;
-//                                for (String key : physicKeys.keySet()) {
-//                                    if (physicKeys.get(key) > most) {
-//                                        most = physicKeys.get(key);
-//                                    }
-//                                }
-//                                for (String key : physicKeys.keySet()) {
-//                                    if (physicKeys.get(key) == most) {
-//                                        most = physicKeys.get(key);
-//                                        Log.e("code", key + "==" + most);
-//                                        break;
-//                                    }
-//                                }
 
                                 //释放canvas对象，并发送到SurfaceView
-                                if (canvas != null) {
-                                    surfaceHolder.unlockCanvasAndPost(canvas);
-                                }
+                                surfaceHolder.unlockCanvasAndPost(canvas);
                                 if (isMoveStaff) {
-                                    handler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-//                                            staff += moveDistance;
-                                            mStaffView.remove(staff);
-                                        }
-                                    });
+                                    staff += moveDistance;
+                                    mStaffView.remove(staff);
                                 }
-                                Thread.sleep(speed);
+                                try {
+                                    Thread.sleep(speed);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
                             }
-                        } catch (Exception e) {
-
-                        } finally {
-//                            if (canvas != null ) {
-//                                surfaceHolder.unlockCanvasAndPost(canvas);
-//                            }
-                        }
+//                        } catch (Exception e) {
+//                            Log.e("code", "111111111" + e.getMessage());
+//                        } finally {
+////                            if (canvas != null ) {
+////                                surfaceHolder.unlockCanvasAndPost(canvas);
+////                            }
+//                        }
 
                     }
-//                    try {
-//                        Thread.sleep(mSpeedTime);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                    mScrollHeight += mSpeedLenth;
-//                    if (isMoveStaff) {
-//                        handler.post(new Runnable() {
-//                            @Override
-//                            public void run() {
-//                                staffMove += mSpeedLenth;
-//                                mStaffView.remove(staffMove);
-//                            }
-//                        });
-//                    }
                 }
             }
         }
@@ -564,48 +537,79 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         mRectF.top = saveTimeData.getTop();
         mRectF.right = saveTimeData.getRight();
         mRectF.bottom = saveTimeData.getBottom();
-        canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, mPaint);
+//        canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, mPaint);
         ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, getBottom());
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (firstLine && saveTimeData.getArriveBottomState() == 1) {
-                    //该数据对应的音符第一次达到pullview底部
-                    if (j == 0) {
-                        if (i == 0) {
-//                            staff = fristSingLenth.get(i) - moveDistance;
-//                            MyLogUtils.e(TAG, "i：" + i + "j" + j);
-                            isMoveStaff = true;
+        if (firstLine && saveTimeData.getArriveBottomState() == 1) {
+            //该数据对应的音符第一次达到pullview底部
+            if (j == 0) {
+                if (i == 0) {
+                    isMoveStaff = true;
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
                             mPrgoressView.setIsShow(true);
-                        } else {
-                            staff = fristSingLenth.get(i) - fristSingLenth.get(0);
-//                            staff = fristSingLenth.get(i) - moveDistance ;
-//                            MyLogUtils.e(TAG, "i：" + i + "j" + j);
-//                            mStaffView.remove(fristSingLenth.get(i));
                         }
-                    }
-
+                    });
+                } else {
+                    staff = fristSingLenth.get(i) - fristSingLenth.get(0);
                 }
             }
-        });
+
+        }
         if (mRectF.bottom > getTop() && mRectF.top < getBottom()) {
             canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, saveTimeData.isRest() ?
                     resetPaint : mPaint);
         }
         if (saveTimeData.isLastNode() && mRectF.top > getBottom()) {
             //谱子结束
+            playState = !playState;
             if (mysurfaceviewThread != null) {
                 mysurfaceviewThread.interrupt();
                 mysurfaceviewThread = null;
             }
-            playState = !playState;
             if (iPlayState != null) {
-                iPlayState.end();
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        iPlayState.end();
+                    }
+                });
+
             }
+
+            endRefreshCanvas();
             //重新计算坐标，以方便用户点击再次开始
             caAllPosition();
+            initAllData();
             return;
         }
+    }
+
+    private void endRefreshCanvas() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                SurfaceHolder surfaceHolder = holder;
+                synchronized (surfaceHolder) {
+                    //锁定canvas
+                    try {
+                        canvas = surfaceHolder.lockCanvas();
+                        //canvas 执行一系列画的动作
+                        if (canvas != null) {
+                            canvas.drawColor(Color.BLACK);
+                            surfaceHolder.unlockCanvasAndPost(canvas);
+                        }
+                    } catch (Exception e) {
+                    }
+                }
+            }
+        }).start();
     }
 
     /**
@@ -623,11 +627,6 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
             }
         });
     }
-
-    //每次刷新移动的距离
-    private int moveDistance = 20;
-    //刷新速度
-    private int speed = 5;
 
 
 }
