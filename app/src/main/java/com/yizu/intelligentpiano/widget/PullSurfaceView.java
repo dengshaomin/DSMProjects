@@ -66,9 +66,9 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
     private int staffMove = 0;
     private boolean isMoveStaff = false;
     //每次刷新移动的距离
-    private int moveDistance = 10;
+    private int moveDistance = 5;
     //刷新速度
-    private final int speed = 5;
+    private final int speed = 2;
     List<Integer> fristSingLenth;
     private Handler handler = new Handler(Looper.getMainLooper());
 
@@ -317,41 +317,41 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                     synchronized (surfaceHolder) {
                         //锁定canvas
 //                        try {
-                            canvas = surfaceHolder.lockCanvas();
+                        canvas = surfaceHolder.lockCanvas();
+                        //canvas 执行一系列画的动作
+                        if (canvas != null) {
+                            canvas.drawColor(Color.BLACK);
                             //canvas 执行一系列画的动作
-                            if (canvas != null) {
-                                canvas.drawColor(Color.BLACK);
-                                //canvas 执行一系列画的动作
-                                int size = mData.size();
+                            int size = mData.size();
 
-                                for (int i = 0; i < size; i++) {
-                                    List<SaveTimeData> frist_hide = mData.get(i).getFrist();
-                                    List<SaveTimeData> second_hide = mData.get(i).getSecond();
-                                    boolean lastNodeFlag = frist_hide.size() > second_hide.size();
-                                    for (int j = 0; j < frist_hide.size(); j++) {
-                                        move(frist_hide.get(j), true, (i == size - 1 &&
-                                                lastNodeFlag) ? (j ==
-                                                frist_hide.size() - 1 ? true : false) : false, i, j);
+                            for (int i = 0; i < size; i++) {
+                                List<SaveTimeData> frist_hide = mData.get(i).getFrist();
+                                List<SaveTimeData> second_hide = mData.get(i).getSecond();
+                                boolean lastNodeFlag = frist_hide.size() > second_hide.size();
+                                for (int j = 0; j < frist_hide.size(); j++) {
+                                    move(frist_hide.get(j), true, (i == size - 1 &&
+                                            lastNodeFlag) ? (j ==
+                                            frist_hide.size() - 1 ? true : false) : false, i, j);
 
-                                    }
-                                    for (int j = 0; j < second_hide.size(); j++) {
-                                        move(second_hide.get(j), false, (i == size - 1
-                                                && !lastNodeFlag) ? (j == second_hide.size() - 1 ? true : false) : false, i, j);
-                                    }
                                 }
-
-                                //释放canvas对象，并发送到SurfaceView
-                                surfaceHolder.unlockCanvasAndPost(canvas);
-                                if (isMoveStaff) {
-                                    staff += moveDistance;
-                                    mStaffView.remove(staff);
-                                }
-                                try {
-                                    Thread.sleep(speed);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
+                                for (int j = 0; j < second_hide.size(); j++) {
+                                    move(second_hide.get(j), false, (i == size - 1
+                                            && !lastNodeFlag) ? (j == second_hide.size() - 1 ? true : false) : false, i, j);
                                 }
                             }
+
+                            //释放canvas对象，并发送到SurfaceView
+                            surfaceHolder.unlockCanvasAndPost(canvas);
+                            if (isMoveStaff) {
+                                staff += moveDistance;
+                                mStaffView.remove(staff);
+                            }
+                            try {
+                                Thread.sleep(speed);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
 //                        } catch (Exception e) {
 //                            Log.e("code", "111111111" + e.getMessage());
 //                        } finally {
