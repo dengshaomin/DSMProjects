@@ -131,9 +131,9 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         this.mPianoKeyView = mPianoKeyView;
         fristSingLenth = mStaffView.getFristSingLenth();
         mAttributess = attributess;
-        //每个duration多少像素
+        //每个duration多少像素(十分之一)
         mSpeedLenth = mStaffView.getmSpeedLenth();
-        //每个duration多少毫秒（
+        //每个duration多少毫秒（十分之一）
         mSpeedTime = mStaffView.getmSpeedTime();
         //默认每分钟88拍
         DEFAULT_TIME_NUM = mStaffView.getTimes();
@@ -149,32 +149,27 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
             }
         }
         caAllPosition();
-        //每次刷新移动的距离
-        moveDistance = mSpeedLenth;
-        //刷新速度
-        speed = mSpeedTime;
     }
 
-    /**
-     * 计算所有位置
-     */
+
     private void caAllPosition() {
         int size = mData.size();
+
         for (int i = 0; i < size; i++) {
             List<SaveTimeData> frist_hide = mData.get(i).getFrist();
             List<SaveTimeData> second_hide = mData.get(i).getSecond();
             boolean lastNodeFlag = frist_hide.size() > second_hide.size();
             for (int j = 0; j < frist_hide.size(); j++) {
-//                if (j == 0) {
-//                    SaveTimeData data = frist_hide.get(0);
-//                    if (frist_hide.get(0).isRest()) {
-//                        int botom = mScrollHeight - data.getmAddDuration() * mSpeedLenth;
-//                        judgeStaffBeat(botom, i);
-//                    } else {
-//                        int botom = mScrollHeight - data.getmAddDuration() * mSpeedLenth;
-//                        judgeStaffBeat(botom, i);
-//                    }
-//                }
+                if (j == 0) {
+                    SaveTimeData data = frist_hide.get(0);
+                    if (frist_hide.get(0).isRest()) {
+                        int botom = mScrollHeight - data.getmAddDuration() * mSpeedLenth;
+                        judgeStaffBeat(botom, i);
+                    } else {
+                        int botom = mScrollHeight - data.getmAddDuration() * mSpeedLenth;
+                        judgeStaffBeat(botom, i);
+                    }
+                }
                 calculationPosiotion(canvas, frist_hide.get(j), true, (i == size - 1 &&
                         lastNodeFlag) ? (j ==
                         frist_hide.size() - 1 ? true : false) : false);
@@ -327,35 +322,58 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                                     for (int j = 0; j < frist_hide.size(); j++) {
                                         move(frist_hide.get(j), true, (i == size - 1 &&
                                                 lastNodeFlag) ? (j ==
-                                                frist_hide.size() - 1 ? true : false) : false, i, j);
+                                                frist_hide.size() - 1 ? true : false) : false);
 
                                     }
                                     for (int j = 0; j < second_hide.size(); j++) {
                                         move(second_hide.get(j), false, (i == size - 1
-                                                && !lastNodeFlag) ? (j == second_hide.size() - 1 ? true : false) : false, i, j);
+                                                && !lastNodeFlag) ? (j == second_hide.size() - 1 ? true : false) : false);
                                     }
                                 }
+//                                Integer most = 0;
+//                                for (String key : physicKeys.keySet()) {
+//                                    if (physicKeys.get(key) > most) {
+//                                        most = physicKeys.get(key);
+//                                    }
+//                                }
+//                                for (String key : physicKeys.keySet()) {
+//                                    if (physicKeys.get(key) == most) {
+//                                        most = physicKeys.get(key);
+//                                        Log.e("code", key + "==" + most);
+//                                        break;
+//                                    }
+//                                }
+
                                 //释放canvas对象，并发送到SurfaceView
                                 if (canvas != null) {
                                     surfaceHolder.unlockCanvasAndPost(canvas);
-                                }
-                                if (isMoveStaff) {
-                                    handler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-//                                            staff += moveDistance;
-                                            mStaffView.remove(staff);
-                                        }
-                                    });
                                 }
                                 Thread.sleep(speed);
                             }
                         } catch (Exception e) {
 
                         } finally {
+//                            if (canvas != null ) {
+//                                surfaceHolder.unlockCanvasAndPost(canvas);
+//                            }
                         }
 
                     }
+//                    try {
+//                        Thread.sleep(mSpeedTime);
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                    mScrollHeight += mSpeedLenth;
+//                    if (isMoveStaff) {
+//                        handler.post(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                staffMove += mSpeedLenth;
+//                                mStaffView.remove(staffMove);
+//                            }
+//                        });
+//                    }
                 }
             }
         }
@@ -510,56 +528,30 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         saveTimeData.setHasCac(true);
     }
 
-    private int staff = 0;
-
-    /**
-     * 移动无线谱
-     *
-     * @param saveTimeData
-     * @param firstLine
-     * @param lastNode
-     * @param i
-     * @param j
-     */
-    private void move(final SaveTimeData saveTimeData, final boolean firstLine, boolean lastNode, final int i, final int j) {
-        saveTimeData.setTop(saveTimeData.getTop() + moveDistance);
-        saveTimeData.setBottom(saveTimeData.getBottom() + moveDistance);
+    private void move(SaveTimeData saveTimeData, boolean firstLine, boolean lastNode) {
+        saveTimeData.setTop(saveTimeData.getTop() + speed * moveDistance);
+        saveTimeData.setBottom(saveTimeData.getBottom() + speed * moveDistance);
         mRectF.left = saveTimeData.getLeft();
         mRectF.top = saveTimeData.getTop();
         mRectF.right = saveTimeData.getRight();
         mRectF.bottom = saveTimeData.getBottom();
         canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, mPaint);
         ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, getBottom());
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (firstLine && saveTimeData.getArriveBottomState() == 1) {
-                    //该数据对应的音符第一次达到pullview底部
-                    if (j == 0) {
-                        if (i == 0) {
-//                            staff = fristSingLenth.get(i) - moveDistance;
-//                            MyLogUtils.e(TAG, "i：" + i + "j" + j);
-                            isMoveStaff = true;
-                            mPrgoressView.setIsShow(true);
-                        } else {
-                            staff = fristSingLenth.get(i) - fristSingLenth.get(0);
-//                            staff = fristSingLenth.get(i) - moveDistance ;
-//                            MyLogUtils.e(TAG, "i：" + i + "j" + j);
-//                            mStaffView.remove(fristSingLenth.get(i));
-                        }
-                    }
+        if (firstLine && saveTimeData.getArriveBottomState() == 1) {
+            //该数据对应的音符第一次达到pullview底部
 
-                }
-            }
-        });
+        }
         if (mRectF.bottom > getTop() && mRectF.top < getBottom()) {
             canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, saveTimeData.isRest() ?
                     resetPaint : mPaint);
         }
         if (saveTimeData.isLastNode() && mRectF.top > getBottom()) {
             //谱子结束
-            onDetachedFromWindow();
-            initAllData();
+            if (mysurfaceviewThread != null) {
+                mysurfaceviewThread.interrupt();
+                mysurfaceviewThread = null;
+            }
+            playState = !playState;
             if (iPlayState != null) {
                 iPlayState.end();
             }
@@ -569,26 +561,40 @@ public class PullSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         }
     }
 
-    /**
-     * 初始化所有数据
-     */
-    private void initAllData() {
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                //进度条屏蔽
-                isMoveStaff = false;
-                mPrgoressView.setIsShow(false);
-                mStaffView.remove(0);
-                // TODO: 2017/11/3 pullView没有处理
-            }
-        });
-    }
-
     //每次刷新移动的距离
-    private int moveDistance = 20;
+    private final int moveDistance = 20;
     //刷新速度
-    private int speed = 5;
+    private final int speed = 5;
 
+    /**
+     * 判断staff是否校准
+     *
+     * @param botom 休止符号
+     * @param i
+     */
+    private void judgeStaffBeat(int botom, int i) {
+        if (botom - mLayoutHeight >= 0 && botom - mLayoutHeight < mSpeedLenth) {
+            MyLogUtils.e(TAG, "进度条更新");
+            if (i == 0) {
+                MyLogUtils.e(TAG, "进度条显示");
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        isMoveStaff = true;
+                        mPrgoressView.setIsShow(true);
+                    }
+                });
+            } else {
+                staffMove = fristSingLenth.get(i);
+                MyLogUtils.e(TAG, "staffMove" + staffMove);
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mStaffView.remove(staffMove);
+                    }
+                });
+            }
+        }
+    }
 
 }
