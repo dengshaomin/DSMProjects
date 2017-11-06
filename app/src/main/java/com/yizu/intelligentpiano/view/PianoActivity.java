@@ -576,6 +576,9 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
                         mPlay.setSelected(false);
                         mPullView.play();
                     }
+                            if(mPullView != null) {
+                                mPullView.resetPullView();
+                            }
                     getSongsData();
                     break;
             }

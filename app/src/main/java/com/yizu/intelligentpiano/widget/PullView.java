@@ -215,6 +215,17 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
+    public void resetPullView(){
+        isPlay = false;
+        staff = 0;
+        mScrollHeight = 0;
+        isMoveStaff = false;
+        if (mysurfaceviewThread != null) {
+            mysurfaceviewThread.interrupt();
+            mysurfaceviewThread = null;
+        }
+
+    }
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
     }
