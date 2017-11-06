@@ -159,8 +159,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     /**
      * 钢琴移动相关
      */
-    //是否保存五线谱移动的数据
-    private boolean isSaveData = false;
+
 
     //默认每分钟88拍
     private int DEFAULT_TIME_NUM = 88;
@@ -171,7 +170,6 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
 
     //保存整个谱子升降音的数组
     private String[] fifth;
-    private boolean isUpfifth = false;
 
 
     //每小节多少Duration
@@ -187,7 +185,9 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
 
     SurfaceHolder holder;
     MysurfaceviewThread mysurfaceviewThread;
-
+    private boolean isUpfifth = false;
+    //是否保存五线谱移动的数据
+    private boolean isSaveData = false;
     private boolean isMove = false;
     private int moveLenth;
 
@@ -353,6 +353,8 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         // 当SurfaceView被销毁时，释放资源。
         isMove = false;
     }
+
+
 
     class MysurfaceviewThread extends Thread {
 
@@ -2370,5 +2372,17 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
             mysurfaceviewThread.start();
         }
         MyLogUtils.e(TAG, "lenth：" + moveLenth);
+    }
+    public void resetPullView() {
+        isMove = false;
+        isUpfifth = false;
+
+        isSaveData = false;
+
+        moveLenth = 0;
+        if (mysurfaceviewThread != null) {
+            mysurfaceviewThread.interrupt();
+            mysurfaceviewThread = null;
+        }
     }
 }
