@@ -341,11 +341,6 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         // 当SurfaceView被创建时，将画图Thread启动起来。
-        if (mysurfaceviewThread == null) {
-            mysurfaceviewThread = new MysurfaceviewThread();
-            isMove = true;
-            mysurfaceviewThread.start();
-        }
     }
 
     @Override
@@ -1864,7 +1859,11 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions()));
         //每一小节的duraction数量
         measureDurationNum = Integer.valueOf(mAttributess.getDivisions()) * Integer.valueOf(mAttributess.getTime().getBeats());
-        invalidate();
+        if (mysurfaceviewThread == null) {
+            mysurfaceviewThread = new MysurfaceviewThread();
+            isMove = true;
+            mysurfaceviewThread.start();
+        }
     }
 
     /**
