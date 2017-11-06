@@ -19,17 +19,12 @@ import java.util.List;
 public class ScoreHelper {
 
     private static ScoreHelper scoreHelper;
-    private int totalNodes;
     private int correctNodes;
     private int hasGoneNodes;
     private List<SaveTimeData> correctKeys;
     private List<Integer> physicKeys;
     private ScoreCallBack callback;
     private int realScore;
-
-    public ScoreCallBack getCallback() {
-        return callback;
-    }
 
     public void setCallback(ScoreCallBack callback) {
         this.callback = callback;
@@ -44,19 +39,6 @@ public class ScoreHelper {
             }
         }
         return scoreHelper;
-    }
-
-
-    public int getRealScore() {
-        return realScore;
-    }
-
-    public void setRealScore(int realScore) {
-        this.realScore = realScore;
-    }
-
-    public void setTotalNode(int totalNode) {
-        totalNodes = totalNode;
     }
 
     public void setCorrectKey(RectF rectF, SaveTimeData saveTimeData, int bottom) {
@@ -84,7 +66,6 @@ public class ScoreHelper {
         } else if (rectF.top > bottom && correctKeys.contains(saveTimeData)) {
             hasGoneNodes++;
             Log.e("code", hasGoneNodes + "");
-//            saveTimeData.setArriveBottomState(3);
             correctKeys.remove(saveTimeData);
         }
     }
@@ -95,9 +76,6 @@ public class ScoreHelper {
         if (press) {
             if (!physicKeys.contains(physicKey)) {
                 physicKeys.add(physicKey);
-//                if (callback != null) {
-//                    callback.callBack(caRealTimeScores());
-//                }
             }
         } else {
             if (physicKeys.contains(physicKey)) {
@@ -115,6 +93,7 @@ public class ScoreHelper {
     private int caRealTimeScores() {
         if (hasGoneNodes == 0) return 100;
         for (SaveTimeData saveTimeData : correctKeys) {
+            if (physicKeys == null) physicKeys = new ArrayList<>();
             for (int i = 0; i < physicKeys.size(); i++) {
                 if (physicKeys.get(i) == saveTimeData.getPhysicalKey()) {
                     correctNodes++;
@@ -126,30 +105,16 @@ public class ScoreHelper {
         return (int) ((float) correctNodes / (float) hasGoneNodes * 100);
     }
 
-    public List<SaveTimeData> getCurrentKeys() {
-        return correctKeys;
-
-    }
-
-    private Integer getPhysicKey(SaveTimeData saveTimeData) {
-        return 31;
-    }
-
-    public int caLastScores() {
-//        return (int) ((float) correctNodes / (float) totalNodes * 100);
-        Log.e("code", "last:" + hasGoneNodes);
-        int score = caRealTimeScores();
-        score = score > 100 ? 100 : score;
-        return 0 < score ? score : 0;
-    }
-
-    public void reset() {
-        realScore = totalNodes = correctNodes = hasGoneNodes = 0;
-        correctKeys = new ArrayList<>();
-        physicKeys = new ArrayList<>();
+    /**
+     * 谱子结束，初始化打分
+     */
+    public void initData() {
+        if (correctKeys != null) correctKeys.clear();
+        if (physicKeys != null) physicKeys.clear();
+        realScore = 0;
     }
 
     public interface ScoreCallBack {
-        public void callBack(int score);
+        void callBack(int score);
     }
 }

@@ -67,4 +67,5 @@
     <dimen name="com_70px">70px</dimen>
     <dimen name="com_240px">240px</dimen>
     <dimen name="com_170px">170px</dimen>
+    <dimen name="com_400px">400px</dimen>
 </resources>

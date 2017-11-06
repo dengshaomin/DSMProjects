@@ -1,24 +1,15 @@
 package com.yizu.intelligentpiano.widget;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
-import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
 
 import com.yizu.intelligentpiano.R;
-import com.yizu.intelligentpiano.bean.Move;
-import com.yizu.intelligentpiano.constens.IPlayState;
-import com.yizu.intelligentpiano.constens.ScoreHelper;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
-
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * Created by liuxiaozhu on 2017/10/23.
@@ -35,14 +26,7 @@ public class PrgoressView extends View {
     private int mLayoutWidth;
     private int mLayoutHeight;
     private StaffView mStaffView;
-    private int measureDurationNum;
-    private int mSpeedTime;
 
-    //    //第一条五线谱一个音符移动的距离和duration（进度条）
-//    private List<Move> mMoveLantehList_Frist;
-//    //第二条五线谱一个音符移动的距离 （进度条）
-//    private List<Move> mMoveLantehList_second;
-//    private List<Move> mData;
     private int mLinsRoomWidth;
     private int twoStaff_fristLins_up;
     private boolean isTowStaff;
@@ -113,11 +97,15 @@ public class PrgoressView extends View {
     }
 
     public void setPrgoressData(StaffView staffView) {
+        isShow = false;
+
         if (staffView == null) return;
         mStaffView = staffView;
         mLinsRoomWidth = mStaffView.getmLinsRoomWidth();
         twoStaff_fristLins_up = mStaffView.getTwoStaff_fristLins_up();
         isTowStaff = mStaffView.isTowStaff();
+        isShow = false;
+        invalidate();
     }
 
     /**

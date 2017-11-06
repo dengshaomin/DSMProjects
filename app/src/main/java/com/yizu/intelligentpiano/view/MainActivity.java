@@ -85,7 +85,7 @@ public class MainActivity extends BaseActivity {
     private void getMac() {
         if (PreManger.instance().getMacId().equals("")) {
             String MACID = VersionUtils.getMacAddress();
-            if (!MACID.equals("02:00:00:00:00:02")) {
+            if (!MACID.equals("02:00:00:00:00:02") && MACID != null) {
                 PreManger.instance().saveMacId(MACID);
                 //设置别名
                 if (MyAppliction.pushService != null) {
@@ -132,7 +132,6 @@ public class MainActivity extends BaseActivity {
             if (mPermisition != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1001);
             } else {
-                startActivity(new Intent(MainActivity.this,Piano2Activity.class));
                 if (Constents.isNetworkConnected) {
                     updataAPP();
                 }
@@ -297,35 +296,10 @@ public class MainActivity extends BaseActivity {
             if (!video.exists()) {
                 video.mkdirs();
             }
-            //儿歌
-            File children = new File(sd.concat(Constents.XML_CHILDREN));
+            //歌曲
+            File children = new File(sd.concat(Constents.XML));
             if (!children.exists()) {
                 children.mkdirs();
-            }
-            //金典
-            File satine = new File(sd.concat(Constents.XML_SATINE));
-            if (!satine.exists()) {
-                satine.mkdirs();
-            }
-            //怀古
-            File nostalgic = new File(sd.concat(Constents.XML_NOSTALGIC));
-            if (!nostalgic.exists()) {
-                nostalgic.mkdirs();
-            }
-            //流行
-            File popular = new File(sd.concat(Constents.XML_POPULAR));
-            if (!popular.exists()) {
-                popular.mkdirs();
-            }
-            //动漫游戏
-            File game = new File(sd.concat(Constents.XML_GAME));
-            if (!game.exists()) {
-                game.mkdirs();
-            }
-            //伤感
-            File sentimental = new File(sd.concat(Constents.XML_SENTIMENTAL));
-            if (!sentimental.exists()) {
-                sentimental.mkdirs();
             }
         }
     }

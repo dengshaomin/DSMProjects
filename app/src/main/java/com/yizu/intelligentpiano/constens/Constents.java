@@ -25,12 +25,5 @@ public class Constents {
     public static final String PIANO_URL = "/智能钢琴";
     public static final String VIDEO_URL = PIANO_URL.concat("/video");
     public static final String APK_URL = PIANO_URL.concat("/apk");
-
-    public static final String XML_CHILDREN = PIANO_URL.concat("/儿童");
-    public static final String XML_SATINE = PIANO_URL.concat("/金典");
-    public static final String XML_NOSTALGIC = PIANO_URL.concat("/怀古");
-    public static final String XML_POPULAR = PIANO_URL.concat("/流行");
-    public static final String XML_GAME = PIANO_URL.concat("/动漫游戏");
-    public static final String XML_SENTIMENTAL = PIANO_URL.concat("/伤感");
-
+    public static final String XML = PIANO_URL.concat("/xml");
 }

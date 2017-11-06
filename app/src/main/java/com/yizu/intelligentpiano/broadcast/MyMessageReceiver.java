@@ -23,20 +23,20 @@ public class MyMessageReceiver extends MessageReceiver {
     public void onNotification(Context context, String title, String summary, Map<String, String> extraMap) {
         // TODO 处理推送通知
         MyLogUtils.e(TAG, "Receive notification, title: " + title + ", summary: " + summary + ", extraMap: " + extraMap);
-        switch (extraMap.get("type")) {
-            case "login":
+        switch (summary) {
+            case "扫码登录":
                 //登陆
                 if (mLogin != null) {
                     mLogin.login(extraMap);
                 }
                 break;
-            case "music":
+            case "音乐推送":
                 //音乐推送
                 if (mMusic != null) {
                     mMusic.music(extraMap);
                 }
                 break;
-            case "logout":
+            case "退出登录":
                 //小程序退出
                 if (mLogout != null) {
                     Constents.user_id = extraMap.get("user_id");
@@ -106,7 +106,6 @@ public class MyMessageReceiver extends MessageReceiver {
         }
         mLogout = logout;
     }
-
 
 
 }

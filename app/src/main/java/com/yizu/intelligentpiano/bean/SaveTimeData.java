@@ -59,8 +59,6 @@ public class SaveTimeData {
     }
 
     private float right;
-    private boolean hasCac;
-
 
     public float getTop() {
         return top;
@@ -76,14 +74,6 @@ public class SaveTimeData {
 
     public void setBottom(float bottom) {
         this.bottom = bottom;
-    }
-
-    public boolean isHasCac() {
-        return hasCac;
-    }
-
-    public void setHasCac(boolean hasCac) {
-        this.hasCac = hasCac;
     }
 
     public SaveTimeData(int mAddDuration, int duration, int octave, String step, int black) {
@@ -168,18 +158,6 @@ public class SaveTimeData {
         return isRest;
     }
 
-    public void setRest(boolean rest) {
-        isRest = rest;
-    }
-
-    public int getBlack() {
-        return black;
-    }
-
-    public void setBlack(int black) {
-        this.black = black;
-    }
-
     public int getArriveBottomState() {
         return arriveBottomState;
     }
@@ -188,19 +166,4 @@ public class SaveTimeData {
         this.arriveBottomState = arriveBottomState;
     }
 
-//    public int getTop() {
-//        return top;
-//    }
-//
-//    public void setTop(int top) {
-//        this.top = top;
-//    }
-//
-//    public int getBottom() {
-//        return bottom;
-//    }
-//
-//    public void setBottom(int bottom) {
-//        this.bottom = bottom;
-//    }
 }

@@ -1,6 +1,8 @@
 package com.yizu.intelligentpiano.view;
 
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -8,7 +10,6 @@ import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -20,12 +21,16 @@ import com.liuxiaozhu.lowrecyclerviews.adapter.viewholder.BaseViewHoloder;
 import com.liuxiaozhu.lowrecyclerviews.callbacks.IPullLoading;
 import com.liuxiaozhu.lowrecyclerviews.utils.LowRecyclerViewUtils;
 import com.yizu.intelligentpiano.R;
+import com.yizu.intelligentpiano.appliction.MyAppliction;
 import com.yizu.intelligentpiano.bean.MusicHistort;
 import com.yizu.intelligentpiano.bean.Songs;
 import com.yizu.intelligentpiano.bean.UserInfo;
+import com.yizu.intelligentpiano.broadcast.MyMessageReceiver;
 import com.yizu.intelligentpiano.broadcast.TimeChangeReceiver;
 import com.yizu.intelligentpiano.constens.Constents;
 import com.yizu.intelligentpiano.constens.HttpUrls;
+import com.yizu.intelligentpiano.constens.IGetSelectData;
+import com.yizu.intelligentpiano.constens.IMusic;
 import com.yizu.intelligentpiano.constens.INetStatus;
 import com.yizu.intelligentpiano.constens.IOkHttpCallBack;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
@@ -34,6 +39,7 @@ import com.yizu.intelligentpiano.utils.OkHttpUtils;
 import com.yizu.intelligentpiano.utils.PreManger;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -58,8 +64,8 @@ public class SelectActivity extends BaseActivity {
     private MyBroadcastReceiver receiver;
     private boolean isShowDialog = true;
 
-    //水平 ,-1代表打分，0-6代表歌曲,
-    private int level = -2;
+    //选择类型，水平 ,-1代表打分，0-6代表歌曲,
+    private int type = -2;
     private int vertical = -1;
 
     //显示时间的dialog
@@ -92,10 +98,22 @@ public class SelectActivity extends BaseActivity {
     private RelativeLayout selectView;
 
 
+    private String nickname;
+    private String icon;
+    private String music_title;
+    private String music_auther;
+    private String music_xml;
+    private String music_id;
+    private String music_type;
+
+    public static SelectActivity selectActivity;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_select);
+        selectActivity = this;
     }
 
     @Override
@@ -134,11 +152,17 @@ public class SelectActivity extends BaseActivity {
         //打分
         setFraction();
         setVedio();
+        //儿童
         setSongs1();
+        //金典
         setSongs2();
+        //怀古
         setSongs3();
+        //流行
         setSongs4();
+        //动漫游戏
         setSongs5();
+        //伤感
         setSongs6();
     }
 
@@ -150,7 +174,7 @@ public class SelectActivity extends BaseActivity {
         mAdapterVedio = new ListViewAdapter<Songs.DataBean.ListBean>(null, this, R.layout.item_song_item) {
             @Override
             protected void setData(BaseViewHoloder holder, int position, Songs.DataBean.ListBean item) {
-                if (0 == level && position == vertical) {
+                if (0 == type && position == vertical) {
                     holder.getAbroadView().setSelected(true);
                 } else {
                     holder.getAbroadView().setSelected(false);
@@ -184,7 +208,7 @@ public class SelectActivity extends BaseActivity {
         mAdapterSong1 = new ListViewAdapter<Songs.DataBean.ListBean>(null, this, R.layout.item_song_item) {
             @Override
             protected void setData(BaseViewHoloder holder, int position, Songs.DataBean.ListBean item) {
-                if (1 == level && position == vertical) {
+                if (1 == type && position == vertical) {
                     holder.getAbroadView().setSelected(true);
                 } else {
                     holder.getAbroadView().setSelected(false);
@@ -218,7 +242,7 @@ public class SelectActivity extends BaseActivity {
         mAdapterSong2 = new ListViewAdapter<Songs.DataBean.ListBean>(null, this, R.layout.item_song_item) {
             @Override
             protected void setData(BaseViewHoloder holder, int position, Songs.DataBean.ListBean item) {
-                if (2 == level && position == vertical) {
+                if (2 == type && position == vertical) {
                     holder.getAbroadView().setSelected(true);
                 } else {
                     holder.getAbroadView().setSelected(false);
@@ -252,7 +276,7 @@ public class SelectActivity extends BaseActivity {
         mAdapterSong3 = new ListViewAdapter<Songs.DataBean.ListBean>(null, this, R.layout.item_song_item) {
             @Override
             protected void setData(BaseViewHoloder holder, int position, Songs.DataBean.ListBean item) {
-                if (3 == level && position == vertical) {
+                if (3 == type && position == vertical) {
                     holder.getAbroadView().setSelected(true);
                 } else {
                     holder.getAbroadView().setSelected(false);
@@ -286,7 +310,7 @@ public class SelectActivity extends BaseActivity {
         mAdapterSong4 = new ListViewAdapter<Songs.DataBean.ListBean>(null, this, R.layout.item_song_item) {
             @Override
             protected void setData(BaseViewHoloder holder, int position, Songs.DataBean.ListBean item) {
-                if (4 == level && position == vertical) {
+                if (4 == type && position == vertical) {
                     holder.getAbroadView().setSelected(true);
                 } else {
                     holder.getAbroadView().setSelected(false);
@@ -320,7 +344,7 @@ public class SelectActivity extends BaseActivity {
         mAdapterSong5 = new ListViewAdapter<Songs.DataBean.ListBean>(null, this, R.layout.item_song_item) {
             @Override
             protected void setData(BaseViewHoloder holder, int position, Songs.DataBean.ListBean item) {
-                if (5 == level && position == vertical) {
+                if (5 == type && position == vertical) {
                     holder.getAbroadView().setSelected(true);
                 } else {
                     holder.getAbroadView().setSelected(false);
@@ -354,7 +378,7 @@ public class SelectActivity extends BaseActivity {
         mAdapterSong6 = new ListViewAdapter<Songs.DataBean.ListBean>(null, this, R.layout.item_song_item) {
             @Override
             protected void setData(BaseViewHoloder holder, int position, Songs.DataBean.ListBean item) {
-                if (6 == level && position == vertical) {
+                if (6 == type && position == vertical) {
                     holder.getAbroadView().setSelected(true);
                 } else {
                     holder.getAbroadView().setSelected(false);
@@ -397,16 +421,17 @@ public class SelectActivity extends BaseActivity {
         if (Constents.user_id.equals("")) {
             return;
         }
-        Map<String, String> maps = new HashMap<>();
+        final Map<String, String> maps = new HashMap<>();
         maps.put("user_id", Constents.user_id);
         maps.put("device_id", PreManger.instance().getMacId());
         OkHttpUtils.postMap(HttpUrls.GETUSERINFO, maps, new IOkHttpCallBack() {
             @Override
             public void success(String result) {
-                UserInfo bean = OkHttpUtils.Json2Bean(result, UserInfo.class);
-                if (bean.getCode().equals("000")) {
-                    if (bean.getData().getLeftscore().length() < 6) {
-                        int time = Integer.parseInt(bean.getData().getLeftscore());
+                UserInfo mUserInfo = OkHttpUtils.Json2Bean(result, UserInfo.class);
+                if (mUserInfo == null) return;
+                if (mUserInfo.getCode().equals("000")) {
+                    if (mUserInfo.getData().getLeftscore().length() < 6) {
+                        int time = Integer.parseInt(mUserInfo.getData().getLeftscore());
                         if (isShowDialog) {
                             if (time <= 60) {
 //                                直接退出，时间不足一分钟，请求服务器
@@ -437,8 +462,10 @@ public class SelectActivity extends BaseActivity {
 
                     }
                     if (mUserName.getText().toString().trim().equals("")) {
-                        mUserName.setText(bean.getData().getNickname());
-                        Glide.with(SelectActivity.this).load(bean.getData().getHeadimg()).into(mIcon);
+                        nickname = mUserInfo.getData().getNickname();
+                        icon = mUserInfo.getData().getHeadimg();
+                        mUserName.setText(nickname);
+                        Glide.with(SelectActivity.this).load(mUserInfo.getData().getHeadimg()).into(mIcon);
                     }
                     if (PreManger.instance().getStatus().equals("1")) {
                         timer = new Timer();
@@ -465,12 +492,76 @@ public class SelectActivity extends BaseActivity {
                 if (isWXLogin) {
                     MyToast.ShowLong("网络断开，请联网后登陆");
                     Intent intent = new Intent(Constents.ACTION);
-                    intent.putExtra("what", Constents.LOGOUT_FINISH);
+                    intent.putExtra(Constents.KEY, Constents.LOGOUT_FINISH);
                     SelectActivity.this.sendBroadcast(intent);
                     MyLogUtils.e(TAG, "结束广播，网络断开");
                 }
             }
         });
+        popLeftImg.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (selectView.getVisibility() == View.VISIBLE) {
+                    selectView.setVisibility(View.GONE);
+                    if (nickname == null || nickname.equals("")) return;
+                    if (icon == null || icon.equals("")) return;
+                    if (music_title == null || music_title.equals("")) return;
+                    if (music_auther == null || music_auther.equals("")) return;
+                    if (music_xml == null || music_xml.equals("")) return;
+                    if (music_id == null || music_id.equals("")) return;
+                    isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
+                    Intent intent = new Intent(SelectActivity.this, PianoActivity.class);
+                    startActivity(intent);
+                } else {
+                    setPopWinndow();
+                }
+            }
+        });
+        MyMessageReceiver.getMusic(new IMusic() {
+            @Override
+            public void music(Map<String, String> map) {
+                if (map == null) return;
+                //音乐推送
+                music_id = map.get("music_id");
+                music_title = map.get("music_title");
+                music_auther = map.get("auther");
+                music_xml = map.get("file_xml");
+                music_type = map.get("type");
+                MyLogUtils.e(TAG, "music_id" + music_id);
+                MyLogUtils.e(TAG, "music_title" + music_title);
+                MyLogUtils.e(TAG, "music_auther" + music_auther);
+                MyLogUtils.e(TAG, "music_xml" + music_xml);
+                MyLogUtils.e(TAG, "music_type" + music_type);
+                MyLogUtils.e(TAG, "" + getTopActivityName(MyAppliction.getContext()));
+                if (getTopActivityName(MyAppliction.getContext())) {
+                    selectView.setVisibility(View.VISIBLE);
+                    popText.setText(music_title + "—" + music_auther);
+                    type = 1;
+                } else {
+                    Intent intent = new Intent(Constents.ACTION);
+                    intent.putExtra(Constents.KEY, Constents.MUSIC);
+                    SelectActivity.this.sendBroadcast(intent);
+                }
+            }
+        });
+    }
+
+    /**
+     * 获取当前activity
+     *
+     * @param context
+     * @return
+     */
+    public boolean getTopActivityName(Context context) {
+        String topActivityClassName = null;
+        ActivityManager activityManager = (ActivityManager) (context.getSystemService(Context.ACTIVITY_SERVICE));
+        List<ActivityManager.RunningTaskInfo> runningTaskInfos = activityManager.getRunningTasks(1);
+        if (runningTaskInfos != null) {
+            ComponentName f = runningTaskInfos.get(0).topActivity;
+            topActivityClassName = f.getClassName();
+        }
+        MyLogUtils.e(TAG, "当前topActivity：" + topActivityClassName);
+        return topActivityClassName.contains(TAG);
     }
 
     /**
@@ -484,7 +575,7 @@ public class SelectActivity extends BaseActivity {
                     mSongName.setText(item.getMusic_title() + "-" + item.getAuther());
                     mSongFraction.setText(item.getScore() + "分");
                 }
-                if (level == -1 && position == vertical) {
+                if (type == -1 && position == vertical) {
                     holder.getAbroadView().setSelected(true);
                 } else {
                     holder.getAbroadView().setSelected(false);
@@ -534,56 +625,6 @@ public class SelectActivity extends BaseActivity {
 
     }
 
-//    /**
-//     * 设置歌曲列表
-//     */
-//    private void setSongList() {
-////        mSongList = new ArrayList<>();
-////        mSongList.add("");
-////        mSongList.add("");
-////        mSongList.add("");
-////        mSongList.add("");
-////        mSongList.add("");
-////        mSongList.add("");
-////        mSongList.add("");
-////        songAdapter = new HListViewAdapter<String>(mSongList, this, R.layout.item_song) {
-////            @Override
-////            protected void setData(BaseViewHoloder holder, int position, String item) {
-////                holder.getTextView(R.id.song_title).setText(item);
-////                RecyclerView views = holder.getRecyclerView(R.id.song_recycler);
-////                RecyclerMap.put(position, views);
-////                setSongs(position, views);
-////            }
-////        };
-////        new LowRecyclerViewUtils<SongList.DataBean>(mSongRecycler, 0, songAdapter);
-//////        new LowRecyclerViewUtils<SongList.DataBean>(mSongRecycler, 1, songAdapter).addItemDecoration(30, R.color.none);
-////        mSongRecycler.setAdapter(songAdapter);
-////        mSongRecycler.smoothScrollToPosition(6);
-////        mSongRecycler.smoothScrollToPosition(0);
-//        // TODO: 2017/10/28
-////        songAdapter.upData();
-////        mSongRecycler.scrollToPosition(0);
-////        getSongList();
-//    }
-
-//    /**
-//     * 获取歌曲列表
-//     */
-//    private void getSongList() {
-//        OkHttpUtils.postMap(HttpUrls.GETCATEGORY, null, new IOkHttpCallBack() {
-//            @Override
-//            public void success(String result) {
-//                SongList bean = OkHttpUtils.Json2Bean(result, SongList.class);
-//                if (bean.getCode().equals("000")) {
-//                    List<SongList.DataBean> data = new ArrayList<>();
-//                    data.add(new SongList.DataBean(""));
-//                    data.addAll(bean.getData());
-//                    songAdapter.insertDatas(data);
-//                }
-//            }
-//        });
-//    }
-
     /**
      * 获取所有的歌曲集合
      *
@@ -622,64 +663,6 @@ public class SelectActivity extends BaseActivity {
         });
     }
 
-//    /**
-//     * 二级歌曲列表
-//     *
-//     * @param mPosition
-//     * @param views
-//     */
-//    private void setSongs(final int mPosition, RecyclerView views) {
-//        if (songDataMap == null) {
-//            songDataMap = new HashMap<>();
-//        }
-//        if (songMap == null) {
-//            songMap = new HashMap<>();
-//        }
-//        final ListViewAdapter<Songs.DataBean.ListBean> adapter = new ListViewAdapter<Songs.DataBean.ListBean>(songDataMap.get(mPosition), this, R.layout.item_song_item) {
-//            @Override
-//            protected void setData(BaseViewHoloder holder, int position, Songs.DataBean.ListBean item) {
-//                if (mPosition == level && position == vertical) {
-//                    holder.getAbroadView().setSelected(true);
-//                } else {
-//                    holder.getAbroadView().setSelected(false);
-//                }
-//                if (position < 9) {
-//                    holder.getTextView(R.id.song_id).setText("0" + (position + 1));
-//                } else {
-//                    holder.getTextView(R.id.song_id).setText("" + (position + 1));
-//                }
-//                holder.getTextView(R.id.song_context).setText(item.getTitle() + "-" + item.getAuther());
-//                if (mPosition == 0) {
-//                    holder.getImageView(R.id.song_img).setImageResource(R.mipmap.vdio);
-//                } else {
-//                    holder.getImageView(R.id.song_img).setImageResource(R.mipmap.music);
-//                }
-//            }
-//        };
-//        new LowRecyclerViewUtils<Songs.DataBean.ListBean>(views, 0, adapter).addItemDecoration(1, R.color.gary);
-//        views.setAdapter(adapter);
-//        songMap.put(mPosition, adapter);
-//        adapter.setPullToData(20, true, new IPullLoading() {
-//            @Override
-//            public void PullToLoading() {
-////                    分页加载
-//                if (mPosition == 0) {
-//                    getVideo();
-//                } else {
-//                    getAllList(mPosition, mAdapterSong1);
-//                }
-//            }
-//        });
-//        //            只有第一次加载数据
-//        if (mPosition == 0 && adapter.getItemCount() == 0) {
-//            getVideo();
-//        }
-//        if (mPosition > 0 && adapter.getItemCount() == 0) {
-//            getAllList(mPosition, mAdapterSong1);
-//        }
-//    }
-
-
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         switch (keyCode) {
@@ -690,7 +673,7 @@ public class SelectActivity extends BaseActivity {
                     popRigetImg.setSelected(false);
                 } else {
                     MyLogUtils.e(TAG, "左");
-                    level--;
+                    type--;
                     vertical = 0;
                     setLevelSelect();
                 }
@@ -698,6 +681,7 @@ public class SelectActivity extends BaseActivity {
 
             case KeyEvent.KEYCODE_DPAD_UP:
                 //上
+                if (selectView.getVisibility() == View.VISIBLE) return true;
                 MyLogUtils.e(TAG, "上");
                 vertical--;
                 setVerticalSelect();
@@ -710,7 +694,7 @@ public class SelectActivity extends BaseActivity {
                     popLeftImg.setSelected(false);
                 } else {
                     MyLogUtils.e(TAG, "右");
-                    level++;
+                    type++;
                     vertical = 0;
                     setLevelSelect();
                 }
@@ -718,6 +702,7 @@ public class SelectActivity extends BaseActivity {
 
             case KeyEvent.KEYCODE_DPAD_DOWN:
                 //下
+                if (selectView.getVisibility() == View.VISIBLE) return true;
                 MyLogUtils.e(TAG, "下");
                 vertical++;
                 setVerticalSelect();
@@ -725,32 +710,26 @@ public class SelectActivity extends BaseActivity {
             case KeyEvent.KEYCODE_DPAD_CENTER:
                 //确定
                 MyLogUtils.e(TAG, "确定");
-                MyLogUtils.e(TAG, "确定" + level);
+                MyLogUtils.e(TAG, "确定" + type);
                 if (timeDialog.getVisibility() == View.VISIBLE) {
                     timeDialog.setVisibility(View.GONE);
                     MyLogUtils.e(TAG, "时间提示框消失");
-                } else if (level > 0) {
+                } else if (type > 0) {
                     if (selectView.getVisibility() == View.VISIBLE) {
-                        if (popData == null) {
-                            return true;
-                        }
                         selectView.setVisibility(View.GONE);
+                        if (nickname == null || nickname.equals("")) return true;
+                        if (icon == null || icon.equals("")) return true;
+                        if (music_title == null || music_title.equals("")) return true;
+                        if (music_auther == null || music_auther.equals("")) return true;
+                        if (music_xml == null || music_xml.equals("")) return true;
+                        if (music_id == null || music_id.equals("")) return true;
                         isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
                         Intent intent = new Intent(SelectActivity.this, PianoActivity.class);
-                        if (popLeftImg.isSelected()) {
-                            intent.putExtra("isShowPull", true);
-                        } else if (popRigetImg.isSelected()) {
-                            intent.putExtra("isShowPull", false);
-                        }
-                        intent.putExtra("type", level);
-                        intent.putExtra("title", popData.getTitle());
-                        intent.putExtra("auther", popData.getAuther());
-                        intent.putExtra("xml", popData.getMusic_xml());
                         startActivity(intent);
                     } else {
                         setPopWinndow();
                     }
-                } else if (level == 0) {
+                } else if (type == 0) {
                     popData = (Songs.DataBean.ListBean) mAdapterVedio.getmData().get(vertical);
                     if (popData != null) {
                         isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
@@ -781,32 +760,27 @@ public class SelectActivity extends BaseActivity {
                 return true;
             case KeyEvent.KEYCODE_ENTER:
                 MyLogUtils.e(TAG, "确定");
-                MyLogUtils.e(TAG, "确定" + level);
+                MyLogUtils.e(TAG, "确定" + type);
                 if (timeDialog.getVisibility() == View.VISIBLE) {
                     timeDialog.setVisibility(View.GONE);
                     MyLogUtils.e(TAG, "时间提示框消失");
-                } else if (level > 0) {
+                } else if (type > 0) {
                     if (selectView.getVisibility() == View.VISIBLE) {
-                        if (popData == null) {
-                            return true;
-                        }
                         selectView.setVisibility(View.GONE);
+                        if (nickname == null || nickname.equals("")) return true;
+                        if (icon == null || icon.equals("")) return true;
+                        if (music_title == null || music_title.equals("")) return true;
+                        if (music_auther == null || music_auther.equals("")) return true;
+                        if (music_xml == null || music_xml.equals("")) return true;
+                        if (music_id == null || music_id.equals("")) return true;
+                        if (music_type == null || music_type.equals("")) return true;
                         isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
                         Intent intent = new Intent(SelectActivity.this, PianoActivity.class);
-                        if (popLeftImg.isSelected()) {
-                            intent.putExtra("isShowPull", true);
-                        } else if (popRigetImg.isSelected()) {
-                            intent.putExtra("isShowPull", false);
-                        }
-                        intent.putExtra("type", level);
-                        intent.putExtra("title", popData.getTitle());
-                        intent.putExtra("auther", popData.getAuther());
-                        intent.putExtra("xml", popData.getMusic_xml());
                         startActivity(intent);
                     } else {
                         setPopWinndow();
                     }
-                } else if (level == 0) {
+                } else if (type == 0) {
                     popData = (Songs.DataBean.ListBean) mAdapterVedio.getmData().get(vertical);
                     if (popData != null) {
                         isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
@@ -814,10 +788,6 @@ public class SelectActivity extends BaseActivity {
                         intent.putExtra("title", popData.getTitle());
                         intent.putExtra("auther", popData.getAuther());
                         intent.putExtra("xml", popData.getMusic_xml());
-
-                        MyLogUtils.e(TAG, "title" + popData.getTitle());
-                        MyLogUtils.e(TAG, "auther" + popData.getAuther());
-                        MyLogUtils.e(TAG, "xml" + popData.getMusic_xml());
                         startActivity(intent);
                     }
                 }
@@ -830,13 +800,13 @@ public class SelectActivity extends BaseActivity {
      * 上下移动
      */
     private void setVerticalSelect() {
-        if (level < -1) {
-            level = -1;
+        if (type < -1) {
+            type = -1;
         }
         if (vertical < 0) {
             vertical = 0;
         }
-        switch (level) {
+        switch (type) {
             case -1:
 //                打分
                 if (vertical >= fractionAdapter.getmData().size()) {
@@ -909,12 +879,12 @@ public class SelectActivity extends BaseActivity {
      * 选择视频，歌曲(向左右移动)
      */
     private void setLevelSelect() {
-        if (level < -1) {
-            level = -1;
-        } else if (level > 6) {
-            level = 6;
+        if (type < -1) {
+            type = -1;
+        } else if (type > 6) {
+            type = 6;
         }
-        switch (level) {
+        switch (type) {
             case -1:
 //                打分
                 mFractionRecyler.smoothScrollToPosition(vertical);
@@ -977,9 +947,8 @@ public class SelectActivity extends BaseActivity {
      * 选择演奏模式
      */
     private void setPopWinndow() {
-        MyLogUtils.e(TAG, "显示弹出框");
-        selectView.setVisibility(View.VISIBLE);
-        switch (level) {
+        if (popData == null) return;
+        switch (type) {
             case 1:
                 popData = (Songs.DataBean.ListBean) mAdapterSong1.getmData().get(vertical);
                 break;
@@ -999,13 +968,14 @@ public class SelectActivity extends BaseActivity {
                 popData = (Songs.DataBean.ListBean) mAdapterSong6.getmData().get(vertical);
                 break;
         }
-        if (popData == null) {
-            return;
-        }
-        popText.setText(popData.getTitle() + "—" + popData.getAuther());
-        final WindowManager.LayoutParams lp = getWindow().getAttributes();
-        lp.alpha = 0.5f;
-        getWindow().setAttributes(lp);
+        if (popData == null) return;
+        selectView.setVisibility(View.VISIBLE);
+        music_title = popData.getTitle();
+        music_auther = popData.getAuther();
+        music_xml = popData.getMusic_xml();
+        music_id = popData.getMusic_id();
+        music_type = popData.getCategory_id();
+        popText.setText(music_title + "—" + music_auther);
     }
 
 
@@ -1033,4 +1003,11 @@ public class SelectActivity extends BaseActivity {
         super.onDestroy();
         unregisterReceiver(receiver);
     }
+
+    public void getData(IGetSelectData data) {
+        if (data == null) return;
+        data.data(nickname, icon, popLeftImg.isSelected(),//昵称，用户头像，是否是瀑布流
+                music_type, music_title, music_auther, music_xml, music_id);//音乐相关
+    }
+
 }

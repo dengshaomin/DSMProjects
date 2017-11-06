@@ -51,7 +51,7 @@ public class UserInfo {
          */
 
         private String nickname;
-        private Object headimg;
+        private String headimg;
         private String score;
         private String device_id;
         private String leftscore;
@@ -64,11 +64,11 @@ public class UserInfo {
             this.nickname = nickname;
         }
 
-        public Object getHeadimg() {
+        public String getHeadimg() {
             return headimg;
         }
 
-        public void setHeadimg(Object headimg) {
+        public void setHeadimg(String headimg) {
             this.headimg = headimg;
         }
 

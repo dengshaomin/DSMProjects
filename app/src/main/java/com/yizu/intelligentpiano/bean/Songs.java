@@ -80,6 +80,7 @@ public class Songs {
             private String title;
             private String auther;
             private String music_xml;
+            private String category_id;
 
             public String getMusic_id() {
                 return music_id;
@@ -111,6 +112,14 @@ public class Songs {
 
             public void setMusic_xml(String music_xml) {
                 this.music_xml = music_xml;
+            }
+
+            public String getCategory_id() {
+                return category_id;
+            }
+
+            public void setCategory_id(String category_id) {
+                this.category_id = category_id;
             }
         }
     }
