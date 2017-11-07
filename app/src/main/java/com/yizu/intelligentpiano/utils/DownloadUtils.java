@@ -10,9 +10,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Looper;
 
 import com.yizu.intelligentpiano.R;
 import com.yizu.intelligentpiano.constens.IDwonLoader;
+
+import java.util.logging.Handler;
 
 /**
  * Created by liuxiaozhu on 2017/9/19.
@@ -69,13 +72,17 @@ public class DownloadUtils {
         // 将下载请求加入下载队列，加入下载队列后会给该任务返回一个long型的id，通过该id可以取消任务，重启任务、获取下载的文件等等
         downloadId = downloadManager.enqueue(request);
         // 注册广播接收者，监听下载状态
-        mContext.registerReceiver(receiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
-
-        AlertDialog.Builder mBuilder = new AlertDialog.Builder(mContext);
-        mBuilder.setIcon(R.mipmap.myicon);
-        mBuilder.setTitle("提示");
-        mBuilder.setMessage("下载中...");
-        mDialog = mBuilder.show();
+        new android.os.Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                mContext.registerReceiver(receiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(mContext);
+                mBuilder.setIcon(R.mipmap.myicon);
+                mBuilder.setTitle("提示");
+                mBuilder.setMessage("下载中...");
+                mDialog = mBuilder.show();
+            }
+        });
     }
 
     // 广播监听下载的各个状态

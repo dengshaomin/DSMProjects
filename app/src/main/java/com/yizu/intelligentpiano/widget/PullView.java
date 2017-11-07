@@ -115,6 +115,9 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     public void setPullData(StaffView mStaffView, PianoKeyView mPianoKeyView, PrgoressView mProgessView) {
         MyLogUtils.e(TAG, "setPullData");
         if (mPianoKeyView == null) return;
+        this.mStaffView = mStaffView;
+        this.mPrgoressView = mProgessView;
+        this.mPianoKeyView = mPianoKeyView;
         mAttributess = null;
         mAttributess = mStaffView.getmAttributess();
         if (mAttributess == null) return;
@@ -122,9 +125,6 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         if (mProgessView == null) return;
         if (mStaffView.getFristSingLenth() == null) return;
         initAllData();
-        this.mStaffView = mStaffView;
-        this.mPrgoressView = mProgessView;
-        this.mPianoKeyView = mPianoKeyView;
         fristSingLenth = mStaffView.getFristSingLenth();
         //每个duration多少像素
         mSpeedLenth = mStaffView.getmSpeedLenth();
@@ -215,7 +215,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
-    public void resetPullView(){
+    public void resetPullView() {
         isPlay = false;
         staff = 0;
         mScrollHeight = 0;
@@ -224,8 +224,9 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
             mysurfaceviewThread.interrupt();
             mysurfaceviewThread = null;
         }
-
+        endRefreshCanvas();
     }
+
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
     }
@@ -557,6 +558,34 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
 //            mysurfaceviewThread = null;
 //        }
     }
+
+    private void endRefreshCanvas() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                SurfaceHolder surfaceHolder = holder;
+                synchronized (surfaceHolder) {
+                    //锁定canvas
+                    try {
+                        Canvas canvas = surfaceHolder.lockCanvas();
+                        //canvas 执行一系列画的动作
+                        if (canvas != null) {
+                            canvas.drawColor(Color.BLACK);
+                            surfaceHolder.unlockCanvasAndPost(canvas);
+                        }
+                    } catch (Exception e) {
+                    }
+                }
+            }
+        }).start();
+    }
+
 
     /**
      * 加速

@@ -12,6 +12,7 @@ import android.graphics.drawable.ScaleDrawable;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -341,6 +342,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         // 当SurfaceView被创建时，将画图Thread启动起来。
+
     }
 
     @Override
@@ -348,7 +350,6 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         // 当SurfaceView被销毁时，释放资源。
         isMove = false;
     }
-
 
 
     class MysurfaceviewThread extends Thread {
@@ -367,18 +368,20 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                 if (isMove) {
                     synchronized (surfaceHolder) {
                         //锁定canvas
+                        Canvas canvas = surfaceHolder.lockCanvas();
                         try {
-                            Canvas canvas = surfaceHolder.lockCanvas();
                             //canvas 执行一系列画的动作
                             if (canvas != null) {
                                 canvas.drawColor(Color.WHITE);
                                 //canvas 执行一系列画的动作
                                 initStaff(canvas);
                                 //释放canvas对象，并发送到SurfaceView
-                                surfaceHolder.unlockCanvasAndPost(canvas);
+
                             }
                         } catch (Exception e) {
+                            Log.e("cdoe", e.getMessage());
                         } finally {
+                            surfaceHolder.unlockCanvasAndPost(canvas);
                         }
 
                     }
@@ -2372,12 +2375,12 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         }
         MyLogUtils.e(TAG, "lenth：" + moveLenth);
     }
+
     public void resetPullView() {
         isMove = false;
         isUpfifth = false;
 
         isSaveData = false;
-
         moveLenth = 0;
         if (mysurfaceviewThread != null) {
             mysurfaceviewThread.interrupt();

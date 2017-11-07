@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.support.annotation.NonNull;
 import android.view.KeyEvent;
@@ -177,7 +178,12 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         mStaffView.setStaffData(bean.getList(), new IFinish() {
             @Override
             public void success() {
-                mProgessView.setPrgoressData(mStaffView);
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mProgessView.setPrgoressData(mStaffView);
+                    }
+                });
                 //更新PullView的数据
                 mPullView.setPullData(mStaffView, mPianoKeyView, mProgessView);
             }
@@ -576,12 +582,12 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
                         mPlay.setSelected(false);
                         mPullView.play();
                     }
-                    if(mPullView != null) {
-                     mPullView.resetPullView();
-                     }
-                      if(mStaffView != null){
+                    if (mPullView != null) {
+                        mPullView.resetPullView();
+                    }
+                    if (mStaffView != null) {
                         mStaffView.resetPullView();
-                      }
+                    }
                     getSongsData();
                     break;
             }
