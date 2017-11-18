@@ -3337,7 +3337,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         return fristSingLenth;
     }
 
-    public int getmSpeedLenth() {
+    public float getmSpeedLenth() {
         return mSpeedLenth;
     }
 

@@ -241,12 +241,12 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     }
 
     private void test() {
-//        music_type = "2";
-//        music_title = "天空之城";
-//        music_auther = "lalagu";
-        music_type = "2.3.4.5.6";
-        music_title = "月亮之上";
-        music_auther = "陈苹";
+        music_type = "2";
+        music_title = "天空之城";
+        music_auther = "lalagu";
+//        music_type = "2.3.4.5.6";
+//        music_title = "月亮之上";
+//        music_auther = "陈苹";
 //        music_type = "2.4";
 //        music_title = "别问我是谁";
 //        music_auther = "Lalagu";
@@ -408,13 +408,11 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
                 break;
             case R.id.speed:
                 //快放
-                if (mPullView.accelerate())
-                    mTimesSpeed.setText(mPullView.getTimes() + "  拍/分钟");
+                mTimesSpeed.setText(mPullView.accelerate() + "  拍/分钟");
                 break;
             case R.id.rewind:
 //                慢放
-                if (mPullView.deceleration())
-                    mTimesSpeed.setText(mPullView.getTimes() + "  拍/分钟");
+                mTimesSpeed.setText(mPullView.deceleration() + "  拍/分钟");
                 break;
         }
     }
@@ -465,21 +463,21 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
                     //左
                     if (mScore.getVisibility() == View.VISIBLE) {
                         score_again.setSelected(true);
+                    } else if (mTime.getVisibility() == View.VISIBLE) {
+
                     } else {
                         //慢放
-
-                        if (mPullView.deceleration())
-                            mTimesSpeed.setText(mPullView.getTimes() + "  拍/分钟");
+                        mTimesSpeed.setText(mPullView.deceleration() + "  拍/分钟");
                     }
                     return true;
                 case KeyEvent.KEYCODE_ALT_RIGHT:
                     //右
                     if (mScore.getVisibility() == View.VISIBLE) {
                         score_exit.setSelected(true);
+                    } else if (mTime.getVisibility() == View.VISIBLE) {
                     } else {
                         //快放
-                        if (mPullView.accelerate())
-                            mTimesSpeed.setText(mPullView.getTimes() + "  拍/分钟");
+                        mTimesSpeed.setText(mPullView.accelerate() + "  拍/分钟");
                     }
                     return true;
                 case KeyEvent.KEYCODE_DPAD_CENTER:

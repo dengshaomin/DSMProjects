@@ -47,11 +47,11 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     private PianoKeyView mPianoKeyView;
 
     //每个duration多少像素
-    private int mSpeedLenth = 0;
+    private float mSpeedLenth = 0;
     //每个duration多少毫秒
     private float mSpeedTime = 0;
     private float mReta = 4;
-    //默认每分钟88拍
+    //默认每分钟80拍
     private int DEFAULT_TIME_NUM = 80;
 
     private Paint mPaint;
@@ -70,8 +70,6 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
 
     //五线谱移动的距离
     private float staff = 0;
-    //瀑布流向下移动的距离
-    private int mScrollHeight = 0;
     //是否播放五线谱
     private boolean isPlay = false;
     //是否移动五线谱
@@ -252,7 +250,6 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     public void resetPullView() {
         isPlay = false;
         staff = 0;
-        mScrollHeight = 0;
         isMoveStaff = false;
         if (thread != null) {
             thread.interrupt();
@@ -507,8 +504,8 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
             }
         }
         saveTimeData.setPhysicalKey(keyNum);
-        mRectF.top = mScrollHeight - (saveTimeData.getmAddDuration() + saveTimeData.getDuration() + (saveTimeData.isTie() ? 1 : 0)) * mSpeedLenth;
-        mRectF.bottom = mScrollHeight - saveTimeData.getmAddDuration() * mSpeedLenth;
+        mRectF.top = 0 - (saveTimeData.getmAddDuration() + saveTimeData.getDuration() + (saveTimeData.isTie() ? 1 : 0)) * mSpeedLenth;
+        mRectF.bottom = 0 - saveTimeData.getmAddDuration() * mSpeedLenth;
         saveTimeData.setTop(mRectF.top);
         saveTimeData.setBottom(mRectF.bottom);
         saveTimeData.setLeft(mRectF.left);
@@ -561,7 +558,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                         return;
                     }
                 }
-                if (!isSave) mBackList.add(new PullBack(mRectF.left,mRectF.right));
+                if (!isSave) mBackList.add(new PullBack(mRectF.left, mRectF.right));
             }
         }
         //绘制结束
@@ -588,8 +585,6 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     private void initAllData() {
         //五线谱移动的距离
         staff = 0;
-        //瀑布流向下移动的距离
-        mScrollHeight = 0;
         //是否播放五线谱
         isPlay = false;
         //是否移动五线谱
@@ -641,21 +636,21 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     /**
      * 加速
      */
-    public boolean accelerate() {
+    public int accelerate() {
         DEFAULT_TIME_NUM += 10;
         if (DEFAULT_TIME_NUM > 200) DEFAULT_TIME_NUM = 200;
         mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions()));
-        return true;
+        return DEFAULT_TIME_NUM;
     }
 
     /**
      * 减速
      */
-    public boolean deceleration() {
+    public int deceleration() {
         DEFAULT_TIME_NUM -= 10;
         if (DEFAULT_TIME_NUM < 20) DEFAULT_TIME_NUM = 20;
         mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions()));
-        return true;
+        return DEFAULT_TIME_NUM;
     }
 
     /**
