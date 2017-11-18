@@ -6,15 +6,17 @@ package com.yizu.intelligentpiano.bean;
  */
 
 public class Tie {
-    private int x;
-    private int y;
+    private float x;
+    private float y;
+    private boolean isUp;
 
-    public Tie(int x, int y) {
+    public Tie(float x, float y, boolean isUp) {
         this.x = x;
         this.y = y;
+        this.isUp = isUp;
     }
 
-    public int getX() {
+    public float getX() {
         return x;
     }
 
@@ -22,11 +24,19 @@ public class Tie {
         this.x = x;
     }
 
-    public int getY() {
+    public float getY() {
         return y;
     }
 
     public void setY(int y) {
         this.y = y;
+    }
+
+    public boolean isUp() {
+        return isUp;
+    }
+
+    public void setUp(boolean up) {
+        isUp = up;
     }
 }

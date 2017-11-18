@@ -20,6 +20,8 @@ import com.yizu.intelligentpiano.utils.DownloadUtils;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
 import com.yizu.intelligentpiano.utils.SDCardUtils;
 
+import jp.kshoji.driver.midi.device.MidiInputDevice;
+
 /**
  * 视频播放
  */

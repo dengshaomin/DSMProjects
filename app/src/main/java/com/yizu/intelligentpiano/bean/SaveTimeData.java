@@ -27,6 +27,7 @@ public class SaveTimeData {
 //    private int bottom;
 
     private boolean isRest = false;
+    private boolean isTie = false;
 
     private float top;
     private float bottom;
@@ -76,12 +77,13 @@ public class SaveTimeData {
         this.bottom = bottom;
     }
 
-    public SaveTimeData(int mAddDuration, int duration, int octave, String step, int black) {
+    public SaveTimeData(int mAddDuration, int duration, int octave, String step, int black, boolean isTie) {
         this.mAddDuration = mAddDuration;
         this.duration = duration;
         this.octave = octave;
         this.step = step;
         this.black = black;
+        this.isTie = isTie;
     }
 
     /**
@@ -166,4 +168,11 @@ public class SaveTimeData {
         this.arriveBottomState = arriveBottomState;
     }
 
+    public boolean isTie() {
+        return isTie;
+    }
+
+    public void setTie(boolean tie) {
+        isTie = tie;
+    }
 }

@@ -7,6 +7,8 @@ import com.yizu.intelligentpiano.R;
 import com.yizu.intelligentpiano.constens.Constents;
 import com.yizu.intelligentpiano.utils.DownloadUtils;
 
+import jp.kshoji.driver.midi.device.MidiInputDevice;
+
 /**
  * 系统更新界面
  */

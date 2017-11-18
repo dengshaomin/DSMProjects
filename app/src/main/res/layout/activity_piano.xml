@@ -19,7 +19,7 @@
 
             <LinearLayout
                 android:layout_width="@dimen/com_534px"
-                android:layout_height="@dimen/com_230px"
+                android:layout_height="@dimen/com_240px"
                 android:background="@color/blue"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
@@ -110,7 +110,9 @@
             <com.yizu.intelligentpiano.widget.PullView
                 android:id="@+id/pullview"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -138,6 +140,16 @@
                     android:padding="@dimen/com_30px"
                     android:src="@mipmap/speed" />
             </LinearLayout>
+            <TextView
+                android:id="@+id/times_speed"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/com_100px"
+                android:layout_alignParentRight="true"
+                android:gravity="center"
+                android:text="80  拍/分钟"
+                android:textSize="@dimen/com_30px"
+                android:textColor="@color/red"
+                />
         </RelativeLayout>
 
         <com.yizu.intelligentpiano.widget.PianoKeyView

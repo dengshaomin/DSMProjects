@@ -4,12 +4,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.hardware.usb.UsbDevice;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.support.annotation.NonNull;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
@@ -27,6 +25,7 @@ import com.yizu.intelligentpiano.constens.IDwonLoader;
 import com.yizu.intelligentpiano.constens.IFinish;
 import com.yizu.intelligentpiano.constens.IGetSelectData;
 import com.yizu.intelligentpiano.constens.IOkHttpCallBack;
+import com.yizu.intelligentpiano.constens.IPlay;
 import com.yizu.intelligentpiano.constens.IPlayEnd;
 import com.yizu.intelligentpiano.constens.ScoreHelper;
 import com.yizu.intelligentpiano.utils.DownloadUtils;
@@ -44,14 +43,12 @@ import com.yizu.intelligentpiano.widget.StaffView;
 import java.util.HashMap;
 import java.util.Map;
 
-import jp.kshoji.driver.midi.activity.AbstractSingleMidiActivity;
 import jp.kshoji.driver.midi.device.MidiInputDevice;
-import jp.kshoji.driver.midi.device.MidiOutputDevice;
 
 /**
  * 钢琴演奏
  */
-public class PianoActivity extends AbstractSingleMidiActivity implements View.OnClickListener {
+public class PianoActivity extends BaseActivity implements View.OnClickListener {
     private static final String TAG = "PianoActivity";
     private MyBroadcastReceiver receiver;
     private PianoKeyView mPianoKeyView;
@@ -72,30 +69,31 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
 
     //是否显示瀑布流
     private boolean isShowPull = true;
-    //是否处理按键
-    private boolean KeyIsOk = false;
+    //是否处理按键，默认连接键盘
+    private boolean KeyIsOk = true;
     //实时得分
     private int realyScore = 0;
 
     private ImageView mIcon;
     private TextView mNickName;
     private TextView mSongName;
+    private TextView mTimesSpeed;
 
     /**
      * 前面数据
      */
     //昵称
-    private String nickName;
+    private String nickName = "";
     //icon
-    private String icon;
+    private String icon = "";
     //歌曲名字
-    private String music_title;
+    private String music_title = "";
     //歌曲作者
-    private String music_auther;
-    private String music_id;
+    private String music_auther = "";
+    private String music_id = "";
     //歌曲类型
-    private String music_type;
-    private String music_xml;
+    private String music_type = "";
+    private String music_xml = "";
     private SelectActivity selectActivity;
 
     private MyThred myThred;
@@ -122,6 +120,17 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
             return true;
         }
     });
+    //键盘断开
+    private Handler keyCancleHandler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message msg) {
+            if (msg.what == 0) {
+                mPlay.setSelected(false);
+                mPullView.play(false);
+            }
+            return true;
+        }
+    });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -132,10 +141,6 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_piano);
-        setRegisterReceiver();
-        initView();
-        setData();
-        setListener();
     }
 
     /**
@@ -185,29 +190,29 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
                     }
                 });
                 //更新PullView的数据
-                mPullView.setPullData(mStaffView, mPianoKeyView, mProgessView);
+                mPullView.setPullData(mStaffView, mPianoKeyView, mProgessView, new IPlay() {
+                    @Override
+                    public void ReadyFinish() {
+                        mTimesSpeed.setText(mPullView.getTimes() + "  拍/分钟");
+                        if (KeyIsOk) {
+                            mPlay.setSelected(true);
+                            mPullView.play(true);
+                        } else {
+                            MyToast.ShowLong("请连接键盘");
+                            mPlay.setSelected(false);
+                        }
+                    }
+                });
             }
         });
 
     }
 
-    private void setListener() {
+    @Override
+    protected void setLinster() {
         mPlay.setOnClickListener(this);
         mSpeed.setOnClickListener(this);
         mRewind.setOnClickListener(this);
-        score_again.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mScore.setVisibility(View.GONE);
-            }
-        });
-        score_exit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mScore.setVisibility(View.GONE);
-                PianoActivity.this.finish();
-            }
-        });
         //实时打分
         ScoreHelper.getInstance().setCallback(new ScoreHelper.ScoreCallBack() {
             @Override
@@ -221,23 +226,41 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
             @Override
             public void end() {
                 mPlay.setSelected(false);
-                showResultView(realyScore);
                 //上传打分
-//                addMusicHistory();
+                addMusicHistory();
+                showResultView(realyScore);
             }
         });
     }
 
-    public void setData() {
-        getSongsData();
-
-//        mPullView.isShow(true);
-//        type = 3;
-//        title = "伤不起";
-//        auther = "邹浩";
-//        String xml = "http://piano.sinotransfer.com/Uploads/Download/2017-09-20/59c21068ef4b5.xml";
-//        initData(type, title, auther, xml);
+    @Override
+    protected void setData() {
+        setRegisterReceiver();
+//        getSongsData();
+        test();
     }
+
+    private void test() {
+//        music_type = "2";
+//        music_title = "天空之城";
+//        music_auther = "lalagu";
+        music_type = "2.3.4.5.6";
+        music_title = "月亮之上";
+        music_auther = "陈苹";
+//        music_type = "2.4";
+//        music_title = "别问我是谁";
+//        music_auther = "Lalagu";
+//        music_type = "2";
+//        music_title = "梦中的婚礼";
+//        music_auther = "lalagu";
+        if (myThred != null) {
+            myThred.interrupt();
+            myThred = null;
+        }
+        myThred = new MyThred();
+        myThred.start();
+    }
+
 
     /**
      * 获取歌曲信息
@@ -302,7 +325,8 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         registerReceiver(receiver, iFilter);
     }
 
-    private void initView() {
+    @Override
+    protected void initView() {
         realyTimeScore = findViewById(R.id.realyTimeScore);
         mPianoKeyView = findViewById(R.id.piano_key);
         mStaffView = findViewById(R.id.staffview);
@@ -321,11 +345,15 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         mIcon = findViewById(R.id.user_icon);
         mNickName = findViewById(R.id.user_name);
         mSongName = findViewById(R.id.user_song);
+        mTimesSpeed = findViewById(R.id.times_speed);
     }
 
 
     //    打分上传
     private void addMusicHistory() {
+        if (music_id.equals("")) return;
+        if (music_title.equals("")) return;
+        if (music_auther.equals("")) return;
         Map<String, String> map = new HashMap<>();
         map.put("music_id", music_id);
         map.put("music_title", music_title);
@@ -354,181 +382,6 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         score_songname.setText(music_title + "—" + music_auther);
     }
 
-    //midi链接
-    @Override
-    public void onDeviceAttached(@NonNull UsbDevice usbDevice) {
-        MyLogUtils.e(TAG, "onDeviceAttached");
-        //此方法已经废弃
-    }
-
-    @Override
-    public void onMidiInputDeviceAttached(@NonNull MidiInputDevice midiInputDevice) {
-        MyLogUtils.e(TAG, "onMidiInputDeviceAttached");
-        //钢琴键盘可以将midi传入到手机
-        MyToast.ShowLong("设备ID：" + midiInputDevice.getUsbDevice().getDeviceId() + ",已链接");
-        KeyIsOk = true;
-    }
-
-    @Override
-    public void onMidiOutputDeviceAttached(@NonNull MidiOutputDevice midiOutputDevice) {
-        //手机可以将midi传入到钢琴键盘
-        MyLogUtils.e(TAG, "onMidiOutputDeviceAttached");
-        KeyIsOk = true;
-    }
-
-    //midi断开
-    @Override
-    public void onDeviceDetached(@NonNull UsbDevice usbDevice) {
-        MyLogUtils.e(TAG, "onDeviceDetached");
-        //此方法已经废弃
-    }
-
-    @Override
-    public void onMidiInputDeviceDetached(@NonNull MidiInputDevice midiInputDevice) {
-        MyLogUtils.e(TAG, "onMidiInputDeviceDetached");
-        //usb断开，钢琴键盘不可以将midi传入到手机
-        MyToast.ShowLong("设备ID：" + midiInputDevice.getUsbDevice().getDeviceId() + ",已断开");
-        KeyIsOk = false;
-    }
-
-    @Override
-    public void onMidiOutputDeviceDetached(@NonNull MidiOutputDevice midiOutputDevice) {
-        MyLogUtils.e(TAG, "onMidiOutputDeviceDetached");
-        //usb断开，手机不可以将midi传入到钢琴键盘
-        KeyIsOk = false;
-    }
-
-    @Override
-    public void onMidiMiscellaneousFunctionCodes(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2, int i3) {
-        MyLogUtils.e(TAG, "onMidiMiscellaneousFunctionCodes");
-    }
-
-    @Override
-    public void onMidiCableEvents(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2, int i3) {
-        MyLogUtils.e(TAG, "onMidiCableEvents");
-    }
-
-    @Override
-    public void onMidiSystemCommonMessage(@NonNull MidiInputDevice midiInputDevice, int i, byte[] bytes) {
-        MyLogUtils.e(TAG, "onMidiSystemCommonMessage");
-    }
-
-    @Override
-    public void onMidiSystemExclusive(@NonNull MidiInputDevice midiInputDevice, int i, byte[] bytes) {
-        MyLogUtils.e(TAG, "onMidiSystemExclusive");
-    }
-
-    /**
-     * 钢琴手指抬起
-     *
-     * @param midiInputDevice
-     * @param i
-     * @param i1
-     * @param i2
-     * @param i3
-     */
-    @Override
-    public void onMidiNoteOff(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2, int i3) {
-        MyLogUtils.e(TAG, "onMidiNoteOff" + "NoteOn cable: " + i + ",  channel: " + i1 + ", note: " + i2 + ", velocity: " + i3);
-        canclePrassHandler.sendEmptyMessage(i2);
-    }
-
-    /**
-     * 钢琴手指按下
-     *
-     * @param midiInputDevice 输入的设备
-     * @param i
-     * @param i1
-     * @param i2              键数代表键的位置
-     * @param i3
-     */
-    @Override
-    public void onMidiNoteOn(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2, int i3) {
-        MyLogUtils.e(TAG, "onMidiNoteOn" + "NoteOn cable: " + i + ",  channel: " + i1 + ", note: " + i2 + ", velocity: " + i3);
-        prassHandler.sendEmptyMessage(i2);
-
-    }
-
-    @Override
-    public void onMidiPolyphonicAftertouch(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2, int i3) {
-        MyLogUtils.e(TAG, "onMidiPolyphonicAftertouch");
-    }
-
-    @Override
-    public void onMidiControlChange(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2, int i3) {
-        MyLogUtils.e(TAG, "onMidiControlChange");
-    }
-
-    @Override
-    public void onMidiProgramChange(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2) {
-        MyLogUtils.e(TAG, "onMidiProgramChange");
-    }
-
-    @Override
-    public void onMidiChannelAftertouch(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2) {
-        MyLogUtils.e(TAG, "onMidiChannelAftertouch");
-    }
-
-    @Override
-    public void onMidiPitchWheel(@NonNull MidiInputDevice midiInputDevice, int i, int i1, int i2) {
-        MyLogUtils.e(TAG, "onMidiPitchWheel");
-    }
-
-    @Override
-    public void onMidiSingleByte(@NonNull MidiInputDevice midiInputDevice, int i, int i1) {
-        MyLogUtils.e(TAG, "onMidiSingleByte");
-    }
-
-    @Override
-    public void onMidiTimeCodeQuarterFrame(@NonNull MidiInputDevice midiInputDevice, int i, int i1) {
-        MyLogUtils.e(TAG, "onMidiTimeCodeQuarterFrame");
-    }
-
-    @Override
-    public void onMidiSongSelect(@NonNull MidiInputDevice midiInputDevice, int i, int i1) {
-        MyLogUtils.e(TAG, "onMidiSongSelect");
-    }
-
-    @Override
-    public void onMidiSongPositionPointer(@NonNull MidiInputDevice midiInputDevice, int i, int i1) {
-        MyLogUtils.e(TAG, "onMidiSongPositionPointer");
-    }
-
-    @Override
-    public void onMidiTuneRequest(@NonNull MidiInputDevice midiInputDevice, int i) {
-        MyLogUtils.e(TAG, "onMidiTuneRequest");
-    }
-
-    @Override
-    public void onMidiTimingClock(@NonNull MidiInputDevice midiInputDevice, int i) {
-        MyLogUtils.e(TAG, "onMidiTimingClock");
-    }
-
-    @Override
-    public void onMidiStart(@NonNull MidiInputDevice midiInputDevice, int i) {
-        MyLogUtils.e(TAG, "onMidiStart");
-    }
-
-    @Override
-    public void onMidiContinue(@NonNull MidiInputDevice midiInputDevice, int i) {
-        MyLogUtils.e(TAG, "onMidiContinue");
-    }
-
-    @Override
-    public void onMidiStop(@NonNull MidiInputDevice midiInputDevice, int i) {
-        MyLogUtils.e(TAG, "onMidiStop");
-    }
-
-    @Override
-    public void onMidiActiveSensing(@NonNull MidiInputDevice midiInputDevice, int i) {
-        MyLogUtils.e(TAG, "onMidiActiveSensing");
-    }
-
-    @Override
-    public void onMidiReset(@NonNull MidiInputDevice midiInputDevice, int i) {
-        MyLogUtils.e(TAG, "onMidiReset");
-    }
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -547,19 +400,21 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
             case R.id.play:
                 if (mPlay.isSelected()) {
                     mPlay.setSelected(false);
+                    mPullView.play(false);
                 } else {
                     mPlay.setSelected(true);
+                    mPullView.play(true);
                 }
-
-                mPullView.play();
                 break;
             case R.id.speed:
                 //快放
-                mPullView.accelerate();
+                if (mPullView.accelerate())
+                    mTimesSpeed.setText(mPullView.getTimes() + "  拍/分钟");
                 break;
             case R.id.rewind:
 //                慢放
-                mPullView.deceleration();
+                if (mPullView.deceleration())
+                    mTimesSpeed.setText(mPullView.getTimes() + "  拍/分钟");
                 break;
         }
     }
@@ -580,7 +435,7 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
                     //推送音乐
                     if (mPlay.isSelected()) {
                         mPlay.setSelected(false);
-                        mPullView.play();
+                        mPullView.play(false);
                     }
                     if (mPullView != null) {
                         mPullView.resetPullView();
@@ -596,6 +451,8 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
 
     @Override
     protected void onDestroy() {
+        mStaffView.onDrestry();
+        mPullView.onDrestry();
         super.onDestroy();
         unregisterReceiver(receiver);
     }
@@ -606,31 +463,60 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
             switch (keyCode) {
                 case KeyEvent.KEYCODE_DPAD_LEFT:
                     //左
+                    if (mScore.getVisibility() == View.VISIBLE) {
+                        score_again.setSelected(true);
+                    } else {
+                        //慢放
+
+                        if (mPullView.deceleration())
+                            mTimesSpeed.setText(mPullView.getTimes() + "  拍/分钟");
+                    }
                     return true;
                 case KeyEvent.KEYCODE_ALT_RIGHT:
                     //右
+                    if (mScore.getVisibility() == View.VISIBLE) {
+                        score_exit.setSelected(true);
+                    } else {
+                        //快放
+                        if (mPullView.accelerate())
+                            mTimesSpeed.setText(mPullView.getTimes() + "  拍/分钟");
+                    }
                     return true;
                 case KeyEvent.KEYCODE_DPAD_CENTER:
                     if (mTime.getVisibility() == View.VISIBLE) {
                         mTime.setVisibility(View.GONE);
-                    } else {
-                        //确定
-                        if (mPlay.isSelected()) {
-//                暂停
-                            mPlay.setSelected(false);
-                            mPullView.play();
-//                    mStaffView.stopPlay();
-//                            mProgessView.stopPlay();
-                        } else {
-//                播放
+                    } else if (mScore.getVisibility() == View.VISIBLE) {
+                        if (score_again.isSelected()) {
+                            //再来一次
+                            mScore.setVisibility(View.GONE);
                             mPlay.setSelected(true);
-                            mPullView.play();
-//                    mStaffView.startPlay();
-//                            mProgessView.startPlay();
+                            mPullView.play(true);
+                        } else {
+                            //退出
+                            mScore.setVisibility(View.GONE);
+                            PianoActivity.this.finish();
+                        }
+                    } else {
+                        //播放，暂停
+                        if (mPlay.isSelected()) {
+                            mPlay.setSelected(false);
+                            mPullView.play(false);
+                        } else {
+                            mPlay.setSelected(true);
+                            mPullView.play(true);
                         }
                     }
-
                     return true;
+                case KeyEvent.KEYCODE_BACK:
+                    if (mTime.getVisibility() == View.VISIBLE) {
+                        mTime.setVisibility(View.GONE);
+                        return true;
+                    }
+                    if (mScore.getVisibility() == View.VISIBLE) {
+                        mScore.setVisibility(View.GONE);
+                        return true;
+                    }
+                    return super.onKeyDown(keyCode, event);
             }
         }
         return super.onKeyDown(keyCode, event);
@@ -644,11 +530,35 @@ public class PianoActivity extends AbstractSingleMidiActivity implements View.On
         public void run() {
             super.run();
             initData();
-//            try {
-//                Thread.sleep(4000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
         }
+    }
+
+    @Override
+    protected void onMidiCanInput(MidiInputDevice midiInputDevice) {
+        MyLogUtils.e(TAG, "onMidiInputDeviceAttached");
+        //钢琴键盘可以将midi传入到手机
+        MyToast.ShowLong("设备ID：" + midiInputDevice.getUsbDevice().getDeviceId() + ",已链接");
+        KeyIsOk = true;
+    }
+
+    @Override
+    protected void onMidiNoInput(MidiInputDevice midiInputDevice) {
+        MyLogUtils.e(TAG, "onMidiInputDeviceDetached");
+        //usb断开，钢琴键盘不可以将midi传入到手机
+        MyToast.ShowLong("设备ID：" + midiInputDevice.getUsbDevice().getDeviceId() + ",已断开");
+        KeyIsOk = false;
+        keyCancleHandler.sendEmptyMessage(0);
+    }
+
+    @Override
+    protected void onNoteOn(MidiInputDevice midiInputDevice, int i, int i1, int i2, int i3) {
+        prassHandler.sendEmptyMessage(i2);
+        MyLogUtils.e(TAG, "onMidiNoteOn" + "NoteOn cable: " + i + ",  channel: " + i1 + ", note: " + i2 + ", velocity: " + i3);
+    }
+
+    @Override
+    protected void onNoteOff(MidiInputDevice midiInputDevice, int i, int i1, int i2, int i3) {
+        canclePrassHandler.sendEmptyMessage(i2);
+        MyLogUtils.e(TAG, "onMidiNoteOff" + "NoteOn cable: " + i + ",  channel: " + i1 + ", note: " + i2 + ", velocity: " + i3);
     }
 }

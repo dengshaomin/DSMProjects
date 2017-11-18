@@ -15,8 +15,8 @@ public class Beam {
         this.beam = beam;
     }
 
-    public String getNumber() {
-        return number;
+    public int getNumber() {
+        return Integer.parseInt(number);
     }
 
     public void setNumber(String number) {

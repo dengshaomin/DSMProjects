@@ -13,13 +13,17 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.yizu.intelligentpiano.R;
+import com.yizu.intelligentpiano.bean.PullBack;
 import com.yizu.intelligentpiano.bean.PullData;
 import com.yizu.intelligentpiano.bean.SaveTimeData;
 import com.yizu.intelligentpiano.bean.xml.Attributess;
+import com.yizu.intelligentpiano.constens.IPlay;
 import com.yizu.intelligentpiano.constens.IPlayEnd;
 import com.yizu.intelligentpiano.constens.ScoreHelper;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
+import com.yizu.intelligentpiano.utils.MyToast;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -45,31 +49,35 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     //每个duration多少像素
     private int mSpeedLenth = 0;
     //每个duration多少毫秒
-    private int mSpeedTime = 0;
+    private float mSpeedTime = 0;
     private float mReta = 4;
     //默认每分钟88拍
-    private int DEFAULT_TIME_NUM = 88;
+    private int DEFAULT_TIME_NUM = 80;
 
     private Paint mPaint;
-    //    private Paint mYellowPaint;
+    private Paint mYellowPaint;
+    private Paint mBackgroundPaint;
+
     private RectF mRectF;
     private PrgoressView mPrgoressView;
     private StaffView mStaffView;
     //第一条无线谱的每一小节的第一个音符
-    List<Integer> fristSingLenth;
+    List<Float> fristSingLenth;
 
     SurfaceHolder holder;
-    MysurfaceviewThread mysurfaceviewThread;
+    MysurfaceviewThread thread;
     private IPlayEnd iPlayEnd;
 
     //五线谱移动的距离
-    private int staff = 0;
+    private float staff = 0;
     //瀑布流向下移动的距离
     private int mScrollHeight = 0;
     //是否播放五线谱
     private boolean isPlay = false;
     //是否移动五线谱
     private boolean isMoveStaff = false;
+    private Canvas mCanvas;
+    private List<PullBack> mBackList = new ArrayList<>();
 
     private Handler handler = new Handler(Looper.getMainLooper());
 
@@ -87,13 +95,19 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         holder.addCallback(this);
         mPaint = new Paint();
         mPaint.setStyle(Paint.Style.FILL);
+        mPaint.setColor(getResources().getColor(R.color.blue));
         mPaint.setAntiAlias(true);
 
-//        mYellowPaint = new Paint();
-//        mYellowPaint.setStyle(Paint.Style.FILL);
-//        mYellowPaint.setAntiAlias(true);
+        mYellowPaint = new Paint();
+        mYellowPaint.setStyle(Paint.Style.FILL);
+        mYellowPaint.setColor(getResources().getColor(R.color.yellow));
+        mYellowPaint.setAntiAlias(true);
         mRectF = new RectF();
 
+        mBackgroundPaint = new Paint();
+        mBackgroundPaint.setStyle(Paint.Style.FILL);
+        mBackgroundPaint.setColor(getResources().getColor(R.color.pullcolor));
+        mBackgroundPaint.setAntiAlias(true);
     }
 
     @Override
@@ -111,10 +125,12 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
      * @param mStaffView
      * @param mPianoKeyView
      * @param mProgessView
+     * @param iPlay
      */
-    public void setPullData(StaffView mStaffView, PianoKeyView mPianoKeyView, PrgoressView mProgessView) {
+    public void setPullData(StaffView mStaffView, PianoKeyView mPianoKeyView, PrgoressView mProgessView, final IPlay iPlay) {
         MyLogUtils.e(TAG, "setPullData");
         if (mPianoKeyView == null) return;
+        if (mStaffView == null) return;
         this.mStaffView = mStaffView;
         this.mPrgoressView = mProgessView;
         this.mPianoKeyView = mPianoKeyView;
@@ -134,6 +150,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         DEFAULT_TIME_NUM = mStaffView.getTimes();
 
         mData = mStaffView.getPullData();
+        if (mData == null) return;
         if (mWhiteKeyWidth == 0) {
             if (mPianoKeyView != null) {
                 mWhiteKeyWidth = mPianoKeyView.getmWhiteKeyWidth();
@@ -143,6 +160,12 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
             }
         }
         caAllPosition();
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                iPlay.ReadyFinish();
+            }
+        });
     }
 
     /**
@@ -195,23 +218,34 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     /**
-     * 开始播放
+     * 播放/暂停
      */
-    public void play() {
-        if (!isPlay) {
-            isPlay = true;
-            if (mysurfaceviewThread == null) {
-                mysurfaceviewThread = new MysurfaceviewThread();
-                mysurfaceviewThread.start();
-            }
-            MyLogUtils.e(TAG, "开始播放");
+    public void play(boolean isplay) {
+        if (mStaffView == null) {
+            MyToast.ShowLong("五线谱初始化失败");
+            return;
+        }
+        isPlay = isplay;
+        if (isPlay) {
+            mStaffView.setMove(isPlay);
+            setMove(isPlay);
         } else {
-            if (mysurfaceviewThread != null) {
-                mysurfaceviewThread.interrupt();
-                mysurfaceviewThread = null;
+            mStaffView.setMove(isPlay);
+            setMove(isPlay);
+        }
+    }
+
+    public void setMove(boolean move) {
+        if (move) {
+            if (thread == null) {
+                thread = new MysurfaceviewThread();
+                thread.start();
             }
-            isPlay = !isPlay;
-            MyLogUtils.e(TAG, "暂停播放");
+        } else {
+            if (thread != null) {
+                thread.interrupt();
+                thread = null;
+            }
         }
     }
 
@@ -220,9 +254,9 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         staff = 0;
         mScrollHeight = 0;
         isMoveStaff = false;
-        if (mysurfaceviewThread != null) {
-            mysurfaceviewThread.interrupt();
-            mysurfaceviewThread = null;
+        if (thread != null) {
+            thread.interrupt();
+            thread = null;
         }
         endRefreshCanvas();
     }
@@ -234,7 +268,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         // 当SurfaceView被创建时，将画图Thread启动起来。
-        if (mysurfaceviewThread != null) {
+        if (thread != null) {
             isPlay = true;
         }
     }
@@ -250,9 +284,9 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        if (mysurfaceviewThread != null) {
-            mysurfaceviewThread.interrupt();
-            mysurfaceviewThread = null;
+        if (thread != null) {
+            thread.interrupt();
+            thread = null;
         }
         isPlay = !isPlay;
     }
@@ -288,36 +322,43 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                 if (isPlay) {
                     synchronized (holder) {
                         //锁定canvas
-                        Canvas canvas = holder.lockCanvas();
+                        mCanvas = holder.lockCanvas();
                         //canvas 执行一系列画的动作
-                        if (canvas != null) {
-                            canvas.drawColor(Color.BLACK);
+                        if (mCanvas != null) {
+                            mCanvas.drawColor(Color.BLACK);
                             //canvas 执行一系列画的动作
                             int size = mData.size();
-
+                            mBackList.clear();
+//                            MyLogUtils.e(TAG, "draw");
                             for (int i = 0; i < size; i++) {
                                 List<SaveTimeData> frist_hide = mData.get(i).getFrist();
                                 List<SaveTimeData> second_hide = mData.get(i).getSecond();
                                 boolean lastNodeFlag = frist_hide.size() > second_hide.size();
                                 for (int j = 0; j < frist_hide.size(); j++) {
-                                    move(canvas, frist_hide.get(j), true, (i == size - 1 && lastNodeFlag) ? (j ==
+                                    move(mCanvas, frist_hide.get(j), true, (i == size - 1 && lastNodeFlag) ? (j ==
                                             frist_hide.size() - 1 ? true : false) : false, i, j);
 
                                 }
                                 for (int j = 0; j < second_hide.size(); j++) {
-                                    move(canvas, second_hide.get(j), false, (i == size - 1
+                                    move(mCanvas, second_hide.get(j), false, (i == size - 1
                                             && !lastNodeFlag) ? (j == second_hide.size() - 1 ? true : false) : false, i, j);
                                 }
                             }
+                            for (int k = 0; k < mBackList.size(); k++) {
+                                //引导条
+                                mCanvas.drawRect(new RectF(mBackList.get(k).getLeft(), 0, mBackList.get(k).getRight(), mLayoutHeight), mBackgroundPaint);
+                            }
                             try {
                                 //释放canvas对象，并发送到SurfaceView
-                                holder.unlockCanvasAndPost(canvas);
+                                holder.unlockCanvasAndPost(mCanvas);
+                                mCanvas = null;
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
 
                             if (isMoveStaff) {
                                 staff += mSpeedLenth / mReta;
+//                                MyLogUtils.e(TAG, "Staff  2:" + staff);
                                 mStaffView.remove(staff);
                             }
                             try {
@@ -466,7 +507,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
             }
         }
         saveTimeData.setPhysicalKey(keyNum);
-        mRectF.top = mScrollHeight - (saveTimeData.getmAddDuration() + saveTimeData.getDuration()) * mSpeedLenth;
+        mRectF.top = mScrollHeight - (saveTimeData.getmAddDuration() + saveTimeData.getDuration() + (saveTimeData.isTie() ? 1 : 0)) * mSpeedLenth;
         mRectF.bottom = mScrollHeight - saveTimeData.getmAddDuration() * mSpeedLenth;
         saveTimeData.setTop(mRectF.top);
         saveTimeData.setBottom(mRectF.bottom);
@@ -508,12 +549,22 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                     staff = fristSingLenth.get(i) - fristSingLenth.get(0);
                 }
             }
-
         }
         if (mRectF.bottom > getTop() && mRectF.top < getBottom()) {
-            if (!saveTimeData.isRest())
-                canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, mPaint);
+            if (!saveTimeData.isRest()) {
+                canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, saveTimeData.getBlackNum() == 0 ? mPaint : mYellowPaint);
+                //保存引导条
+                boolean isSave = false;
+                for (int k = 0; k < mBackList.size(); k++) {
+                    if (mBackList.get(k).getLeft() == mRectF.left) {
+                        isSave = true;
+                        return;
+                    }
+                }
+                if (!isSave) mBackList.add(new PullBack(mRectF.left,mRectF.right));
+            }
         }
+        //绘制结束
         if (saveTimeData.isLastNode() && mRectF.top > getBottom()) {
             if (iPlayEnd != null) {
                 handler.post(new Runnable() {
@@ -545,6 +596,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         isMoveStaff = false;
         mSpeedTime = mStaffView.getmSpeedTime();
         mStaffView.remove(0);
+//        mStaffView.setStartIndex(0);
         handler.post(new Runnable() {
             @Override
             public void run() {
@@ -553,12 +605,11 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
             }
         });
         ScoreHelper.getInstance().initData();
-//        if (mysurfaceviewThread != null) {
-//            mysurfaceviewThread.interrupt();
-//            mysurfaceviewThread = null;
-//        }
     }
 
+    /**
+     * 绘制结束刷新画布
+     */
     private void endRefreshCanvas() {
         new Thread(new Runnable() {
             @Override
@@ -590,21 +641,21 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     /**
      * 加速
      */
-    public void accelerate() {
-        DEFAULT_TIME_NUM += 50;
-        if (DEFAULT_TIME_NUM > 400) DEFAULT_TIME_NUM = 400;
+    public boolean accelerate() {
+        DEFAULT_TIME_NUM += 10;
+        if (DEFAULT_TIME_NUM > 200) DEFAULT_TIME_NUM = 200;
         mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions()));
-        MyLogUtils.e(TAG, "加速：" + mSpeedTime);
+        return true;
     }
 
     /**
      * 减速
      */
-    public void deceleration() {
-        DEFAULT_TIME_NUM -= 50;
-        if (DEFAULT_TIME_NUM < 30) DEFAULT_TIME_NUM = 30;
+    public boolean deceleration() {
+        DEFAULT_TIME_NUM -= 10;
+        if (DEFAULT_TIME_NUM < 20) DEFAULT_TIME_NUM = 20;
         mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions()));
-        MyLogUtils.e(TAG, "减速：" + mSpeedTime);
+        return true;
     }
 
     /**
@@ -615,8 +666,27 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     public void isShow(boolean isShowPull) {
         if (!isShowPull) {
             mPaint.setColor(getResources().getColor(R.color.none));
+            mYellowPaint.setColor(getResources().getColor(R.color.none));
+            mBackgroundPaint.setColor(getResources().getColor(R.color.none));
         } else {
             mPaint.setColor(getResources().getColor(R.color.blue));
+            mYellowPaint.setColor(getResources().getColor(R.color.yellow));
+            mBackgroundPaint.setColor(getResources().getColor(R.color.pullcolor));
         }
+    }
+
+    public void onDrestry() {
+        if (mCanvas != null) {
+            holder.unlockCanvasAndPost(mCanvas);
+            mCanvas = null;
+        }
+        if (thread != null) {
+            thread.interrupt();
+            thread = null;
+        }
+    }
+
+    public int getTimes() {
+        return DEFAULT_TIME_NUM;
     }
 }

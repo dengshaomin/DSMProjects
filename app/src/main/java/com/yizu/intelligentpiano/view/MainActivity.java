@@ -40,6 +40,8 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+import jp.kshoji.driver.midi.device.MidiInputDevice;
+
 /**
  * 登陆界面,主界面
  */
@@ -68,7 +70,7 @@ public class MainActivity extends BaseActivity {
         if (PreManger.instance().getStatus().equals("2")) {
             button.setVisibility(View.VISIBLE);
         }
-
+        startActivity(new Intent(MainActivity.this, PianoActivity.class));
         button.setSelected(true);
         cheackedPermisition();
     }
@@ -260,7 +262,7 @@ public class MainActivity extends BaseActivity {
             public void success(String result) {
                 VerSion bean = OkHttpUtils.Json2Bean(result, VerSion.class);
                 if (bean.getCode().equals("000")) {
-                    if (VersionUtils.getVersionCode() != Integer.valueOf(bean.getDatas().getVersion_number())) {
+                    if (VersionUtils.getVersionCode() < Integer.valueOf(bean.getDatas().getVersion_number())) {
                         MyLogUtils.e("downloadurl", bean.getDatas().getFileUrl());
                         Intent intent = new Intent(MainActivity.this, UpdataActivity.class);
                         intent.putExtra("url", bean.getDatas().getFileUrl());
@@ -353,4 +355,5 @@ public class MainActivity extends BaseActivity {
         super.onDestroy();
         unregisterReceiver(broadcast);
     }
+
 }

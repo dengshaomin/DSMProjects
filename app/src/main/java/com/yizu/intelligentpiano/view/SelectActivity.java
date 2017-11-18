@@ -44,6 +44,8 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import jp.kshoji.driver.midi.device.MidiInputDevice;
+
 
 /**
  * 选择播放，演奏或者其他
@@ -708,59 +710,8 @@ public class SelectActivity extends BaseActivity {
                 setVerticalSelect();
                 return true;
             case KeyEvent.KEYCODE_DPAD_CENTER:
-                //确定
-                MyLogUtils.e(TAG, "确定");
-                MyLogUtils.e(TAG, "确定" + type);
-                if (timeDialog.getVisibility() == View.VISIBLE) {
-                    timeDialog.setVisibility(View.GONE);
-                    MyLogUtils.e(TAG, "时间提示框消失");
-                } else if (type > 0) {
-                    if (selectView.getVisibility() == View.VISIBLE) {
-                        selectView.setVisibility(View.GONE);
-                        if (nickname == null || nickname.equals("")) return true;
-                        if (icon == null || icon.equals("")) return true;
-                        if (music_title == null || music_title.equals("")) return true;
-                        if (music_auther == null || music_auther.equals("")) return true;
-                        if (music_xml == null || music_xml.equals("")) return true;
-                        if (music_id == null || music_id.equals("")) return true;
-                        isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
-                        Intent intent = new Intent(SelectActivity.this, PianoActivity.class);
-                        startActivity(intent);
-                    } else {
-                        setPopWinndow();
-                    }
-                } else if (type == 0) {
-                    popData = (Songs.DataBean.ListBean) mAdapterVedio.getmData().get(vertical);
-                    if (popData != null) {
-                        isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
-                        Intent intent = new Intent(SelectActivity.this, VideoActivity.class);
-                        intent.putExtra("title", popData.getTitle());
-                        intent.putExtra("auther", popData.getAuther());
-                        intent.putExtra("xml", popData.getMusic_xml());
-                        if (popData.getMusic_xml() == null) {
-                            return true;
-                        }
-                        startActivity(intent);
-                    }
-                }
-                return true;
-            case KeyEvent.KEYCODE_BACK:
-                //返回
-                MyLogUtils.e(TAG, "返回");
-                if (timeDialog.getVisibility() == View.VISIBLE) {
-                    timeDialog.setVisibility(View.GONE);
-                } else if (selectView.getVisibility() == View.VISIBLE) {
-                    selectView.setVisibility(View.GONE);
-                } else if (isWXLogin) {
-                    Intent intent = new Intent(Constents.ACTION);
-                    intent.putExtra(Constents.KEY, Constents.LOGOUT);
-                    SelectActivity.this.sendBroadcast(intent);
-                    finish();
-                }
-                return true;
-            case KeyEvent.KEYCODE_ENTER:
-                MyLogUtils.e(TAG, "确定");
-                MyLogUtils.e(TAG, "确定" + type);
+//                MyLogUtils.e(TAG, "确定");
+//                MyLogUtils.e(TAG, "确定" + type);
                 if (timeDialog.getVisibility() == View.VISIBLE) {
                     timeDialog.setVisibility(View.GONE);
                     MyLogUtils.e(TAG, "时间提示框消失");
@@ -792,6 +743,53 @@ public class SelectActivity extends BaseActivity {
                     }
                 }
                 return true;
+            case KeyEvent.KEYCODE_BACK:
+                //返回
+                MyLogUtils.e(TAG, "返回");
+                if (timeDialog.getVisibility() == View.VISIBLE) {
+                    timeDialog.setVisibility(View.GONE);
+                } else if (selectView.getVisibility() == View.VISIBLE) {
+                    selectView.setVisibility(View.GONE);
+                } else if (isWXLogin) {
+                    Intent intent = new Intent(Constents.ACTION);
+                    intent.putExtra(Constents.KEY, Constents.LOGOUT);
+                    SelectActivity.this.sendBroadcast(intent);
+                }
+                return true;
+//            case KeyEvent.KEYCODE_ENTER:
+//                MyLogUtils.e(TAG, "确定");
+//                MyLogUtils.e(TAG, "确定" + type);
+//                if (timeDialog.getVisibility() == View.VISIBLE) {
+//                    timeDialog.setVisibility(View.GONE);
+//                    MyLogUtils.e(TAG, "时间提示框消失");
+//                } else if (type > 0) {
+//                    if (selectView.getVisibility() == View.VISIBLE) {
+//                        selectView.setVisibility(View.GONE);
+//                        if (nickname == null || nickname.equals("")) return true;
+//                        if (icon == null || icon.equals("")) return true;
+//                        if (music_title == null || music_title.equals("")) return true;
+//                        if (music_auther == null || music_auther.equals("")) return true;
+//                        if (music_xml == null || music_xml.equals("")) return true;
+//                        if (music_id == null || music_id.equals("")) return true;
+//                        if (music_type == null || music_type.equals("")) return true;
+//                        isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
+//                        Intent intent = new Intent(SelectActivity.this, PianoActivity.class);
+//                        startActivity(intent);
+//                    } else {
+//                        setPopWinndow();
+//                    }
+//                } else if (type == 0) {
+//                    popData = (Songs.DataBean.ListBean) mAdapterVedio.getmData().get(vertical);
+//                    if (popData != null) {
+//                        isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
+//                        Intent intent = new Intent(SelectActivity.this, VideoActivity.class);
+//                        intent.putExtra("title", popData.getTitle());
+//                        intent.putExtra("auther", popData.getAuther());
+//                        intent.putExtra("xml", popData.getMusic_xml());
+//                        startActivity(intent);
+//                    }
+//                }
+//                return true;
         }
         return super.onKeyDown(keyCode, event);
     }

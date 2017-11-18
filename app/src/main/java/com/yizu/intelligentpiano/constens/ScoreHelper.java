@@ -65,7 +65,7 @@ public class ScoreHelper {
             }
         } else if (rectF.top > bottom && correctKeys.contains(saveTimeData)) {
             hasGoneNodes++;
-            Log.e("code", hasGoneNodes + "");
+//            Log.e("code", hasGoneNodes + "");
             correctKeys.remove(saveTimeData);
         }
     }

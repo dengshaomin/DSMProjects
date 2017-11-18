@@ -54,7 +54,7 @@ public class DownloadUtils {
         mIDwonLoader = iDwonLoader;
         type = types;
         // 创建下载任务
-        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(DwonUrl));
+        final DownloadManager.Request request = new DownloadManager.Request(Uri.parse(DwonUrl));
         // 移动网络情况下是否允许漫游
         request.setAllowedOverRoaming(false);
         // 在通知栏中显示，默认就是显示的
@@ -147,6 +147,7 @@ public class DownloadUtils {
             }
         }
         c.close();
+        mContext.unregisterReceiver(receiver);
     }
 
     // 下载到本地后执行安装
