@@ -76,7 +76,7 @@ public class XmlPrareUtils {
         }
         try {
 
-            InputStream stream = new FileInputStream(file);
+            FileInputStream stream = new FileInputStream(file);
             if (stream == null) {
                 MyToast.ShowLong("xml文件解析失败");
                 return null;
