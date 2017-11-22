@@ -46,11 +46,15 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
 
     private PianoKeyView mPianoKeyView;
 
-    //每个duration多少像素
+    //    //每个duration多少像素
     private float mSpeedLenth = 0;
-    //每个duration多少毫秒
-    private float mSpeedTime = 0;
-    private float mReta = 4;
+    //    //每个duration多少毫秒
+//    private float mSpeedTime = 0;
+    private float mReta = 20;
+    //每拍的时间
+    private float mTimesTime = 0;
+    //每拍的长度
+    private float mTimesLenth = 0;
     //默认每分钟80拍
     private int DEFAULT_TIME_NUM = 80;
 
@@ -75,9 +79,21 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     //是否移动五线谱
     private boolean isMoveStaff = false;
     private Canvas mCanvas;
+    //用来保存瀑布流灰色背景
     private List<PullBack> mBackList = new ArrayList<>();
+    //用来保存光标的位置
+    private float centerX = 0;
+    //瀑布流从第几小节开始
+    private int index = 0;
+    //瀑布流下落得距离
+    private float move = 0;
+    //用来保存开始计算的时间（毫秒数）
+    long time = 0;
+    //缩小时间的误差
+    float timeError = 0;
 
     private Handler handler = new Handler(Looper.getMainLooper());
+
 
     public PullView(Context context) {
         this(context, null);
@@ -140,12 +156,15 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         if (mStaffView.getFristSingLenth() == null) return;
         initAllData();
         fristSingLenth = mStaffView.getFristSingLenth();
-        //每个duration多少像素
+//        //每个duration多少像素
         mSpeedLenth = mStaffView.getmSpeedLenth();
-        //每个duration多少毫秒
-        mSpeedTime = mStaffView.getmSpeedTime();
+//        //每个duration多少毫秒
+//        mSpeedTime = mStaffView.getmSpeedTime();
+        mTimesTime = 60 * 1000 / mStaffView.getTimes();
+        mTimesLenth = mStaffView.getmSpeedLenth() * Float.valueOf(mAttributess.getDivisions());
         //默认每分钟88拍
         DEFAULT_TIME_NUM = mStaffView.getTimes();
+        MyLogUtils.e(TAG, "拍数：" + DEFAULT_TIME_NUM);
 
         mData = mStaffView.getPullData();
         if (mData == null) return;
@@ -157,7 +176,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                 return;
             }
         }
-        caAllPosition();
+        caAllPosition(true);
         handler.post(new Runnable() {
             @Override
             public void run() {
@@ -168,18 +187,20 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
 
     /**
      * 计算所有位置
+     *
+     * @param isFrist:是不是第一次计算
      */
-    private void caAllPosition() {
+    private void caAllPosition(boolean isFrist) {
         int size = mData.size();
         for (int i = 0; i < size; i++) {
             List<SaveTimeData> frist_hide = mData.get(i).getFrist();
             List<SaveTimeData> second_hide = mData.get(i).getSecond();
             for (int j = 0; j < frist_hide.size(); j++) {
-                calculationPosiotion(frist_hide.get(j));
+                calculationPosiotion(frist_hide.get(j), isFrist);
                 frist_hide.get(j).setLastNode(false);
             }
             for (int j = 0; j < second_hide.size(); j++) {
-                calculationPosiotion(second_hide.get(j));
+                calculationPosiotion(second_hide.get(j), isFrist);
                 second_hide.get(j).setLastNode(false);
             }
         }
@@ -250,6 +271,8 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     public void resetPullView() {
         isPlay = false;
         staff = 0;
+        index = 0;
+        move = 0;
         isMoveStaff = false;
         if (thread != null) {
             thread.interrupt();
@@ -322,25 +345,23 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                         mCanvas = holder.lockCanvas();
                         //canvas 执行一系列画的动作
                         if (mCanvas != null) {
+                            time = System.currentTimeMillis();
                             mCanvas.drawColor(Color.BLACK);
                             //canvas 执行一系列画的动作
-                            int size = mData.size();
+                            int size = Math.min(mData.size(), (index + 3));
                             mBackList.clear();
-//                            MyLogUtils.e(TAG, "draw");
-                            for (int i = 0; i < size; i++) {
+                            move += mTimesLenth / mReta;
+                            for (int i = index; i < size; i++) {
                                 List<SaveTimeData> frist_hide = mData.get(i).getFrist();
                                 List<SaveTimeData> second_hide = mData.get(i).getSecond();
-                                boolean lastNodeFlag = frist_hide.size() > second_hide.size();
                                 for (int j = 0; j < frist_hide.size(); j++) {
-                                    move(mCanvas, frist_hide.get(j), true, (i == size - 1 && lastNodeFlag) ? (j ==
-                                            frist_hide.size() - 1 ? true : false) : false, i, j);
-
+                                    move(mCanvas, frist_hide.get(j), true, i, j);
                                 }
                                 for (int j = 0; j < second_hide.size(); j++) {
-                                    move(mCanvas, second_hide.get(j), false, (i == size - 1
-                                            && !lastNodeFlag) ? (j == second_hide.size() - 1 ? true : false) : false, i, j);
+                                    move(mCanvas, second_hide.get(j), false, i, j);
                                 }
                             }
+
                             for (int k = 0; k < mBackList.size(); k++) {
                                 //引导条
                                 mCanvas.drawRect(new RectF(mBackList.get(k).getLeft(), 0, mBackList.get(k).getRight(), mLayoutHeight), mBackgroundPaint);
@@ -354,12 +375,29 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                             }
 
                             if (isMoveStaff) {
-                                staff += mSpeedLenth / mReta;
-//                                MyLogUtils.e(TAG, "Staff  2:" + staff);
-                                mStaffView.remove(staff);
+                                staff += mTimesLenth / mReta;
+                                int center = mLayoutWith / 2 - (mLayoutWith - mPrgoressView.getmLayoutWidth());
+                                if (staff < center) {
+                                    handler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            mPrgoressView.setMove(staff);
+                                        }
+                                    });
+                                } else {
+                                    if (centerX == 0) centerX = staff;
+                                    mStaffView.remove(staff - centerX, index);
+                                }
                             }
+                            time = System.currentTimeMillis() - time;
                             try {
-                                Thread.sleep((long) (mSpeedTime / mReta));
+                                int mTime = (int) (mTimesTime / mReta);
+                                timeError += mTimesTime / mReta - mTime;
+                                if (timeError > 1) {
+                                    timeError -= 1;
+                                    mTime += 1;
+                                }
+                                Thread.sleep(Math.max(0, mTime - time));
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
@@ -374,142 +412,145 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
      * 计算每个音符的位置
      *
      * @param saveTimeData
+     * @param isFrist
      * @return
      */
-    private void calculationPosiotion(SaveTimeData saveTimeData) {
-        int octave = saveTimeData.getOctave();
-        int black = saveTimeData.getBlackNum();
-        int keyNum = 0;
-        int key = (octave - 1) * 7;
-        int num = mWhiteKeyWidth * key;
-        key += 23;
-        if (!saveTimeData.isRest()) {
-            if (octave == 0) {
-                switch (saveTimeData.getStep()) {
-                    case "A":
-                        if (black == 1) {
-                            keyNum = 22;
-                            mRectF.left = mWhiteKeyWidth - mBlackKeyWidth / 3;
-                            mRectF.right = mWhiteKeyWidth + mBlackKeyWidth / 3;
-                        } else {
-                            keyNum = 21;
-                            mRectF.left = 0;
-                            mRectF.right = mWhiteKeyWidth - mBlackKeyWidth / 3;
-                        }
-                        break;
-                    case "B":
-                        if (black == -1) {
-                            keyNum = 22;
-                            mRectF.left = mWhiteKeyWidth - mBlackKeyWidth / 3;
-                            mRectF.right = mWhiteKeyWidth + mBlackKeyWidth / 3;
-                        } else {
-                            keyNum = 23;
-                            mRectF.left = mWhiteKeyWidth + mBlackKeyWidth / 3;
-                            mRectF.right = mWhiteKeyWidth * 2;
-                        }
-                        break;
-                }
-            } else {
-                switch (saveTimeData.getStep()) {
-                    case "C":
-                        if (black == 1) {
-                            keyNum = key + 2;
-                            mRectF.left = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 3 + num;
-                            mRectF.right = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
-                        } else {
-                            keyNum = key + 1;
-                            mRectF.left = mWhiteKeyWidth * 2 + num;
-                            mRectF.right = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 2 + num;
-                        }
-                        break;
-                    case "D":
-                        if (black == 1) {
-                            keyNum = key + 4;
-                            mRectF.left = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
-                            mRectF.right = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 3 + num;
-                        } else if (black == -1) {
-                            keyNum = key + 2;
-                            mRectF.left = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 3 + num;
-                            mRectF.right = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
-                        } else {
-                            keyNum = key + 3;
-                            mRectF.left = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
-                            mRectF.right = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
-                        }
-                        break;
-                    case "E":
-                        if (black == -1) {
-                            keyNum = key + 4;
-                            mRectF.left = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
-                            mRectF.right = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 3 + num;
-                        } else {
-                            keyNum = key + 5;
-                            mRectF.left = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 3 + num;
-                            mRectF.right = mWhiteKeyWidth * 5 + num;
-                        }
-                        break;
-                    case "F":
-                        if (black == 1) {
-                            keyNum = 7;
-                            mRectF.left = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 3 + num;
-                            mRectF.right = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
-                        } else {
-                            keyNum = 6;
-                            mRectF.left = mWhiteKeyWidth * 5 + num;
-                            mRectF.right = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 3 + num;
-                        }
-                        break;
-                    case "G":
-                        if (black == 1) {
-                            keyNum = 9;
-                            mRectF.left = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
-                            mRectF.right = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
-                        } else if (black == -1) {
-                            keyNum = 7;
-                            mRectF.left = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 3 + num;
-                            mRectF.right = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
-                        } else {
-                            keyNum = 8;
-                            mRectF.left = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
-                            mRectF.right = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
-                        }
-                        break;
-                    case "A":
-                        if (black == 1) {
-                            keyNum = 11;
-                            mRectF.left = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
-                            mRectF.right = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 2 + num;
-                        } else if (black == -1) {
-                            keyNum = 9;
-                            mRectF.left = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
-                            mRectF.right = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
-                        } else {
-                            keyNum = 10;
-                            mRectF.left = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
-                            mRectF.right = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
-                        }
-                        break;
-                    case "B":
-                        if (black == -1) {
-                            keyNum = 11;
-                            mRectF.left = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
-                            mRectF.right = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 3 + num;
-                        } else {
-                            keyNum = 12;
-                            mRectF.left = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 3 + num;
-                            mRectF.right = mWhiteKeyWidth * 9 + num;
-                        }
-                        break;
+    private void calculationPosiotion(SaveTimeData saveTimeData, boolean isFrist) {
+        if (isFrist) {
+            int octave = saveTimeData.getOctave();
+            int black = saveTimeData.getBlackNum();
+            int keyNum = 0;
+            int key = (octave - 1) * 7;
+            int num = mWhiteKeyWidth * key;
+            key += 23;
+            if (!saveTimeData.isRest()) {
+                if (octave == 0) {
+                    switch (saveTimeData.getStep()) {
+                        case "A":
+                            if (black == 1) {
+                                keyNum = 22;
+                                mRectF.left = mWhiteKeyWidth - mBlackKeyWidth / 3;
+                                mRectF.right = mWhiteKeyWidth + mBlackKeyWidth / 3;
+                            } else {
+                                keyNum = 21;
+                                mRectF.left = 0;
+                                mRectF.right = mWhiteKeyWidth - mBlackKeyWidth / 3;
+                            }
+                            break;
+                        case "B":
+                            if (black == -1) {
+                                keyNum = 22;
+                                mRectF.left = mWhiteKeyWidth - mBlackKeyWidth / 3;
+                                mRectF.right = mWhiteKeyWidth + mBlackKeyWidth / 3;
+                            } else {
+                                keyNum = 23;
+                                mRectF.left = mWhiteKeyWidth + mBlackKeyWidth / 3;
+                                mRectF.right = mWhiteKeyWidth * 2;
+                            }
+                            break;
+                    }
+                } else {
+                    switch (saveTimeData.getStep()) {
+                        case "C":
+                            if (black == 1) {
+                                keyNum = key + 2;
+                                mRectF.left = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 3 + num;
+                                mRectF.right = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
+                            } else {
+                                keyNum = key + 1;
+                                mRectF.left = mWhiteKeyWidth * 2 + num;
+                                mRectF.right = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 2 + num;
+                            }
+                            break;
+                        case "D":
+                            if (black == 1) {
+                                keyNum = key + 4;
+                                mRectF.left = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
+                                mRectF.right = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 3 + num;
+                            } else if (black == -1) {
+                                keyNum = key + 2;
+                                mRectF.left = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 3 + num;
+                                mRectF.right = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
+                            } else {
+                                keyNum = key + 3;
+                                mRectF.left = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
+                                mRectF.right = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
+                            }
+                            break;
+                        case "E":
+                            if (black == -1) {
+                                keyNum = key + 4;
+                                mRectF.left = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
+                                mRectF.right = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 3 + num;
+                            } else {
+                                keyNum = key + 5;
+                                mRectF.left = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 3 + num;
+                                mRectF.right = mWhiteKeyWidth * 5 + num;
+                            }
+                            break;
+                        case "F":
+                            if (black == 1) {
+                                keyNum = 7;
+                                mRectF.left = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 3 + num;
+                                mRectF.right = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
+                            } else {
+                                keyNum = 6;
+                                mRectF.left = mWhiteKeyWidth * 5 + num;
+                                mRectF.right = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 3 + num;
+                            }
+                            break;
+                        case "G":
+                            if (black == 1) {
+                                keyNum = 9;
+                                mRectF.left = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
+                                mRectF.right = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
+                            } else if (black == -1) {
+                                keyNum = 7;
+                                mRectF.left = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 3 + num;
+                                mRectF.right = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
+                            } else {
+                                keyNum = 8;
+                                mRectF.left = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
+                                mRectF.right = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
+                            }
+                            break;
+                        case "A":
+                            if (black == 1) {
+                                keyNum = 11;
+                                mRectF.left = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
+                                mRectF.right = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 2 + num;
+                            } else if (black == -1) {
+                                keyNum = 9;
+                                mRectF.left = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
+                                mRectF.right = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
+                            } else {
+                                keyNum = 10;
+                                mRectF.left = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
+                                mRectF.right = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
+                            }
+                            break;
+                        case "B":
+                            if (black == -1) {
+                                keyNum = 11;
+                                mRectF.left = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
+                                mRectF.right = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 3 + num;
+                            } else {
+                                keyNum = 12;
+                                mRectF.left = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 3 + num;
+                                mRectF.right = mWhiteKeyWidth * 9 + num;
+                            }
+                            break;
+                    }
                 }
             }
+            saveTimeData.setPhysicalKey(keyNum);
+            mRectF.top = 0 - (saveTimeData.getmAddDuration() + saveTimeData.getDuration() + (saveTimeData.isTie() ? 1 : 0)) * mSpeedLenth;
+            mRectF.bottom = 0 - saveTimeData.getmAddDuration() * mSpeedLenth;
+            saveTimeData.setTop(mRectF.top);
+            saveTimeData.setBottom(mRectF.bottom);
+            saveTimeData.setLeft(mRectF.left - 28);
+            saveTimeData.setRight(mRectF.right - 30);
         }
-        saveTimeData.setPhysicalKey(keyNum);
-        mRectF.top = 0 - (saveTimeData.getmAddDuration() + saveTimeData.getDuration() + (saveTimeData.isTie() ? 1 : 0)) * mSpeedLenth;
-        mRectF.bottom = 0 - saveTimeData.getmAddDuration() * mSpeedLenth;
-        saveTimeData.setTop(mRectF.top);
-        saveTimeData.setBottom(mRectF.bottom);
-        saveTimeData.setLeft(mRectF.left);
-        saveTimeData.setRight(mRectF.right);
         saveTimeData.setArriveBottomState(0);
     }
 
@@ -519,17 +560,14 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
      * @param canvas
      * @param saveTimeData
      * @param firstLine
-     * @param lastNode
      * @param i
      * @param j
      */
-    private void move(Canvas canvas, final SaveTimeData saveTimeData, final boolean firstLine, boolean lastNode, final int i, final int j) {
-        saveTimeData.setTop(saveTimeData.getTop() + mSpeedLenth / mReta);
-        saveTimeData.setBottom(saveTimeData.getBottom() + mSpeedLenth / mReta);
+    private void move(Canvas canvas, final SaveTimeData saveTimeData, final boolean firstLine, final int i, final int j) {
         mRectF.left = saveTimeData.getLeft();
-        mRectF.top = saveTimeData.getTop();
+        mRectF.top = saveTimeData.getTop() + move;
         mRectF.right = saveTimeData.getRight();
-        mRectF.bottom = saveTimeData.getBottom();
+        mRectF.bottom = saveTimeData.getBottom() + move;
         ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, getBottom());
         if (firstLine && saveTimeData.getArriveBottomState() == 1) {
             //该数据对应的音符第一次达到pullview底部
@@ -540,16 +578,17 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                         @Override
                         public void run() {
                             mPrgoressView.setIsShow(true);
+
                         }
                     });
-                } else {
-                    staff = fristSingLenth.get(i) - fristSingLenth.get(0);
                 }
+                staff = fristSingLenth.get(i);
+                index = i;
             }
         }
-        if (mRectF.bottom > getTop() && mRectF.top < getBottom()) {
+        if (mRectF.bottom > 0 && mRectF.top < mLayoutHeight) {
             if (!saveTimeData.isRest()) {
-                canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, saveTimeData.getBlackNum() == 0 ? mPaint : mYellowPaint);
+                canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, !firstLine ? mPaint : mYellowPaint);
                 //保存引导条
                 boolean isSave = false;
                 for (int k = 0; k < mBackList.size(); k++) {
@@ -561,7 +600,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                 if (!isSave) mBackList.add(new PullBack(mRectF.left, mRectF.right));
             }
         }
-        //绘制结束
+//        绘制结束
         if (saveTimeData.isLastNode() && mRectF.top > getBottom()) {
             if (iPlayEnd != null) {
                 handler.post(new Runnable() {
@@ -573,7 +612,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
             }
             //初始化数据
             initAllData();
-            caAllPosition();
+            caAllPosition(false);
             return;
         }
     }
@@ -589,14 +628,20 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         isPlay = false;
         //是否移动五线谱
         isMoveStaff = false;
-        mSpeedTime = mStaffView.getmSpeedTime();
-        mStaffView.remove(0);
+//        mSpeedTime = mStaffView.getmSpeedTime();
+        mTimesTime = 60 * 1000 / mStaffView.getTimes();
+        index = 0;
+        move = 0;
+        timeError = 0;
+        mStaffView.remove(0, index);
 //        mStaffView.setStartIndex(0);
+        centerX = staff;
         handler.post(new Runnable() {
             @Override
             public void run() {
                 //进度条屏蔽
                 mPrgoressView.setIsShow(false);
+                mPrgoressView.setMove(0);
             }
         });
         ScoreHelper.getInstance().initData();
@@ -639,7 +684,9 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     public int accelerate() {
         DEFAULT_TIME_NUM += 10;
         if (DEFAULT_TIME_NUM > 200) DEFAULT_TIME_NUM = 200;
-        mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions()));
+//        mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions()));
+        mTimesTime = 60 * 1000 / DEFAULT_TIME_NUM;
+        if (DEFAULT_TIME_NUM > 50) mReta = 20;
         return DEFAULT_TIME_NUM;
     }
 
@@ -649,7 +696,9 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     public int deceleration() {
         DEFAULT_TIME_NUM -= 10;
         if (DEFAULT_TIME_NUM < 20) DEFAULT_TIME_NUM = 20;
-        mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions()));
+//        mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions()));
+        mTimesTime = 60 * 1000 / DEFAULT_TIME_NUM;
+        if (DEFAULT_TIME_NUM <= 50) mReta = 30;
         return DEFAULT_TIME_NUM;
     }
 
@@ -684,4 +733,6 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     public int getTimes() {
         return DEFAULT_TIME_NUM;
     }
+
+
 }

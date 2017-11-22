@@ -38,7 +38,6 @@ import com.yizu.intelligentpiano.bean.xml.Notes;
 import com.yizu.intelligentpiano.bean.StaffSaveData;
 import com.yizu.intelligentpiano.constens.IFinish;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
-import com.yizu.intelligentpiano.utils.MyToast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -219,18 +218,24 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     int beats = 0;
     //    int startIndex = 0;
     private Canvas mCanvas;
+    private boolean isSteam = false;
+
+    private int index = 0;
+
 
     /**
      * 保存全部音符的位置信息
      */
-    //小结线
-    private List<StaffSaveData> mMeasureLins = new ArrayList<>();
     //间线
     private List<StaffSaveData> mStaffViewLins = new ArrayList<>();
     //黑色弧形延音线
     private List<Tia> mBlackTia = new ArrayList<>();
     //红色弧形延音线
     private List<Tia> mRedTia = new ArrayList<>();
+    //小结线
+    private List<StaffSaveData> mFristMeasureLins = new ArrayList<>();
+    private List<StaffSaveData> mSecoundMeasureLins = new ArrayList<>();
+
     //全音符符头
     private List<HeadData> mWholeHead = new ArrayList();
     //二分音符符头
@@ -249,9 +254,35 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     private List<Tial> mTial = new ArrayList<>();
     //降音b
     private List<Dwon> mDwon = new ArrayList();
-    //休止符号
+    //休止符号(直线)
     private List<Rest> mRest = new ArrayList();
+    //休止符号(贝塞尔曲线)
     private List<Tia> mRestTia = new ArrayList();
+    /*************二次保存****************/
+    //全音符符头
+    private List<List<HeadData>> mAllWholeHead = new ArrayList();
+    //二分音符符头
+    private List<List<HeadData>> mAllHalfHead = new ArrayList();
+    //四分音符符头
+    private List<List<HeadData>> mAllHead = new ArrayList();
+    //延音符
+    private List<List<Dot>> mAllDot = new ArrayList();
+    //头部间线（超出五线谱范围的）
+    private List<List<StaffSaveData>> mAllHeadLins = new ArrayList<>();
+    //符杠
+    private List<List<StaffSaveData>> mAllLins = new ArrayList<>();
+    //底部连音线
+    private List<List<StaffSaveData>> mAllSlurLins = new ArrayList<>();
+    //八分音符的符尾
+    private List<List<Tial>> mAllTial = new ArrayList<>();
+    //降音b
+    private List<List<Dwon>> mAllDwon = new ArrayList();
+    //休止符号(直线)
+    private List<List<Rest>> mAllRest = new ArrayList();
+    //休止符号(贝塞尔曲线)
+    private List<List<Tia>> mAllRestTia = new ArrayList();
+    //初始化音符的时候是音符是否是混乱的，防止出现音符错乱
+    private boolean isConfused = false;
 
 
     /**
@@ -469,7 +500,6 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         isMove = false;
     }
 
-
     class MysurfaceviewThread extends Thread {
 
         public MysurfaceviewThread() {
@@ -521,14 +551,17 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
             mPath = new Path();
             //初始化五线谱(条数)
             drawStaffLines(mAttributess, canvas, (fristSingLenth.size() == 0 || moveLenth < fristSingLenth.get(1)));
-            if (isSaveData) {
+            if (isSaveData||isConfused) {
+                MyLogUtils.e(TAG,"绘制");
 //                清除所有数据
                 initData();
                 //绘制音符
                 drawSgin(canvas);
-                iFinish.success();
                 isSaveData = false;
-                isMove = false;
+                if (!isConfused) {
+                    isMove = false;
+                    iFinish.success();
+                }
             } else {
                 //选择绘制
                 selectDraw(canvas);
@@ -550,14 +583,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                     Math.min(data.getRightss() - moveLenth, mLayoutWidth),
                     data.getBottoms(), mLinsPaint);
         }
-        //每一小节的分割线
-        for (int i = 0; i < mMeasureLins.size(); i++) {
-            StaffSaveData data = mMeasureLins.get(i);
-            if (data.getLefts() - moveLenth < 0) continue;
-            if (data.getLefts() - moveLenth > mLayoutWidth) continue;
-            canvas.drawLine(data.getLefts() - moveLenth, data.getTops(), data.getRightss() - moveLenth, data.getBottoms(), mLinsPaint);
-        }
-        //黑色弧形延音线
+//            黑色弧形延音线
         mPath = new Path();
         for (int i = 0; i < mBlackTia.size(); i++) {
             Tia tia = mBlackTia.get(i);
@@ -567,7 +593,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
             mPath.quadTo(tia.getX() - moveLenth, tia.getY(), tia.getRightss() - moveLenth, tia.getBottoms());
             canvas.drawPath(mPath, mLinsPaint);
         }
-        //红色弧形延音线
+//        红色弧形延音线
         mPath = new Path();
         for (int i = 0; i < mRedTia.size(); i++) {
             Tia tia = mRedTia.get(i);
@@ -578,152 +604,173 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                     tia.getRightss() - moveLenth, tia.getBottoms());
             canvas.drawPath(mPath, mRedPaint);
         }
-        //绘制全音符符头
-        for (int i = 0; i < mWholeHead.size(); i++) {
-            HeadData data = mWholeHead.get(i);
-            if (data.getLeft1() - moveLenth > mLayoutWidth) continue;
-            if (data.getRight1() - moveLenth < 0) continue;
-            canvas.save();
-            RectF rectFs = new RectF(data.getLeft1() - moveLenth,
-                    data.getTop1(),
-                    data.getRight1() - moveLenth,
-                    data.getBottom1());
-            canvas.drawOval(rectFs, mBlackPaint);
-            canvas.rotate(30, data.getPx() - moveLenth, data.getPy());
-            RectF rectF = new RectF(data.getLeft2() - moveLenth,
-                    data.getTop2(),
-                    data.getRight2() - moveLenth,
-                    data.getBottom2());
-            canvas.drawOval(rectF, mWhitePaint);
-            canvas.restore();
-        }
-        //绘制二分音符符头
-        for (int i = 0; i < mHalfHead.size(); i++) {
-            HeadData data = mHalfHead.get(i);
-            if (data.getLeft1() - moveLenth > mLayoutWidth) continue;
-            if (data.getRight1() - moveLenth < 0) continue;
-            canvas.save();
-            RectF rectFs = new RectF(data.getLeft1() - moveLenth,
-                    data.getTop1(),
-                    data.getRight1() - moveLenth,
-                    data.getBottom1());
-            canvas.rotate(-30, data.getPx() - moveLenth, data.getPy());
-            canvas.drawOval(rectFs, mBlackPaint);
-            canvas.restore();
-            canvas.save();
-            RectF rectF = new RectF(data.getLeft2() - moveLenth,
-                    data.getTop2(),
-                    data.getRight2() - moveLenth,
-                    data.getBottom2());
-            canvas.rotate(-30, data.getPx() - moveLenth, data.getPy());
-            canvas.drawOval(rectF, mWhitePaint);
-            canvas.restore();
-        }
-        //绘制四分音符符头
-        for (int i = 0; i < mHead.size(); i++) {
-            HeadData data = mHead.get(i);
-            if (data.getLeft1() - moveLenth > mLayoutWidth) continue;
-            if (data.getRight1() - moveLenth < 0) continue;
-            canvas.save();
-            RectF rectFs = new RectF(data.getLeft1() - moveLenth,
-                    data.getTop1(),
-                    data.getRight1() - moveLenth,
-                    data.getBottom1());
-            canvas.rotate(-30, data.getPx() - moveLenth, data.getPy());//向上旋转30度
-            canvas.drawOval(rectFs, mBlackPaint);
-            canvas.restore();
-        }
-        //绘制延音dot
-        for (int i = 0; i < mDot.size(); i++) {
-            Dot dot = mDot.get(i);
-            if (dot.getCx() - moveLenth < 0) continue;
-            if (dot.getCx() - moveLenth > mLayoutWidth) continue;
-            canvas.drawCircle(dot.getCx() - moveLenth, dot.getCy(), mLinsRoomWidth / 3, mBlackPaint);
-        }
-        //绘制音符短间线
-        for (int i = 0; i < mHeadLins.size(); i++) {
-            StaffSaveData data = mHeadLins.get(i);
+        int num = Math.max(0, index - 1);
+        int max = Math.min(mAllHead.size(), (index + 10));
+        //每一小节的分割线
+        for (int i = num; i < max; i++) {
+            StaffSaveData data = mFristMeasureLins.get(i);
+            if (data.getLefts() - moveLenth < 0) continue;
             if (data.getLefts() - moveLenth > mLayoutWidth) continue;
-            if (data.getRightss() - moveLenth < 0) continue;
-            drawLins(canvas, data.getLefts() - moveLenth, data.getTops(), data.getRightss() - moveLenth, data.getBottoms());
+            canvas.drawLine(data.getLefts() - moveLenth, data.getTops(), data.getRightss() - moveLenth, data.getBottoms(), mLinsPaint);
+        }
+        if (isTowStaff) {
+            //每一小节的分割线
+            for (int i = num; i < max; i++) {
+                StaffSaveData data = mSecoundMeasureLins.get(i);
+                if (data.getLefts() - moveLenth < 0) continue;
+                if (data.getLefts() - moveLenth > mLayoutWidth) continue;
+                canvas.drawLine(data.getLefts() - moveLenth, data.getTops(), data.getRightss() - moveLenth, data.getBottoms(), mLinsPaint);
+            }
+        }
+        for (int j = num; j < max; j++) {
+            //绘制全音符符头
+            List<HeadData> wholeHead = mAllWholeHead.get(j);
+            for (int i = 0; i < wholeHead.size(); i++) {
+                HeadData data = wholeHead.get(i);
+                if (data.getLeft1() - moveLenth > mLayoutWidth) continue;
+                if (data.getRight1() - moveLenth < 0) continue;
+                canvas.save();
+                RectF rectFs = new RectF(data.getLeft1() - moveLenth,
+                        data.getTop1(),
+                        data.getRight1() - moveLenth,
+                        data.getBottom1());
+                canvas.drawOval(rectFs, mBlackPaint);
+                canvas.rotate(30, data.getPx() - moveLenth, data.getPy());
+                RectF rectF = new RectF(data.getLeft2() - moveLenth,
+                        data.getTop2(),
+                        data.getRight2() - moveLenth,
+                        data.getBottom2());
+                canvas.drawOval(rectF, mWhitePaint);
+                canvas.restore();
+            }
+            //绘制二分音符符头
+            List<HeadData> halfHead = mAllHalfHead.get(j);
+            for (int i = 0; i < halfHead.size(); i++) {
+                HeadData data = halfHead.get(i);
+                if (data.getLeft1() - moveLenth > mLayoutWidth) continue;
+                if (data.getRight1() - moveLenth < 0) continue;
+                canvas.save();
+                RectF rectFs = new RectF(data.getLeft1() - moveLenth,
+                        data.getTop1(),
+                        data.getRight1() - moveLenth,
+                        data.getBottom1());
+                canvas.rotate(-30, data.getPx() - moveLenth, data.getPy());
+                canvas.drawOval(rectFs, mBlackPaint);
+                canvas.restore();
+                canvas.save();
+                RectF rectF = new RectF(data.getLeft2() - moveLenth,
+                        data.getTop2(),
+                        data.getRight2() - moveLenth,
+                        data.getBottom2());
+                canvas.rotate(-30, data.getPx() - moveLenth, data.getPy());
+                canvas.drawOval(rectF, mWhitePaint);
+                canvas.restore();
+            }
+            //绘制四分音符符头
+            List<HeadData> head = mAllHead.get(j);
+            for (int i = 0; i < head.size(); i++) {
+                HeadData data = head.get(i);
+                if (data.getLeft1() - moveLenth > mLayoutWidth) continue;
+                if (data.getRight1() - moveLenth < 0) continue;
+                canvas.save();
+                RectF rectFs = new RectF(data.getLeft1() - moveLenth,
+                        data.getTop1(),
+                        data.getRight1() - moveLenth,
+                        data.getBottom1());
+                canvas.rotate(-30, data.getPx() - moveLenth, data.getPy());//向上旋转30度
+                canvas.drawOval(rectFs, mBlackPaint);
+                canvas.restore();
+            }
+            //绘制延音dot
+            List<Dot> dots = mAllDot.get(j);
+            for (int i = 0; i < dots.size(); i++) {
+                Dot dot = dots.get(i);
+                if (dot.getCx() - moveLenth < 0) continue;
+                if (dot.getCx() - moveLenth > mLayoutWidth) continue;
+                canvas.drawCircle(dot.getCx() - moveLenth, dot.getCy(), mLinsRoomWidth / 3, mBlackPaint);
+            }
+
+            //绘制音符短间线
+            List<StaffSaveData> headLins = mAllHeadLins.get(j);
+            for (int i = 0; i < headLins.size(); i++) {
+                StaffSaveData data = headLins.get(i);
+                if (data.getLefts() - moveLenth > mLayoutWidth) continue;
+                if (data.getRightss() - moveLenth < 0) continue;
+                drawLins(canvas, data.getLefts() - moveLenth, data.getTops(), data.getRightss() - moveLenth, data.getBottoms());
 //            MyLogUtils.e(TAG, "绘制短线");
-        }
-        //绘制符杠
-        for (int i = 0; i < mLins.size(); i++) {
-            StaffSaveData data = mLins.get(i);
-            if (data.getLefts() - moveLenth > mLayoutWidth) continue;
-            if (data.getRightss() - moveLenth < 0) continue;
-            drawLins(canvas, data.getLefts() - moveLenth, data.getTops(), data.getRightss() - moveLenth, data.getBottoms());
-        }
-        //绘制符尾连音符
-        for (int i = 0; i < mSlurLins.size(); i++) {
-            StaffSaveData data = mSlurLins.get(i);
-            if (data.getLefts() - moveLenth > mLayoutWidth) continue;
-            if (data.getRightss() - moveLenth < 0) continue;
-            canvas.drawLine(data.getLefts() - moveLenth,
-                    data.getTops(),
-                    data.getRightss() - moveLenth,
-                    data.getBottoms(), mBeamPaint);
-        }
-        mPath = new Path();
-        for (int i = 0; i < mTial.size(); i++) {
-            Tial tia = mTial.get(i);
-            if (tia.getX() - moveLenth > mLayoutWidth) continue;
-            if (tia.getX3() - moveLenth < 0) continue;
-            mPath.moveTo(tia.getX() - moveLenth, tia.getY());
-            mPath.cubicTo(tia.getX1() - moveLenth, tia.getY1(),
-                    tia.getX2() - moveLenth, tia.getY2(),
-                    tia.getX3() - moveLenth, tia.getY3());
-            canvas.drawPath(mPath, mTailPaint);
-        }
-        for (int i = 0; i < mDwon.size(); i++) {
-            Dwon dwon = mDwon.get(i);
-            if (dwon.getLeft() - moveLenth > mLayoutWidth) continue;
-            if (dwon.getRight() - moveLenth < 0) continue;
-            mPath.moveTo(dwon.getLeft() - moveLenth, dwon.getTop());
-            mPath.quadTo(dwon.getX() - moveLenth, dwon.getY(),
-                    dwon.getRight() - moveLenth, dwon.getBottom());
-            canvas.drawPath(mPath, mTailPaint);
-            drawLins(canvas, dwon.getX1() - moveLenth, dwon.getY1(),
-                    dwon.getX2() - moveLenth, dwon.getY2());
-        }
-        for (int i = 0; i < mRest.size(); i++) {
-            Rest rest = mRest.get(i);
-            if (rest.getLeft() - moveLenth > mLayoutWidth) continue;
-            if (rest.getRight() - moveLenth < 0) continue;
-            canvas.drawLine(rest.getLeft() - moveLenth, rest.getTop(),
-                    rest.getRight() - moveLenth, rest.getBottom(), mCrudePaint);
-        }
-        for (int i = 0; i < mRestTia.size(); i++) {
-            Tia tia = mRestTia.get(i);
-            if (tia.getLefts() - moveLenth > mLayoutWidth) continue;
-            if (tia.getRightss() - moveLenth < 0) continue;
-            mPath.moveTo(tia.getLefts() - moveLenth, tia.getTops());
-            mPath.quadTo(tia.getX() - moveLenth, tia.getY(), tia.getRightss() - moveLenth, tia.getBottoms());
-            canvas.drawPath(mPath, mLinsPaint);
+            }
+            //绘制符杠
+            List<StaffSaveData> lins = mAllLins.get(j);
+            for (int i = 0; i < lins.size(); i++) {
+                StaffSaveData data = lins.get(i);
+                if (data.getLefts() - moveLenth > mLayoutWidth) continue;
+                if (data.getRightss() - moveLenth < 0) continue;
+                drawLins(canvas, data.getLefts() - moveLenth, data.getTops(), data.getRightss() - moveLenth, data.getBottoms());
+            }
+            //绘制符尾连音符
+            List<StaffSaveData> slurLins = mAllSlurLins.get(j);
+            for (int i = 0; i < slurLins.size(); i++) {
+                StaffSaveData data = slurLins.get(i);
+                if (data.getLefts() - moveLenth > mLayoutWidth) continue;
+                if (data.getRightss() - moveLenth < 0) continue;
+                canvas.drawLine(data.getLefts() - moveLenth,
+                        data.getTops(),
+                        data.getRightss() - moveLenth,
+                        data.getBottoms(), mBeamPaint);
+            }
+            mPath = new Path();
+            List<Tial> tial = mAllTial.get(j);
+            for (int i = 0; i < tial.size(); i++) {
+                Tial tia = tial.get(i);
+                if (tia.getX() - moveLenth > mLayoutWidth) continue;
+                if (tia.getX3() - moveLenth < 0) continue;
+                mPath.moveTo(tia.getX() - moveLenth, tia.getY());
+                mPath.cubicTo(tia.getX1() - moveLenth, tia.getY1(),
+                        tia.getX2() - moveLenth, tia.getY2(),
+                        tia.getX3() - moveLenth, tia.getY3());
+                canvas.drawPath(mPath, mTailPaint);
+            }
+            List<Dwon> dwons = mAllDwon.get(j);
+            for (int i = 0; i < dwons.size(); i++) {
+                Dwon dwon = dwons.get(i);
+                if (dwon.getLeft() - moveLenth > mLayoutWidth) continue;
+                if (dwon.getRight() - moveLenth < 0) continue;
+                mPath.moveTo(dwon.getLeft() - moveLenth, dwon.getTop());
+                mPath.quadTo(dwon.getX() - moveLenth, dwon.getY(),
+                        dwon.getRight() - moveLenth, dwon.getBottom());
+                canvas.drawPath(mPath, mTailPaint);
+                drawLins(canvas, dwon.getX1() - moveLenth, dwon.getY1(),
+                        dwon.getX2() - moveLenth, dwon.getY2());
+            }
+            List<Rest> restS = mAllRest.get(j);
+            for (int i = 0; i < restS.size(); i++) {
+                Rest rest = restS.get(i);
+                if (rest.getLeft() - moveLenth > mLayoutWidth) continue;
+                if (rest.getRight() - moveLenth < 0) continue;
+                canvas.drawLine(rest.getLeft() - moveLenth, rest.getTop(),
+                        rest.getRight() - moveLenth, rest.getBottom(), mCrudePaint);
+            }
+            List<Tia> restTia = mAllRestTia.get(j);
+            for (int i = 0; i < restTia.size(); i++) {
+                Tia tia = restTia.get(i);
+                if (tia.getLefts() - moveLenth > mLayoutWidth) continue;
+                if (tia.getRightss() - moveLenth < 0) continue;
+                mPath.moveTo(tia.getLefts() - moveLenth, tia.getTops());
+                mPath.quadTo(tia.getX() - moveLenth, tia.getY(), tia.getRightss() - moveLenth, tia.getBottoms());
+                canvas.drawPath(mPath, mLinsPaint);
+            }
         }
     }
 
     private void initData() {
         mTie.clear();
         mSlur.clear();
-
-        mMeasureLins.clear();
         mStaffViewLins.clear();
         mBlackTia.clear();
         mRedTia.clear();
-        mWholeHead.clear();
-        mHalfHead.clear();
-        mHead.clear();
-        mDot.clear();
-        mHeadLins.clear();
-        mLins.clear();
-        mSlurLins.clear();
-        mTial.clear();
-        mDwon.clear();
-        mRest.clear();
-        mRestTia.clear();
-
+        mFristMeasureLins.clear();
+        mSecoundMeasureLins.clear();
+        fristSingLenth.clear();
     }
 
 
@@ -731,15 +778,13 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * 绘制符号
      */
     private void drawSgin(Canvas canvas) {
+        isConfused = false;
         int size = mFristStaffData.size();
         for (int j = 0; j < size; j++) {
-            //每个小节都清除用于保存符尾连音线的数据
-            legatosMap.clear();
-            forwardHook.clear();
-
+            initSgin();
+            isSteam = false;
 //          保存每一小节第一一条五线谱的以一个元素的位置
             fristSingLenth.add(mFristStaffWidth);
-
             List<MeasureBase> base = mFristStaffData.get(j).getMeasure();
             List<MeasureBase> base1 = mSecondStaffData.get(j).getMeasure();
             int baseSize = base.size();
@@ -776,8 +821,37 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                 mFristStaffWidth += mSpeedLenth;
                 mScendStaffWidth += mSpeedLenth;
             }
+            mAllWholeHead.add(mWholeHead);
+            mAllHalfHead.add(mHalfHead);
+            mAllHead.add(mHead);
+            mAllDot.add(mDot);
+            mAllHeadLins.add(mHeadLins);
+            mAllLins.add(mLins);
+            mAllSlurLins.add(mSlurLins);
+            mAllTial.add(mTial);
+            mAllDwon.add(mDwon);
+            mAllRest.add(mRest);
+            mAllRestTia.add(mRestTia);
         }
         drawStaffLins(canvas);
+    }
+
+    private void initSgin() {
+        mWholeHead = new ArrayList<>();
+        mHalfHead = new ArrayList<>();
+        mHead = new ArrayList<>();
+        mDot = new ArrayList<>();
+        mHeadLins = new ArrayList<>();
+        mLins = new ArrayList<>();
+        mSlurLins = new ArrayList<>();
+        mTial = new ArrayList<>();
+        mDwon = new ArrayList<>();
+        mRest = new ArrayList<>();
+        mRestTia = new ArrayList<>();
+
+        legatosMap.clear();
+        forwardHook.clear();
+        legatosMap.clear();
     }
 
     /**
@@ -821,11 +895,11 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
             //每小节的竖直分割线
             canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_up,
                     mFristStaffWidth, twoStaff_fristLins_up, mLinsPaint);
-            mMeasureLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fiveLins_up, mFristStaffWidth, twoStaff_fristLins_up));
+            mFristMeasureLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fiveLins_up, mFristStaffWidth, twoStaff_fristLins_up));
             if (isTowStaff) {
                 canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_down,
                         mFristStaffWidth, twoStaff_fristLins_down, mLinsPaint);
-                mMeasureLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fiveLins_down,
+                mSecoundMeasureLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fiveLins_down,
                         mFristStaffWidth, twoStaff_fristLins_down));
 
             }
@@ -834,13 +908,15 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                 //如果是两条五线谱，绘制最后一小节的尾线
                 canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_up,
                         mFristStaffWidth, twoStaff_fristLins_down, mLinsPaint);
-                mMeasureLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fiveLins_up,
+                mFristMeasureLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fiveLins_up,
+                        mFristStaffWidth, twoStaff_fristLins_down));
+                mSecoundMeasureLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fiveLins_up,
                         mFristStaffWidth, twoStaff_fristLins_down));
             } else {
                 //如果是一条五线谱，绘制最后一小节的尾线
                 canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_up,
                         mFristStaffWidth, twoStaff_fristLins_up, mLinsPaint);
-                mMeasureLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fiveLins_up,
+                mFristMeasureLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fiveLins_up,
                         mFristStaffWidth, twoStaff_fristLins_up));
             }
         }
@@ -927,10 +1003,9 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         float tialX = getTialX(isFristStaff, isDwon);
         int tialStartY = isDwon ? y + mLinsRoomWidth : y + mLinsRoomWidth / 4;
         int tialStopY = getTialY(type, isDwon, y);
-        if (notes.getBeam() != null) {
-            //绘制符尾连音符
-            drawLegato(notes.getBeam(), isDwon, tialX, tialStartY, tialStopY, canvas, notes.getChord());
-        } else {
+        if (notes.getBeam() == null) {
+            //有和音返回
+//            if (isSteam) return;
             //绘制符杠
             drawLins(canvas, tialX, tialStartY, tialX, tialStopY);
             mLins.add(new StaffSaveData(tialX, tialStartY, tialX, tialStopY));
@@ -938,6 +1013,11 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                 //绘制符号尾部（八分音符以后）
                 drawTial(canvas, isFristStaff ? mFristStaffWidth : mScendStaffWidth, y, isDwon, type, notes);
             }
+//            if (isFristStaff)MyLogUtils.e(TAG,"tial："+mFristStaffWidth);
+        } else {
+//            if (isFristStaff)MyLogUtils.e(TAG,"tialS："+mFristStaffWidth);
+            //绘制符尾连音符
+            drawLegato(notes.getBeam(), isDwon, tialX, tialStartY, tialStopY, canvas, notes.getChord());
         }
     }
 
@@ -2448,6 +2528,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                         list.add(new Legato(tialX, tialStartY, tialX, tialStopY));
                         legatosMap.put(beam1.getNumber(), list);
                     }
+                    if (beam1.getNumber() == 1) isSteam = true;
                     break;
                 case "end":
                     if (chord) return;
@@ -2463,6 +2544,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                     stopX = legatosMap.get(1).get(0).getStopX();
                     stopY = legatosMap.get(1).get(0).getStopY();
                     if (beam1.getNumber() == 1) {
+                        isSteam = false;
                         if (legatosMap.get(1).size() == 1) {
 ////                            只有两个音符
                             if (legatosMap.size() == 1 && forwardHook.size() > 0) {
@@ -2722,6 +2804,8 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         canvas.restore();
         mHead.add(new HeadData(CenterX - mLinsRoomWidth3 / 4, CenterY - mLinsRoomWidth2 / 5, CenterX + mLinsRoomWidth3 / 4, CenterY + mLinsRoomWidth2 / 5,
                 CenterX, CenterY));
+        HeadData data = mHead.get(mHead.size()-1);
+        if (data.getBottom1()-data.getTop1()>mLinsRoomWidth) isConfused = true;
         if (isAddDot) {
             canvas.drawCircle(CenterX + mLinsRoomWidth3 / 2, CenterY, mLinsRoomWidth / 3, mBlackPaint);
             mDot.add(new Dot(CenterX + mLinsRoomWidth3 / 2, CenterY));
@@ -2736,11 +2820,6 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      */
     public void setStaffData(List<Measure> staffData, IFinish iFinish) {
         initStaffData();
-//        MyLogUtils.e(TAG, "setStaffData");
-        if (staffData == null) {
-            MyToast.ShowLong("五线谱数据为空");
-            return;
-        }
         if (iFinish != null) {
             this.iFinish = iFinish;
         }
@@ -2794,7 +2873,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                     } else {
                         isTowStaff = false;
                     }
-                } else if (staffData.get(j).getMeasure().get(k).getSound() != null && !staffData.get(j).getMeasure().get(k).getSound().equals("")) {
+                } else if (staffData.get(j).getMeasure().get(k).getSound() != null) {
 //                    建议拍数
                     DEFAULT_TIME_NUM = Integer.valueOf(staffData.get(j).getMeasure().get(k).getSound());
                 } else {
@@ -2885,6 +2964,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         mSpeedTime = 0;
         isMove = false;
         moveLenth = 0;
+        index = 0;
     }
 
     /**
@@ -3355,8 +3435,9 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      *
      * @param lenth
      */
-    public void remove(float lenth) {
+    public void remove(float lenth, int index) {
         moveLenth = lenth;
+        this.index = index;
 //        MyLogUtils.e(TAG, "Staff  3:" + lenth);
     }
 
@@ -3366,6 +3447,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
 
         isSaveData = false;
         moveLenth = 0;
+        index = 0;
 //        startIndex = 0;
         if (thread != null) {
             thread.interrupt();
@@ -3415,4 +3497,5 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
             thread = null;
         }
     }
+
 }

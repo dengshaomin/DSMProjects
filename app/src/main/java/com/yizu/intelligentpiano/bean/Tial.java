@@ -5,7 +5,7 @@ package com.yizu.intelligentpiano.bean;
  * Email: chenhuixueba@163.com
  */
 
-public class Tial {
+public class Tial{
     private float x;
     private float y;
     private float x1;

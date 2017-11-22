@@ -5,7 +5,7 @@ package com.yizu.intelligentpiano.bean;
  * Email: chenhuixueba@163.com
  */
 
-public class HeadData {
+public class HeadData{
     float left1;
     float top1;
     float right1;

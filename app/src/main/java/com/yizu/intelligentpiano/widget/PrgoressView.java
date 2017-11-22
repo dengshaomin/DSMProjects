@@ -32,6 +32,8 @@ public class PrgoressView extends View {
     private boolean isTowStaff;
     private boolean isShow = false;
 
+    private float move = 0;
+
     public PrgoressView(Context context) {
         this(context, null);
     }
@@ -68,9 +70,8 @@ public class PrgoressView extends View {
         MyLogUtils.e(TAG, "onDraw");
 
         if (!isShow) return;
-        if (mStaffView != null && mStaffView.getFristSingLenth().size() > 1) {
-            setBlueProgresBar(canvas, mStaffView.getFristSingLenth().get(0));
-        }
+        if (move == 0) return;
+        setBlueProgresBar(canvas, move);
     }
 
     /**
@@ -116,5 +117,14 @@ public class PrgoressView extends View {
     public void setIsShow(boolean show) {
         isShow = show;
         invalidate();
+    }
+
+    public void setMove(float move) {
+        this.move = move;
+        invalidate();
+    }
+
+    public int getmLayoutWidth() {
+        return mLayoutWidth;
     }
 }

@@ -18,7 +18,7 @@
             android:orientation="horizontal">
 
             <LinearLayout
-                android:layout_width="@dimen/com_534px"
+                android:layout_width="@dimen/com_500px"
                 android:layout_height="@dimen/com_240px"
                 android:background="@color/blue"
                 android:gravity="center_vertical"
@@ -78,7 +78,7 @@
 
             <TextView
                 android:id="@+id/realyTimeScore"
-                android:layout_width="100dp"
+                android:layout_width="@dimen/com_300px"
                 android:layout_height="match_parent"
                 android:gravity="center"
                 android:padding="@dimen/com_30px"

@@ -166,9 +166,9 @@ public class Piano {
             blackOffset = 1;
         }
         drawable.setBounds(
-                (7 * group - 4 + whiteOffset + blackOffset + positionOfGroup) * mWhiteKeyWidth - mBlackKeyWidth / 2,
+                (7 * group - 4 + whiteOffset + blackOffset + positionOfGroup) * mWhiteKeyWidth - mBlackKeyWidth / 2 - 30,
                 0,
-                (7 * group - 4 + whiteOffset + blackOffset + positionOfGroup) * mWhiteKeyWidth + mBlackKeyWidth / 2,
+                (7 * group - 4 + whiteOffset + blackOffset + positionOfGroup) * mWhiteKeyWidth + mBlackKeyWidth / 2 - 30,
                 mBlackKeyHeight
         );
     }
@@ -186,9 +186,9 @@ public class Piano {
             offset = 5;
         }
         drawable.setBounds(
-                (7 * group - 5 + offset + positionOfGroup) * mWhiteKeyWidth,
+                (7 * group - 5 + offset + positionOfGroup) * mWhiteKeyWidth - 30,
                 0,
-                (7 * group - 4 + offset + positionOfGroup) * mWhiteKeyWidth - 1,
+                (7 * group - 4 + offset + positionOfGroup) * mWhiteKeyWidth - 1 - 30,
                 mWhiteKeyHeight - 1
         );
     }
@@ -202,7 +202,6 @@ public class Piano {
             }
         }
         map.put(num, pianoKey);
-//        MyLogUtils.e("map", "num:" + num);
     }
 
     private void setWhiteMap(int group, int positionOfGroup, PianoKey pianoKey) {
@@ -220,7 +219,6 @@ public class Piano {
             }
         }
         map.put(num, pianoKey);
-//        MyLogUtils.e("map", "num:" + num+"group"+group+"positionOfGroup"+positionOfGroup);
     }
 
 
@@ -234,6 +232,7 @@ public class Piano {
 
     /**
      * 获取所有键的顺序组合
+     *
      * @return
      */
     public List<PianoKey> getKeyList() {

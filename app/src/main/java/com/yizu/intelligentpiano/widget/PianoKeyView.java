@@ -84,10 +84,10 @@ public class PianoKeyView extends View {
         float scale = (float) whiteKeyHeight / whiteKeyWidth;
         MyLogUtils.e(TAG, "" + scale);
         //白键宽度
-        mWhiteKeyWidth = mLayoutWidth / WHITE_PIANO_KEY_NUMS;
-        if (mLayoutWidth % WHITE_PIANO_KEY_NUMS != 0) {
-            mWhiteKeyWidth += 1;
-        }
+        mWhiteKeyWidth = (mLayoutWidth+60) / WHITE_PIANO_KEY_NUMS;
+//        if (mLayoutWidth % WHITE_PIANO_KEY_NUMS != 0) {
+//            mWhiteKeyWidth += 1;
+//        }
 //        计算得出布局的实际高度
         mLayoutHeight = (int) ((mWhiteKeyWidth * scale * 10 + 9) / 10);
         mWhiteKeyHeight = mLayoutHeight;
@@ -134,8 +134,6 @@ public class PianoKeyView extends View {
 
 //        实现按压效果
         allPianoKeys.get(prass - 21).getKeyDrawable().setState(new int[]{android.R.attr.state_pressed});
-//        实现去掉按压效果
-//        key.getKeyDrawable().setState(new int[]{-android.R.attr.state_pressed});
         // 将键重新进行绘制
         invalidate(allPianoKeys.get(prass - 21).getKeyDrawable().getBounds());
     }

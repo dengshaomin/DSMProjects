@@ -131,6 +131,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
             return true;
         }
     });
+    private Handler mHandler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -176,8 +177,13 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
         MyLogUtils.e(TAG, "xmlUrls：" + urls);
         XmlPrareUtils utils = new XmlPrareUtils(this);
         XmlBean bean = utils.getXmlBean(urls);
-        if (bean == null) {
-            MyLogUtils.e(TAG, "解析失败");
+        if (bean == null || bean.getList() == null) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    MyToast.ShowLong("解析失败");
+                }
+            });
             return;
         }
         mStaffView.setStaffData(bean.getList(), new IFinish() {
@@ -188,8 +194,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
                     public void run() {
                         mProgessView.setPrgoressData(mStaffView);
                     }
-                });
-                //更新PullView的数据
+                });                //更新PullView的数据
                 mPullView.setPullData(mStaffView, mPianoKeyView, mProgessView, new IPlay() {
                     @Override
                     public void ReadyFinish() {
@@ -236,23 +241,26 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     @Override
     protected void setData() {
         setRegisterReceiver();
-//        getSongsData();
-        test();
+        getSongsData();
+//        test();
     }
 
     private void test() {
-        music_type = "2";
-        music_title = "天空之城";
-        music_auther = "lalagu";
-//        music_type = "2.3.4.5.6";
-//        music_title = "月亮之上";
-//        music_auther = "陈苹";
-//        music_type = "2.4";
-//        music_title = "别问我是谁";
-//        music_auther = "Lalagu";
+//        music_type = "2.3.7";
+//        music_title = "月亮代表我的心";
+//        music_auther = "lalagu";
+
 //        music_type = "2";
 //        music_title = "梦中的婚礼";
 //        music_auther = "lalagu";
+
+//        music_type = "2.3.4.5.6";
+//        music_title = "月亮之上";
+//        music_auther = "陈苹";
+
+        music_type = "2.4";
+        music_title = "别问我是谁";
+        music_auther = "Lalagu";
         if (myThred != null) {
             myThred.interrupt();
             myThred = null;
@@ -293,6 +301,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
         MyLogUtils.e(TAG, "isShowPull：" + isShowPull);
         //设置是否显示瀑布流
         mPullView.isShow(isShowPull);
+        if (!isShowPull) realyTimeScore.setVisibility(View.GONE);
         mNickName.setText(nickName);
         Glide.with(PianoActivity.this).load(icon).into(mIcon);
         mSongName.setText(music_title + "—" + music_auther);
@@ -351,6 +360,8 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
 
     //    打分上传
     private void addMusicHistory() {
+        if (realyScore == 0) return;
+        if (realyTimeScore.getVisibility() == View.GONE) return;
         if (music_id.equals("")) return;
         if (music_title.equals("")) return;
         if (music_auther.equals("")) return;
@@ -463,6 +474,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
                     //左
                     if (mScore.getVisibility() == View.VISIBLE) {
                         score_again.setSelected(true);
+                        score_exit.setSelected(false);
                     } else if (mTime.getVisibility() == View.VISIBLE) {
 
                     } else {
@@ -470,9 +482,10 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
                         mTimesSpeed.setText(mPullView.deceleration() + "  拍/分钟");
                     }
                     return true;
-                case KeyEvent.KEYCODE_ALT_RIGHT:
+                case KeyEvent.KEYCODE_DPAD_RIGHT:
                     //右
                     if (mScore.getVisibility() == View.VISIBLE) {
+                        score_again.setSelected(false);
                         score_exit.setSelected(true);
                     } else if (mTime.getVisibility() == View.VISIBLE) {
                     } else {

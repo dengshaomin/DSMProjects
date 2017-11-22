@@ -20,6 +20,7 @@ import org.xmlpull.v1.XmlPullParser;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,7 +75,8 @@ public class XmlPrareUtils {
             return null;
         }
         try {
-            FileInputStream stream = new FileInputStream(file);
+
+            InputStream stream = new FileInputStream(file);
             if (stream == null) {
                 MyToast.ShowLong("xml文件解析失败");
                 return null;
@@ -194,7 +196,9 @@ public class XmlPrareUtils {
                     attributess = new Attributess();
                     break;
                 case "sound":
-                    measureBase.setSound(xmlPullParser.getAttributeValue(null, "tempo"));
+                    String sound = xmlPullParser.getAttributeValue(null, "tempo");
+                    measureBase.setSound(sound);
+                    measureBaseList.add(measureBase);
                     break;
                 case "divisions":
                     attributess.setDivisions(xmlPullParser.nextText());

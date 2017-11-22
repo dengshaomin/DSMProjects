@@ -5,7 +5,7 @@ package com.yizu.intelligentpiano.bean;
  * Email: chenhuixueba@163.com
  */
 
-public class Rest {
+public class Rest{
     float left;
     float top;
     float right;
