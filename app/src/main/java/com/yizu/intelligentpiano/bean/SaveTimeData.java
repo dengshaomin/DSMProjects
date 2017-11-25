@@ -19,12 +19,11 @@ public class SaveTimeData {
 
     //对应的物理keycode
     private int physicalKey;
-    //是否已经被记录
-    private boolean hasRecord;
+//    //是否已经被记录
+//    private boolean hasRecord;
     //    //用于pullview记录到达pullview底部的状态 0:初始状态 1：第一次到达pullview底部 2：正在经过pullview 3:移出pullview
     private int arriveBottomState;
-//    private int top;
-//    private int bottom;
+
 
     private boolean isRest = false;
     private boolean isTie = false;
@@ -138,14 +137,6 @@ public class SaveTimeData {
 
     public void setPhysicalKey(int physicalKey) {
         this.physicalKey = physicalKey;
-    }
-
-    public boolean isHasRecord() {
-        return hasRecord;
-    }
-
-    public void setHasRecord(boolean hasRecord) {
-        this.hasRecord = hasRecord;
     }
 
     public int getBlackNum() {

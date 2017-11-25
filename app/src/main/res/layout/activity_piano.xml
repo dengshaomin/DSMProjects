@@ -82,7 +82,6 @@
                 android:layout_height="match_parent"
                 android:gravity="center"
                 android:padding="@dimen/com_30px"
-                android:text="当前得分：0分"
                 android:textColor="@color/black"
                 android:textSize="@dimen/com_25px" />
 

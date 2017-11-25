@@ -237,27 +237,27 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     private List<StaffSaveData> mSecoundMeasureLins = new ArrayList<>();
 
     //全音符符头
-    private List<HeadData> mWholeHead = new ArrayList();
+    private List<HeadData> mWholeHead;
     //二分音符符头
-    private List<HeadData> mHalfHead = new ArrayList();
+    private List<HeadData> mHalfHead;
     //四分音符符头
-    private List<HeadData> mHead = new ArrayList();
+    private List<HeadData> mHead;
     //延音符
-    private List<Dot> mDot = new ArrayList();
+    private List<Dot> mDot;
     //头部间线（超出五线谱范围的）
-    private List<StaffSaveData> mHeadLins = new ArrayList<>();
+    private List<StaffSaveData> mHeadLins;
     //符杠
-    private List<StaffSaveData> mLins = new ArrayList<>();
+    private List<StaffSaveData> mLins;
     //底部连音线
-    private List<StaffSaveData> mSlurLins = new ArrayList<>();
+    private List<StaffSaveData> mSlurLins;
     //八分音符的符尾
-    private List<Tial> mTial = new ArrayList<>();
+    private List<Tial> mTial;
     //降音b
-    private List<Dwon> mDwon = new ArrayList();
+    private List<Dwon> mDwon;
     //休止符号(直线)
-    private List<Rest> mRest = new ArrayList();
+    private List<Rest> mRest;
     //休止符号(贝塞尔曲线)
-    private List<Tia> mRestTia = new ArrayList();
+    private List<Tia> mRestTia;
     /*************二次保存****************/
     //全音符符头
     private List<List<HeadData>> mAllWholeHead = new ArrayList();
@@ -497,7 +497,10 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         // 当SurfaceView被销毁时，释放资源。
-        isMove = false;
+        synchronized (this) {
+            isMove = false;
+        }
+
     }
 
     class MysurfaceviewThread extends Thread {
@@ -551,8 +554,8 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
             mPath = new Path();
             //初始化五线谱(条数)
             drawStaffLines(mAttributess, canvas, (fristSingLenth.size() == 0 || moveLenth < fristSingLenth.get(1)));
-            if (isSaveData||isConfused) {
-                MyLogUtils.e(TAG,"绘制");
+            if (isSaveData || isConfused) {
+                MyLogUtils.e(TAG, "绘制");
 //                清除所有数据
                 initData();
                 //绘制音符
@@ -771,6 +774,18 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         mFristMeasureLins.clear();
         mSecoundMeasureLins.clear();
         fristSingLenth.clear();
+
+        mAllWholeHead.clear();
+        mAllHalfHead.clear();
+        mAllHead.clear();
+        mAllDot.clear();
+        mAllHeadLins.clear();
+        mAllLins.clear();
+        mAllSlurLins.clear();
+        mAllTial.clear();
+        mAllDwon.clear();
+        mAllRest.clear();
+        mAllRestTia.clear();
     }
 
 
@@ -2804,8 +2819,8 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         canvas.restore();
         mHead.add(new HeadData(CenterX - mLinsRoomWidth3 / 4, CenterY - mLinsRoomWidth2 / 5, CenterX + mLinsRoomWidth3 / 4, CenterY + mLinsRoomWidth2 / 5,
                 CenterX, CenterY));
-        HeadData data = mHead.get(mHead.size()-1);
-        if (data.getBottom1()-data.getTop1()>mLinsRoomWidth) isConfused = true;
+        HeadData data = mHead.get(mHead.size() - 1);
+        if (data.getBottom1() - data.getTop1() > mLinsRoomWidth) isConfused = true;
         if (isAddDot) {
             canvas.drawCircle(CenterX + mLinsRoomWidth3 / 2, CenterY, mLinsRoomWidth / 3, mBlackPaint);
             mDot.add(new Dot(CenterX + mLinsRoomWidth3 / 2, CenterY));
@@ -3441,6 +3456,14 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
 //        MyLogUtils.e(TAG, "Staff  3:" + lenth);
     }
 
+    public void onResume() {
+        isMove = true;
+    }
+
+    public void onPause() {
+        isMove = false;
+    }
+
     public void resetPullView() {
         isMove = false;
         isUpfifth = false;
@@ -3462,16 +3485,13 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      */
     public void setMove(boolean move) {
         isMove = move;
+        if (thread != null) {
+            thread.interrupt();
+            thread = null;
+        }
         if (isMove) {
-            if (thread == null) {
-                thread = new MysurfaceviewThread();
-                thread.start();
-            }
-        } else {
-            if (thread != null) {
-                thread.interrupt();
-                thread = null;
-            }
+            thread = new MysurfaceviewThread();
+            thread.start();
         }
     }
 

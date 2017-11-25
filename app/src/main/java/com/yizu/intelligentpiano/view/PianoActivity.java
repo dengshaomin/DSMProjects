@@ -104,7 +104,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
         public boolean handleMessage(Message msg) {
             if (msg.what > 20 && msg.what < 109) {
                 mPianoKeyView.painoKeyPress(msg.what);
-                ScoreHelper.getInstance().caCorrectKey(msg.what, true);
+                ScoreHelper.getInstance().caCorrectKey(msg.what);
             }
             return true;
         }
@@ -114,8 +114,8 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
         public boolean handleMessage(Message msg) {
             if (msg.what > 20 && msg.what < 109) {
                 mPianoKeyView.painoKeyCanclePress(msg.what);
-//                打分
-                ScoreHelper.getInstance().caCorrectKey(msg.what, false);
+////                打分
+//                ScoreHelper.getInstance().caCorrectKey(msg.what, false);
             }
             return true;
         }
@@ -135,11 +135,11 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        //隐藏标题
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        //设置全屏
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+//        //隐藏标题
+//        requestWindowFeature(Window.FEATURE_NO_TITLE);
+//        //设置全屏
+//        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+//                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_piano);
     }
@@ -178,12 +178,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
         XmlPrareUtils utils = new XmlPrareUtils(this);
         XmlBean bean = utils.getXmlBean(urls);
         if (bean == null || bean.getList() == null) {
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    MyToast.ShowLong("解析失败");
-                }
-            });
+//            MyToast.ShowLong("解析失败");
             return;
         }
         mStaffView.setStaffData(bean.getList(), new IFinish() {
@@ -233,7 +228,6 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
                 mPlay.setSelected(false);
                 //上传打分
                 addMusicHistory();
-                showResultView(realyScore);
             }
         });
     }
@@ -241,14 +235,14 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     @Override
     protected void setData() {
         setRegisterReceiver();
-        getSongsData();
-//        test();
+//        getSongsData();
+        test();
     }
 
     private void test() {
-//        music_type = "2.3.7";
-//        music_title = "月亮代表我的心";
-//        music_auther = "lalagu";
+        music_type = "2.3.7";
+        music_title = "月亮代表我的心";
+        music_auther = "lalagu";
 
 //        music_type = "2";
 //        music_title = "梦中的婚礼";
@@ -258,9 +252,9 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
 //        music_title = "月亮之上";
 //        music_auther = "陈苹";
 
-        music_type = "2.4";
-        music_title = "别问我是谁";
-        music_auther = "Lalagu";
+//        music_type = "2.4";
+//        music_title = "别问我是谁";
+//        music_auther = "Lalagu";
         if (myThred != null) {
             myThred.interrupt();
             myThred = null;
@@ -317,6 +311,13 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
      * 判断xml是否需要下载
      */
     private void initData() {
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                realyScore = 0;
+                realyTimeScore.setText("当前得分：" + realyScore + "分");
+            }
+        });
         String urls = SDCardUtils.getIsHave(Constents.XML.concat("/" + music_type + "_" + music_title + "_" + music_auther + ".xml"));
         if (urls.equals("")) {
             downLoadFile(music_xml, music_type + "_" + music_title + "_" + music_auther + ".xml", Constents.XML);
@@ -360,8 +361,8 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
 
     //    打分上传
     private void addMusicHistory() {
+        if (!isShowPull) return;//不显示瀑布流就不上传打分
         if (realyScore == 0) return;
-        if (realyTimeScore.getVisibility() == View.GONE) return;
         if (music_id.equals("")) return;
         if (music_title.equals("")) return;
         if (music_auther.equals("")) return;
@@ -375,7 +376,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
         OkHttpUtils.postMap(HttpUrls.addMusicHistory, map, new IOkHttpCallBack() {
             @Override
             public void success(String result) {
-                MyLogUtils.e(TAG, "上传成功");
+                showResultView(realyScore);
             }
         });
     }
@@ -397,12 +398,14 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     protected void onResume() {
         super.onResume();
         mPullView.onResume();
+        mStaffView.onResume();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         mPullView.onPause();
+        mStaffView.onPause();
     }
 
     @Override
@@ -439,18 +442,24 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
                 case Constents.NOTIME_5:
                     //剩余5分钟
                     mTime.setVisibility(View.VISIBLE);
+                    mPullView.play(false);
                     break;
                 case Constents.MUSIC:
                     //推送音乐
+                    if (mScore.getVisibility() == View.VISIBLE) {
+                        mScore.setVisibility(View.GONE);
+                    } else if (mTime.getVisibility() == View.VISIBLE) {
+                        mTime.setVisibility(View.GONE);
+                    }
                     if (mPlay.isSelected()) {
                         mPlay.setSelected(false);
                         mPullView.play(false);
                     }
-                    if (mPullView != null) {
-                        mPullView.resetPullView();
-                    }
                     if (mStaffView != null) {
                         mStaffView.resetPullView();
+                    }
+                    if (mPullView != null) {
+                        mPullView.resetPullView();
                     }
                     getSongsData();
                     break;

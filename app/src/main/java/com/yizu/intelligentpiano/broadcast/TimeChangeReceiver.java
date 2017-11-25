@@ -11,9 +11,8 @@ import com.yizu.intelligentpiano.constens.INetStatus;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
 
 /**
- * Created by liuxiaozhu on 2017/9/26.
- * All Rights Reserved by YiZu
- * 监听网络是否变化
+ * Author：Created by liuxiaozhu on 2017/11/24.
+ * Email: chenhuixueba@163.com
  */
 
 public class TimeChangeReceiver extends BroadcastReceiver {

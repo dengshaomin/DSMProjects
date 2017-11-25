@@ -70,7 +70,7 @@ public class MainActivity extends BaseActivity {
         if (PreManger.instance().getStatus().equals("2")) {
             button.setVisibility(View.VISIBLE);
         }
-//        startActivity(new Intent(MainActivity.this, PianoActivity.class));
+        startActivity(new Intent(MainActivity.this, PianoActivity.class));
         button.setSelected(true);
         cheackedPermisition();
     }

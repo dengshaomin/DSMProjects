@@ -245,26 +245,14 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
             return;
         }
         isPlay = isplay;
-        if (isPlay) {
-            mStaffView.setMove(isPlay);
-            setMove(isPlay);
-        } else {
-            mStaffView.setMove(isPlay);
-            setMove(isPlay);
+        mStaffView.setMove(isPlay);
+        if (thread != null) {
+            thread.interrupt();
+            thread = null;
         }
-    }
-
-    public void setMove(boolean move) {
-        if (move) {
-            if (thread == null) {
-                thread = new MysurfaceviewThread();
-                thread.start();
-            }
-        } else {
-            if (thread != null) {
-                thread.interrupt();
-                thread = null;
-            }
+        if (isPlay) {
+            thread = new MysurfaceviewThread();
+            thread.start();
         }
     }
 
@@ -312,7 +300,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public void onResume() {
-        int a = 1;
+        isPlay = true;
     }
 
     public void onPause() {
@@ -350,6 +338,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                             //canvas 执行一系列画的动作
                             int size = Math.min(mData.size(), (index + 3));
                             mBackList.clear();
+                            if (move == 0) ScoreHelper.getInstance().initData();//初始化打分
                             move += mTimesLenth / mReta;
                             for (int i = index; i < size; i++) {
                                 List<SaveTimeData> frist_hide = mData.get(i).getFrist();
@@ -397,6 +386,8 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                                     timeError -= 1;
                                     mTime += 1;
                                 }
+                                MyLogUtils.e(TAG, "mTime：" + mTime);
+                                MyLogUtils.e(TAG, "time：" + time);
                                 Thread.sleep(Math.max(0, mTime - time));
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
@@ -568,7 +559,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         mRectF.top = saveTimeData.getTop() + move;
         mRectF.right = saveTimeData.getRight();
         mRectF.bottom = saveTimeData.getBottom() + move;
-        ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, getBottom());
+        ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, mLayoutHeight);
         if (firstLine && saveTimeData.getArriveBottomState() == 1) {
             //该数据对应的音符第一次达到pullview底部
             if (j == 0) {
@@ -644,7 +635,6 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                 mPrgoressView.setMove(0);
             }
         });
-        ScoreHelper.getInstance().initData();
     }
 
     /**
@@ -654,7 +644,6 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         new Thread(new Runnable() {
             @Override
             public void run() {
-
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
