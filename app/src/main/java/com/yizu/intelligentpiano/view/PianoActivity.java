@@ -235,8 +235,8 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     @Override
     protected void setData() {
         setRegisterReceiver();
-//        getSongsData();
-        test();
+        getSongsData();
+//        test();
     }
 
     private void test() {

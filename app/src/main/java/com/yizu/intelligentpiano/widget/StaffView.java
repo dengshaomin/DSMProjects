@@ -516,6 +516,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
 //            SurfaceHolder surfaceHolder = holder;
             while (true) {
                 if (isMove) {
+                    isMove = false;
                     synchronized (holder) {
                         //锁定canvas
                         mCanvas = holder.lockCanvas();
@@ -524,7 +525,9 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                             if (mCanvas != null) {
                                 mCanvas.drawColor(Color.WHITE);
                                 //canvas 执行一系列画的动作
+                                long time = System.currentTimeMillis();
                                 initStaff(mCanvas);
+                                Log.e("code", (System.currentTimeMillis() - time) + "");
                             }
                         } catch (Exception e) {
                             Log.e(TAG, e.getMessage());
@@ -3451,6 +3454,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * @param lenth
      */
     public void remove(float lenth, int index) {
+        isMove = true;
         moveLenth = lenth;
         this.index = index;
 //        MyLogUtils.e(TAG, "Staff  3:" + lenth);
