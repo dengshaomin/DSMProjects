@@ -44,19 +44,16 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
 
     private List<PullData> mData;
 
-    private PianoKeyView mPianoKeyView;
-
     //    //每个duration多少像素
     private float mSpeedLenth = 0;
-    //    //每个duration多少毫秒
-//    private float mSpeedTime = 0;
-    private float mReta = 20;
-    //每拍的时间
-    private float mTimesTime = 0;
-    //每拍的长度
-    private float mTimesLenth = 0;
+
+    private float mReta = 0.8f;
+//    //每拍的时间
+//    private float mTimesTime = 0;
+//    //每拍的长度
+//    private float mTimesLenth = 0;
     //默认每分钟80拍
-    private int DEFAULT_TIME_NUM = 80;
+//    private int DEFAULT_TIME_NUM = 80;
 
     private Paint mPaint;
     private Paint mYellowPaint;
@@ -93,7 +90,9 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     float timeError = 0;
 
     private Handler handler = new Handler(Looper.getMainLooper());
-
+    /************只管时间不管速度(200拍的速度是最快的，减小速度只需要缩短每次移动的长度)**************/
+    private int mTimess = 60;
+    private float mLenth;//100拍的长度
 
     public PullView(Context context) {
         this(context, null);
@@ -147,7 +146,6 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         if (mStaffView == null) return;
         this.mStaffView = mStaffView;
         this.mPrgoressView = mProgessView;
-        this.mPianoKeyView = mPianoKeyView;
         mAttributess = null;
         mAttributess = mStaffView.getmAttributess();
         if (mAttributess == null) return;
@@ -160,21 +158,17 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         mSpeedLenth = mStaffView.getmSpeedLenth();
 //        //每个duration多少毫秒
 //        mSpeedTime = mStaffView.getmSpeedTime();
-        mTimesTime = 60 * 1000 / mStaffView.getTimes();
-        mTimesLenth = mStaffView.getmSpeedLenth() * Float.valueOf(mAttributess.getDivisions());
+//        mTimesTime = 60 * 1000 / mStaffView.getTimes();
+        mLenth = mSpeedLenth * Float.valueOf(mAttributess.getDivisions()) / 10;
         //默认每分钟88拍
-        DEFAULT_TIME_NUM = mStaffView.getTimes();
-        MyLogUtils.e(TAG, "拍数：" + DEFAULT_TIME_NUM);
+//        DEFAULT_TIME_NUM = mStaffView.getTimes();
+//        MyLogUtils.e(TAG, "拍数：" + DEFAULT_TIME_NUM);
 
         mData = mStaffView.getPullData();
         if (mData == null) return;
         if (mWhiteKeyWidth == 0) {
-            if (mPianoKeyView != null) {
-                mWhiteKeyWidth = mPianoKeyView.getmWhiteKeyWidth();
-                mBlackKeyWidth = mPianoKeyView.getmBlackKeyWidth();
-            } else {
-                return;
-            }
+            mWhiteKeyWidth = mPianoKeyView.getmWhiteKeyWidth();
+            mBlackKeyWidth = mPianoKeyView.getmBlackKeyWidth();
         }
         caAllPosition(true);
         handler.post(new Runnable() {
@@ -245,7 +239,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
             return;
         }
         isPlay = isplay;
-        mStaffView.setMove(isPlay);
+//        mStaffView.setMove(isPlay);
         if (thread != null) {
             thread.interrupt();
             thread = null;
@@ -339,7 +333,8 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                             int size = Math.min(mData.size(), (index + 3));
                             mBackList.clear();
                             if (move == 0) ScoreHelper.getInstance().initData();//初始化打分
-                            move += mTimesLenth / mReta;
+//                            move += mTimesLenth / mReta;
+                            move += mLenth * mReta;
                             for (int i = index; i < size; i++) {
                                 List<SaveTimeData> frist_hide = mData.get(i).getFrist();
                                 List<SaveTimeData> second_hide = mData.get(i).getSecond();
@@ -364,7 +359,8 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                             }
 
                             if (isMoveStaff) {
-                                staff += mTimesLenth / mReta;
+//                                staff += mTimesLenth / mReta;
+                                staff += mLenth * mReta;
                                 int center = mLayoutWith / 2 - (mLayoutWith - mPrgoressView.getmLayoutWidth());
                                 if (staff < center) {
                                     handler.post(new Runnable() {
@@ -380,15 +376,16 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                             }
                             time = System.currentTimeMillis() - time;
                             try {
-                                int mTime = (int) (mTimesTime / mReta);
-                                timeError += mTimesTime / mReta - mTime;
-                                if (timeError > 1) {
-                                    timeError -= 1;
-                                    mTime += 1;
-                                }
-                                MyLogUtils.e(TAG, "mTime：" + mTime);
+//                                int mTime = (int) (mTimesTime / mReta);
+//                                timeError += mTimesTime / mReta - mTime;
+//                                timeError += mTimesTime / mReta - mTime;
+//                                if (timeError > 1) {
+//                                    timeError -= 1;
+//                                    mTime += 1;
+//                                }
+//                                MyLogUtils.e(TAG, "mTime：" + mTime);
                                 MyLogUtils.e(TAG, "time：" + time);
-                                Thread.sleep(Math.max(0, mTime - time));
+                                Thread.sleep(Math.max(0, mTimess - time));
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
@@ -615,18 +612,18 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     private void initAllData() {
         //五线谱移动的距离
         staff = 0;
+        centerX = staff;
         //是否播放五线谱
         isPlay = false;
         //是否移动五线谱
         isMoveStaff = false;
 //        mSpeedTime = mStaffView.getmSpeedTime();
-        mTimesTime = 60 * 1000 / mStaffView.getTimes();
+//        mTimesTime = 60 * 1000 / mStaffView.getTimes();
         index = 0;
         move = 0;
         timeError = 0;
         mStaffView.remove(0, index);
 //        mStaffView.setStartIndex(0);
-        centerX = staff;
         handler.post(new Runnable() {
             @Override
             public void run() {
@@ -670,25 +667,29 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     /**
      * 加速
      */
-    public int accelerate() {
-        DEFAULT_TIME_NUM += 10;
-        if (DEFAULT_TIME_NUM > 200) DEFAULT_TIME_NUM = 200;
-//        mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions()));
-        mTimesTime = 60 * 1000 / DEFAULT_TIME_NUM;
-        if (DEFAULT_TIME_NUM > 50) mReta = 20;
-        return DEFAULT_TIME_NUM;
+    public float accelerate() {
+//        DEFAULT_TIME_NUM += 10;
+//        if (DEFAULT_TIME_NUM > 200) DEFAULT_TIME_NUM = 200;
+////        mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions()));
+//        mTimesTime = 60 * 1000 / DEFAULT_TIME_NUM;
+//        if (DEFAULT_TIME_NUM > 50) mReta = 10;
+        mReta += 0.1;
+        if (mReta >= 1.5) mReta = 1.5f;
+        return mReta;
     }
 
     /**
      * 减速
      */
-    public int deceleration() {
-        DEFAULT_TIME_NUM -= 10;
-        if (DEFAULT_TIME_NUM < 20) DEFAULT_TIME_NUM = 20;
-//        mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions()));
-        mTimesTime = 60 * 1000 / DEFAULT_TIME_NUM;
-        if (DEFAULT_TIME_NUM <= 50) mReta = 30;
-        return DEFAULT_TIME_NUM;
+    public float deceleration() {
+//        DEFAULT_TIME_NUM -= 10;
+//        if (DEFAULT_TIME_NUM < 20) DEFAULT_TIME_NUM = 20;
+////        mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions()));
+//        mTimesTime = 60 * 1000 / DEFAULT_TIME_NUM;
+//        if (DEFAULT_TIME_NUM > 50) mReta = 20;
+        mReta -= 0.1;
+        if (mReta <= 0.5) mReta = 0.5f;
+        return mReta;
     }
 
     /**
@@ -719,9 +720,12 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
-    public int getTimes() {
-        return DEFAULT_TIME_NUM;
+//    public int getTimes() {
+//        return DEFAULT_TIME_NUM;
+//    }
+
+
+    public float getmReta() {
+        return  mReta;
     }
-
-
 }

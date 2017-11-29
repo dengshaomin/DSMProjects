@@ -193,7 +193,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
                 mPullView.setPullData(mStaffView, mPianoKeyView, mProgessView, new IPlay() {
                     @Override
                     public void ReadyFinish() {
-                        mTimesSpeed.setText(mPullView.getTimes() + "  拍/分钟");
+                        mTimesSpeed.setText(mPullView.getmReta() + "  拍/分钟");
                         if (KeyIsOk) {
                             mPlay.setSelected(true);
                             mPullView.play(true);
@@ -235,14 +235,14 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     @Override
     protected void setData() {
         setRegisterReceiver();
-        getSongsData();
-//        test();
+//        getSongsData();
+        test();
     }
 
     private void test() {
-        music_type = "2.3.7";
-        music_title = "月亮代表我的心";
-        music_auther = "lalagu";
+//        music_type = "2.3.7";
+//        music_title = "月亮代表我的心";
+//        music_auther = "lalagu";
 
 //        music_type = "2";
 //        music_title = "梦中的婚礼";
@@ -252,9 +252,9 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
 //        music_title = "月亮之上";
 //        music_auther = "陈苹";
 
-//        music_type = "2.4";
-//        music_title = "别问我是谁";
-//        music_auther = "Lalagu";
+        music_type = "2.4";
+        music_title = "别问我是谁";
+        music_auther = "Lalagu";
         if (myThred != null) {
             myThred.interrupt();
             myThred = null;

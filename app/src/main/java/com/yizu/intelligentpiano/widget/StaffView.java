@@ -55,12 +55,12 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
 
     private final static String TAG = "StaffView";
 
-    //该view划分为6个五线谱
-    private static final int STAFF_NUMS = 6;
-    //一个五线谱的间数
-    private static final int STAFF_LINS_NUM = 4;
-    //总的间数
-    private static final int STAFF_ALL_TAIL_NUMS = STAFF_NUMS * STAFF_LINS_NUM;
+    //    //该view划分为6个五线谱
+//    private static final int STAFF_NUMS = 6;
+//    //一个五线谱的间数
+//    private static final int STAFF_LINS_NUM = 4;
+//    //总的间数
+//    private static final int STAFF_ALL_TAIL_NUMS = STAFF_NUMS * STAFF_LINS_NUM;
     //乐谱线的基本宽度
     private static final int STAFF_LINS_WSITH = 1;
 
@@ -103,7 +103,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     /**
      * 一个间间距
      */
-    private int mLinsRoomWidth;
+    private int mLinsRoomWidth = 0;
     private int mLinsRoomWidth2;
     private int mLinsRoomWidth3;
     private int mLinsRoomWidth4;
@@ -111,8 +111,6 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     private int mLinsRoomWidth6;
     private int mLinsRoomWidth7;
     private int mLinsRoomWidth8;
-    private int mLinsRoomWidth9;
-    private int mLinsRoomWidth10;
 
     //第一条五线谱总的宽度
     private float mFristStaffWidth;
@@ -218,7 +216,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     int beats = 0;
     //    int startIndex = 0;
     private Canvas mCanvas;
-    private boolean isSteam = false;
+//    private boolean isSteam = false;
 
     private int index = 0;
 
@@ -281,8 +279,6 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     private List<List<Rest>> mAllRest = new ArrayList();
     //休止符号(贝塞尔曲线)
     private List<List<Tia>> mAllRestTia = new ArrayList();
-    //初始化音符的时候是音符是否是混乱的，防止出现音符错乱
-    private boolean isConfused = false;
 
 
     /**
@@ -302,6 +298,33 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         holder = getHolder();//获取SurfaceHolder对象，同时指定callback
         holder.addCallback(this);
         initPaint();
+    }
+
+    /**
+     * 初始化五线谱基本数据
+     */
+    private void init() {
+        if (mLinsRoomWidth != 0) return;
+        //6个五线谱，每个五线谱4隔间
+        mLinsRoomWidth = 240 / 24;
+        mLinsRoomWidth2 = mLinsRoomWidth * 2;
+        mLinsRoomWidth3 = mLinsRoomWidth * 3;
+        mLinsRoomWidth4 = mLinsRoomWidth * 4;
+        mLinsRoomWidth5 = mLinsRoomWidth * 5;
+        mLinsRoomWidth6 = mLinsRoomWidth * 6;
+        mLinsRoomWidth7 = mLinsRoomWidth * 7;
+        mLinsRoomWidth8 = mLinsRoomWidth * 8;
+        mLayoutCenterHeight = 240 / 2;
+        twoStaff_fristLins_up = mLayoutCenterHeight - mLinsRoomWidth4;
+        twoStaff_threeLins_up = mLayoutCenterHeight - mLinsRoomWidth6;
+        twoStaff_fiveLins_up = mLayoutCenterHeight - mLinsRoomWidth8;
+
+        twoStaff_fristLins_down = mLayoutCenterHeight + mLinsRoomWidth8;
+        twoStaff_threeLins_down = mLayoutCenterHeight + mLinsRoomWidth6;
+        twoStaff_fiveLins_down = mLayoutCenterHeight + mLinsRoomWidth4;
+        initSignScan();
+        initRiseDrop();
+        mBeamPaint.setStrokeWidth(mLinsRoomWidth / 2);
     }
 
     /**
@@ -412,27 +435,6 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         MyLogUtils.e(TAG, "onMeasure");
         mLayoutWidth = MeasureSpec.getSize(widthMeasureSpec);
         mLayoutHeight = MeasureSpec.getSize(heightMeasureSpec);
-        mLinsRoomWidth = mLayoutHeight / STAFF_ALL_TAIL_NUMS;
-        mLinsRoomWidth2 = mLinsRoomWidth * 2;
-        mLinsRoomWidth3 = mLinsRoomWidth * 3;
-        mLinsRoomWidth4 = mLinsRoomWidth * 4;
-        mLinsRoomWidth5 = mLinsRoomWidth * 5;
-        mLinsRoomWidth6 = mLinsRoomWidth * 6;
-        mLinsRoomWidth7 = mLinsRoomWidth * 7;
-        mLinsRoomWidth8 = mLinsRoomWidth * 8;
-        mLinsRoomWidth9 = mLinsRoomWidth * 9;
-        mLinsRoomWidth10 = mLinsRoomWidth * 10;
-        mLayoutCenterHeight = mLayoutHeight / 2;
-        twoStaff_fristLins_up = mLayoutCenterHeight - mLinsRoomWidth4;
-        twoStaff_threeLins_up = mLayoutCenterHeight - mLinsRoomWidth6;
-        twoStaff_fiveLins_up = mLayoutCenterHeight - mLinsRoomWidth8;
-
-        twoStaff_fristLins_down = mLayoutCenterHeight + mLinsRoomWidth8;
-        twoStaff_threeLins_down = mLayoutCenterHeight + mLinsRoomWidth6;
-        twoStaff_fiveLins_down = mLayoutCenterHeight + mLinsRoomWidth4;
-        initSignScan();
-        initRiseDrop();
-        mBeamPaint.setStrokeWidth(mLinsRoomWidth / 2);
     }
 
     /**
@@ -527,10 +529,10 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                                 //canvas 执行一系列画的动作
                                 long time = System.currentTimeMillis();
                                 initStaff(mCanvas);
-                                Log.e("code", (System.currentTimeMillis() - time) + "");
+                                MyLogUtils.e("code", (System.currentTimeMillis() - time) + "");
                             }
                         } catch (Exception e) {
-                            Log.e(TAG, e.getMessage());
+                            MyLogUtils.e(TAG, e.getMessage());
                         } finally {
                             try {
                                 //释放canvas对象，并发送到SurfaceView
@@ -557,17 +559,14 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
             mPath = new Path();
             //初始化五线谱(条数)
             drawStaffLines(mAttributess, canvas, (fristSingLenth.size() == 0 || moveLenth < fristSingLenth.get(1)));
-            if (isSaveData || isConfused) {
+            if (isSaveData) {
                 MyLogUtils.e(TAG, "绘制");
 //                清除所有数据
                 initData();
                 //绘制音符
                 drawSgin(canvas);
                 isSaveData = false;
-                if (!isConfused) {
-                    isMove = false;
-                    iFinish.success();
-                }
+                iFinish.success();
             } else {
                 //选择绘制
                 selectDraw(canvas);
@@ -593,8 +592,8 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         mPath = new Path();
         for (int i = 0; i < mBlackTia.size(); i++) {
             Tia tia = mBlackTia.get(i);
-            if (tia.getLefts() - moveLenth > mLayoutWidth) continue;
             if (tia.getRightss() - moveLenth < 0) continue;
+            if (tia.getLefts() - moveLenth > mLayoutWidth) continue;
             mPath.moveTo(tia.getLefts() - moveLenth, tia.getTops());
             mPath.quadTo(tia.getX() - moveLenth, tia.getY(), tia.getRightss() - moveLenth, tia.getBottoms());
             canvas.drawPath(mPath, mLinsPaint);
@@ -611,9 +610,10 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
             canvas.drawPath(mPath, mRedPaint);
         }
         int num = Math.max(0, index - 1);
-        int max = Math.min(mAllHead.size(), (index + 10));
-        //每一小节的分割线
+        int max = mAllHead.size();
+        //一小节的分割线
         for (int i = num; i < max; i++) {
+            if (fristSingLenth.get(i) - moveLenth > mLayoutWidth) break;
             StaffSaveData data = mFristMeasureLins.get(i);
             if (data.getLefts() - moveLenth < 0) continue;
             if (data.getLefts() - moveLenth > mLayoutWidth) continue;
@@ -622,6 +622,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         if (isTowStaff) {
             //每一小节的分割线
             for (int i = num; i < max; i++) {
+                if (fristSingLenth.get(i) - moveLenth > mLayoutWidth) break;
                 StaffSaveData data = mSecoundMeasureLins.get(i);
                 if (data.getLefts() - moveLenth < 0) continue;
                 if (data.getLefts() - moveLenth > mLayoutWidth) continue;
@@ -629,6 +630,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
             }
         }
         for (int j = num; j < max; j++) {
+            if (fristSingLenth.get(j) - moveLenth > mLayoutWidth) break;
             //绘制全音符符头
             List<HeadData> wholeHead = mAllWholeHead.get(j);
             for (int i = 0; i < wholeHead.size(); i++) {
@@ -796,11 +798,9 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * 绘制符号
      */
     private void drawSgin(Canvas canvas) {
-        isConfused = false;
         int size = mFristStaffData.size();
         for (int j = 0; j < size; j++) {
             initSgin();
-            isSteam = false;
 //          保存每一小节第一一条五线谱的以一个元素的位置
             fristSingLenth.add(mFristStaffWidth);
             List<MeasureBase> base = mFristStaffData.get(j).getMeasure();
@@ -2546,7 +2546,6 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                         list.add(new Legato(tialX, tialStartY, tialX, tialStopY));
                         legatosMap.put(beam1.getNumber(), list);
                     }
-                    if (beam1.getNumber() == 1) isSteam = true;
                     break;
                 case "end":
                     if (chord) return;
@@ -2562,7 +2561,6 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                     stopX = legatosMap.get(1).get(0).getStopX();
                     stopY = legatosMap.get(1).get(0).getStopY();
                     if (beam1.getNumber() == 1) {
-                        isSteam = false;
                         if (legatosMap.get(1).size() == 1) {
 ////                            只有两个音符
                             if (legatosMap.size() == 1 && forwardHook.size() > 0) {
@@ -2822,8 +2820,6 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         canvas.restore();
         mHead.add(new HeadData(CenterX - mLinsRoomWidth3 / 4, CenterY - mLinsRoomWidth2 / 5, CenterX + mLinsRoomWidth3 / 4, CenterY + mLinsRoomWidth2 / 5,
                 CenterX, CenterY));
-        HeadData data = mHead.get(mHead.size() - 1);
-        if (data.getBottom1() - data.getTop1() > mLinsRoomWidth) isConfused = true;
         if (isAddDot) {
             canvas.drawCircle(CenterX + mLinsRoomWidth3 / 2, CenterY, mLinsRoomWidth / 3, mBlackPaint);
             mDot.add(new Dot(CenterX + mLinsRoomWidth3 / 2, CenterY));
@@ -2837,6 +2833,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * @param staffData
      */
     public void setStaffData(List<Measure> staffData, IFinish iFinish) {
+        init();
         initStaffData();
         if (iFinish != null) {
             this.iFinish = iFinish;
@@ -3454,10 +3451,9 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * @param lenth
      */
     public void remove(float lenth, int index) {
-        isMove = true;
         moveLenth = lenth;
         this.index = index;
-//        MyLogUtils.e(TAG, "Staff  3:" + lenth);
+        isMove = true;
     }
 
     public void onResume() {
@@ -3482,31 +3478,6 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
-    /**
-     * 线程是否绘制
-     *
-     * @param move
-     */
-    public void setMove(boolean move) {
-        isMove = move;
-        if (thread != null) {
-            thread.interrupt();
-            thread = null;
-        }
-        if (isMove) {
-            thread = new MysurfaceviewThread();
-            thread.start();
-        }
-    }
-
-//    /**
-//     * 设置开始绘制的下标
-//     *
-//     * @param index
-//     */
-//    public void setStartIndex(int index) {
-////        startIndex = index;
-//    }
 
     /**
      * 销毁时调用
