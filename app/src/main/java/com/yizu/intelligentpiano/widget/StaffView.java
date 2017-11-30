@@ -521,9 +521,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                     isMove = false;
                     synchronized (holder) {
                         //锁定canvas
-                        if(mCanvas == null) {
-                            mCanvas = holder.lockCanvas();
-                        }
+                        mCanvas = holder.lockCanvas();
                         try {
                             //canvas 执行一系列画的动作
                             if (mCanvas != null) {
@@ -534,13 +532,13 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                             }
                         } catch (Exception e) {
                         } finally {
-//                            try {
-//                                //释放canvas对象，并发送到SurfaceView
-////                                holder.unlockCanvasAndPost(mCanvas);
-////                                mCanvas = null;
-//                            } catch (Exception e) {
-//                                e.printStackTrace();
-//                            }
+                            try {
+                                //释放canvas对象，并发送到SurfaceView
+                                holder.unlockCanvasAndPost(mCanvas);
+                                mCanvas = null;
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 }

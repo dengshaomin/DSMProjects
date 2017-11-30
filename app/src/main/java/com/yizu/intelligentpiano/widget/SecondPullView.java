@@ -174,7 +174,7 @@ public class SecondPullView extends SurfaceView implements SurfaceHolder.Callbac
      */
     //设置第二条瀑布流的数据
     public void setData(List<PullData> data, int mWhiteKeyWidth) {
-        MyLogUtils.e(TAG,"初始化第二条瀑布流");
+        MyLogUtils.e(TAG, "初始化第二条瀑布流");
         move = 0;
         isPlay = true;
         mData = data;
@@ -268,6 +268,8 @@ public class SecondPullView extends SurfaceView implements SurfaceHolder.Callbac
     /**
      * 绘制结束刷新画布
      */
+    private Canvas canvas;
+
     public void endRefreshCanvas() {
         new Thread(new Runnable() {
             @Override
@@ -281,11 +283,12 @@ public class SecondPullView extends SurfaceView implements SurfaceHolder.Callbac
                 synchronized (surfaceHolder) {
                     //锁定canvas
                     try {
-                        Canvas canvas = surfaceHolder.lockCanvas();
+                        if (canvas == null)
+                            canvas = surfaceHolder.lockCanvas();
                         //canvas 执行一系列画的动作
                         if (canvas != null) {
                             canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-                            surfaceHolder.unlockCanvasAndPost(canvas);
+//                            surfaceHolder.unlockCanvasAndPost(canvas);
                         }
                     } catch (Exception e) {
                     }
@@ -296,6 +299,7 @@ public class SecondPullView extends SurfaceView implements SurfaceHolder.Callbac
 
     /**
      * 播放
+     *
      * @param isplay
      */
     public void play(boolean isplay) {
