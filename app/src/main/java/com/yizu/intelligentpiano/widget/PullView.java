@@ -4,11 +4,13 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -156,7 +158,8 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
 //        //每个duration多少毫秒
 //        mSpeedTime = mStaffView.getmSpeedTime();
 //        mTimesTime = 60 * 1000 / mStaffView.getTimes();
-        mLenth = mSpeedLenth * Float.valueOf(mAttributess.getDivisions()) / 10;
+//        mLenth = mSpeedLenth * Float.valueOf(mAttributess.getDivisions()) / 10;
+        mLenth = 5;
         //默认每分钟88拍
 //        DEFAULT_TIME_NUM = mStaffView.getTimes();
 //        MyLogUtils.e(TAG, "拍数：" + DEFAULT_TIME_NUM);
@@ -325,13 +328,13 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                     synchronized (holder) {
                         //锁定canvas
                         time = System.currentTimeMillis();
-                        mCanvas = holder.lockCanvas();
+                        if (mCanvas == null)
+                            mCanvas = holder.lockCanvas();
                         //canvas 执行一系列画的动作
                         if (mCanvas != null) {
                             mCanvas.drawColor(Color.BLACK);
                             //canvas 执行一系列画的动作
                             move += mLenth * mReta;
-                            long time2 = 0;
                             //显示瀑布流就绘制
                             if (isShowPullView) {
                                 int size = Math.min(mData.size(), (index + 3));
@@ -344,8 +347,6 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                                         move(mCanvas, frist_hide.get(j), i, j);
                                     }
                                 }
-                                long time1 = System.currentTimeMillis();
-                                MyLogUtils.e(TAG,"瀑布流"+(time1-time));
 //                                for (int k = 0; k < mBackList.size(); k++) {
 //                                    //引导条
 //                                    mRectF.left = mBackList.get(k).getLeft();
@@ -354,18 +355,14 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
 //                                    mRectF.bottom = mLayoutHeight;
 //                                    mCanvas.drawRect(mRectF, mBackgroundPaint);
 //                                }
-                                time2 = System.currentTimeMillis();
-                                MyLogUtils.e(TAG,"背景"+(time2-time1));
                             }
-                            try {
-                                //释放canvas对象，并发送到SurfaceView
-                                holder.unlockCanvasAndPost(mCanvas);
-                                mCanvas = null;
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                            long time3 = System.currentTimeMillis();
-                            MyLogUtils.e(TAG,"释放"+(time3-time2));
+//                            try {
+//                                //释放canvas对象，并发送到SurfaceView
+////                                holder.unlockCanvasAndPost(mCanvas);
+////                                mCanvas = null;
+//                            } catch (Exception e) {
+//                                e.printStackTrace();
+//                            }
                             //驱动五线谱
                             if (isMoveStaff) {
 //                                staff += mTimesLenth / mReta;
@@ -383,12 +380,8 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                                     mStaffView.remove(staff - centerX, index);
                                 }
                             }
-                            long time4 = System.currentTimeMillis();
-                            MyLogUtils.e(TAG,"移动"+(time4-time3));
-                            time = System.currentTimeMillis() - time;
                             try {
-                                MyLogUtils.e(TAG, "time：" + time);
-                                Thread.sleep(Math.max(0, mTimess - time));
+                                Thread.sleep(16 - (System.currentTimeMillis() - time));
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
@@ -589,6 +582,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                 if (!isSave) mBackList.add(new PullBack(mRectF.left, mRectF.right));
             }
         }
+
 //        绘制结束
         if (saveTimeData.isLastNode() && mRectF.top > getBottom()) {
             if (iPlayEnd != null) {
@@ -672,7 +666,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     public String accelerate() {
         mReta += 0.1f;
         if (mReta >= 1.5f) mReta = 1.5f;
-        DecimalFormat decimalFormat=new DecimalFormat("0.0");
+        DecimalFormat decimalFormat = new DecimalFormat("0.0");
         return decimalFormat.format(mReta);
     }
 
@@ -682,7 +676,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     public String deceleration() {
         mReta -= 0.1f;
         if (mReta <= 0.5f) mReta = 0.5f;
-        DecimalFormat decimalFormat=new DecimalFormat("0.0");
+        DecimalFormat decimalFormat = new DecimalFormat("0.0");
         return decimalFormat.format(mReta);
     }
 
@@ -708,7 +702,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
 
 
     public String getmReta() {
-        DecimalFormat decimalFormat=new DecimalFormat("0.0");
+        DecimalFormat decimalFormat = new DecimalFormat("0.0");
         return decimalFormat.format(mReta);
     }
 }
