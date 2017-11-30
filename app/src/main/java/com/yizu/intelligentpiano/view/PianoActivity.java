@@ -38,6 +38,7 @@ import com.yizu.intelligentpiano.utils.XmlPrareUtils;
 import com.yizu.intelligentpiano.widget.PianoKeyView;
 import com.yizu.intelligentpiano.widget.PrgoressView;
 import com.yizu.intelligentpiano.widget.PullView;
+import com.yizu.intelligentpiano.widget.SecondPullView;
 import com.yizu.intelligentpiano.widget.StaffView;
 
 import java.util.HashMap;
@@ -54,6 +55,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     private PianoKeyView mPianoKeyView;
     private StaffView mStaffView;
     private PullView mPullView;
+    private SecondPullView mPullView2;
     private PrgoressView mProgessView;
     private RelativeLayout mTime;
     private RelativeLayout mScore;
@@ -190,10 +192,10 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
                         mProgessView.setPrgoressData(mStaffView);
                     }
                 });                //更新PullView的数据
-                mPullView.setPullData(mStaffView, mPianoKeyView, mProgessView, new IPlay() {
+                mPullView.setPullData(mStaffView, mPianoKeyView, mProgessView, mPullView2, new IPlay() {
                     @Override
                     public void ReadyFinish() {
-                        mTimesSpeed.setText(mPullView.getmReta() + "  拍/分钟");
+                        mTimesSpeed.setText(mPullView.getmReta());
                         if (KeyIsOk) {
                             mPlay.setSelected(true);
                             mPullView.play(true);
@@ -235,8 +237,8 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     @Override
     protected void setData() {
         setRegisterReceiver();
-//        getSongsData();
-        test();
+        getSongsData();
+//        test();
     }
 
     private void test() {
@@ -244,17 +246,17 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
 //        music_title = "月亮代表我的心";
 //        music_auther = "lalagu";
 
-//        music_type = "2";
-//        music_title = "梦中的婚礼";
-//        music_auther = "lalagu";
+        music_type = "2";
+        music_title = "梦中的婚礼";
+        music_auther = "lalagu";
 
 //        music_type = "2.3.4.5.6";
 //        music_title = "月亮之上";
 //        music_auther = "陈苹";
 
-        music_type = "2.4";
-        music_title = "别问我是谁";
-        music_auther = "Lalagu";
+//        music_type = "2.4";
+//        music_title = "别问我是谁";
+//        music_auther = "Lalagu";
         if (myThred != null) {
             myThred.interrupt();
             myThred = null;
@@ -295,6 +297,8 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
         MyLogUtils.e(TAG, "isShowPull：" + isShowPull);
         //设置是否显示瀑布流
         mPullView.isShow(isShowPull);
+        mPullView2.isShow(isShowPull);
+
         if (!isShowPull) realyTimeScore.setVisibility(View.GONE);
         mNickName.setText(nickName);
         Glide.with(PianoActivity.this).load(icon).into(mIcon);
@@ -341,6 +345,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
         mPianoKeyView = findViewById(R.id.piano_key);
         mStaffView = findViewById(R.id.staffview);
         mPullView = findViewById(R.id.pullview);
+        mPullView2 = findViewById(R.id.pullview2);
         mPlay = findViewById(R.id.play);
         mSpeed = findViewById(R.id.speed);
         mRewind = findViewById(R.id.rewind);
@@ -398,6 +403,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     protected void onResume() {
         super.onResume();
         mPullView.onResume();
+        mPullView2.onResume();
         mStaffView.onResume();
     }
 
@@ -405,6 +411,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     protected void onPause() {
         super.onPause();
         mPullView.onPause();
+        mPullView2.onPause();
         mStaffView.onPause();
     }
 
@@ -422,11 +429,11 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
                 break;
             case R.id.speed:
                 //快放
-                mTimesSpeed.setText(mPullView.accelerate() + "  拍/分钟");
+                mTimesSpeed.setText(mPullView.accelerate());
                 break;
             case R.id.rewind:
 //                慢放
-                mTimesSpeed.setText(mPullView.deceleration() + "  拍/分钟");
+                mTimesSpeed.setText(mPullView.deceleration());
                 break;
         }
     }
@@ -461,6 +468,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
                     if (mPullView != null) {
                         mPullView.resetPullView();
                     }
+                    if (mPullView2 != null) mPullView2.resetPullView();
                     getSongsData();
                     break;
             }
@@ -471,6 +479,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     protected void onDestroy() {
         mStaffView.onDrestry();
         mPullView.onDrestry();
+        mPullView2.onDrestry();
         super.onDestroy();
         unregisterReceiver(receiver);
     }
@@ -488,7 +497,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
 
                     } else {
                         //慢放
-                        mTimesSpeed.setText(mPullView.deceleration() + "  拍/分钟");
+                        mTimesSpeed.setText(mPullView.deceleration());
                     }
                     return true;
                 case KeyEvent.KEYCODE_DPAD_RIGHT:
@@ -499,7 +508,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
                     } else if (mTime.getVisibility() == View.VISIBLE) {
                     } else {
                         //快放
-                        mTimesSpeed.setText(mPullView.accelerate() + "  拍/分钟");
+                        mTimesSpeed.setText(mPullView.accelerate());
                     }
                     return true;
                 case KeyEvent.KEYCODE_DPAD_CENTER:

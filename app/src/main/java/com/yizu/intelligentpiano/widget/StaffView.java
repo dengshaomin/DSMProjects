@@ -432,7 +432,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        MyLogUtils.e(TAG, "onMeasure");
+//        MyLogUtils.e(TAG, "onMeasure");
         mLayoutWidth = MeasureSpec.getSize(widthMeasureSpec);
         mLayoutHeight = MeasureSpec.getSize(heightMeasureSpec);
     }
@@ -525,11 +525,11 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                         try {
                             //canvas 执行一系列画的动作
                             if (mCanvas != null) {
+                                long time = System.currentTimeMillis();
                                 mCanvas.drawColor(Color.WHITE);
                                 //canvas 执行一系列画的动作
-                                long time = System.currentTimeMillis();
                                 initStaff(mCanvas);
-                                MyLogUtils.e("code", (System.currentTimeMillis() - time) + "");
+                                MyLogUtils.e(TAG, "绘制时间"+(System.currentTimeMillis() - time) + "");
                             }
                         } catch (Exception e) {
                             MyLogUtils.e(TAG, e.getMessage());
@@ -2833,6 +2833,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * @param staffData
      */
     public void setStaffData(List<Measure> staffData, IFinish iFinish) {
+        MyLogUtils.e(TAG,"初始化五线谱");
         init();
         initStaffData();
         if (iFinish != null) {
@@ -3493,4 +3494,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
+    public int getmLayoutWidth() {
+        return mLayoutWidth;
+    }
 }

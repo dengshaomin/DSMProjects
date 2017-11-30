@@ -70,7 +70,7 @@ public class PianoKeyView extends View {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        MyLogUtils.e(TAG, "onMeasure");
+//        MyLogUtils.e(TAG, "onMeasure");
         //获取布局宽度
         mLayoutWidth = MeasureSpec.getSize(widthMeasureSpec);
         Drawable whiteKeyDrawable = ContextCompat.getDrawable(mContext, R.drawable.white_piano_key);
@@ -84,7 +84,7 @@ public class PianoKeyView extends View {
         float scale = (float) whiteKeyHeight / whiteKeyWidth;
         MyLogUtils.e(TAG, "" + scale);
         //白键宽度
-        mWhiteKeyWidth = (mLayoutWidth+60) / WHITE_PIANO_KEY_NUMS;
+        mWhiteKeyWidth = (mLayoutWidth + 60) / WHITE_PIANO_KEY_NUMS;
 //        if (mLayoutWidth % WHITE_PIANO_KEY_NUMS != 0) {
 //            mWhiteKeyWidth += 1;
 //        }
@@ -104,7 +104,8 @@ public class PianoKeyView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        MyLogUtils.e(TAG, "onDraw");
+//        MyLogUtils.e(TAG, "onDraw");
+//        long time = System.currentTimeMillis();
         if (mPiano == null) {
             mPiano = new Piano(mContext, mBlackKeyHeight, mBlackKeyWidth,
                     mWhiteKeyHeight, mWhiteKeyWidth, scaleHeight, scaleWidth);
@@ -127,6 +128,7 @@ public class PianoKeyView extends View {
                 key.getKeyDrawable().draw(canvas);
             }
         }
+//        MyLogUtils.e(TAG, "键盘绘制时间：" + (System.currentTimeMillis() - time));
     }
 
 

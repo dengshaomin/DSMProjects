@@ -55,7 +55,7 @@ public class ScoreHelper {
      * @param saveTimeData
      * @param bottom
      */
-    public void setCorrectKey(RectF rectF, SaveTimeData saveTimeData, int bottom) {
+    public synchronized void setCorrectKey(RectF rectF, SaveTimeData saveTimeData, int bottom) {
         if (correctKeys == null) correctKeys = new ArrayList<>();
         if (rectF.bottom >= bottom && rectF.top <= bottom) {
             //设置当前音符的位置的状态。0:未到弹奏 1：开始弹奏 2.结束弹奏

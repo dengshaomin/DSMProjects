@@ -23,6 +23,7 @@ import com.yizu.intelligentpiano.constens.ScoreHelper;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
 import com.yizu.intelligentpiano.utils.MyToast;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,14 +49,8 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     private float mSpeedLenth = 0;
 
     private float mReta = 0.8f;
-//    //每拍的时间
-//    private float mTimesTime = 0;
-//    //每拍的长度
-//    private float mTimesLenth = 0;
-    //默认每分钟80拍
-//    private int DEFAULT_TIME_NUM = 80;
-
-    private Paint mPaint;
+    //默认显示瀑布流
+    private boolean isShowPullView = true;
     private Paint mYellowPaint;
     private Paint mBackgroundPaint;
 
@@ -88,6 +83,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     long time = 0;
     //缩小时间的误差
     float timeError = 0;
+    private SecondPullView mPullView2;
 
     private Handler handler = new Handler(Looper.getMainLooper());
     /************只管时间不管速度(200拍的速度是最快的，减小速度只需要缩短每次移动的长度)**************/
@@ -106,10 +102,6 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         super(context, attrs, defStyleAttr);
         holder = getHolder();//获取SurfaceHolder对象，同时指定callback
         holder.addCallback(this);
-        mPaint = new Paint();
-        mPaint.setStyle(Paint.Style.FILL);
-        mPaint.setColor(getResources().getColor(R.color.blue));
-        mPaint.setAntiAlias(true);
 
         mYellowPaint = new Paint();
         mYellowPaint.setStyle(Paint.Style.FILL);
@@ -126,7 +118,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        MyLogUtils.e(TAG, "onMeasure");
+//        MyLogUtils.e(TAG, "onMeasure");
         mLayoutWith = MeasureSpec.getSize(widthMeasureSpec);
         mLayoutHeight = MeasureSpec.getSize(heightMeasureSpec);
     }
@@ -138,19 +130,24 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
      * @param mStaffView
      * @param mPianoKeyView
      * @param mProgessView
+     * @param mPullView2
      * @param iPlay
      */
-    public void setPullData(StaffView mStaffView, PianoKeyView mPianoKeyView, PrgoressView mProgessView, final IPlay iPlay) {
-        MyLogUtils.e(TAG, "setPullData");
+    public void setPullData(StaffView mStaffView, PianoKeyView mPianoKeyView,
+                            PrgoressView mProgessView, SecondPullView mPullView2, final IPlay iPlay) {
+        MyLogUtils.e(TAG, "初始化第一条瀑布流");
         if (mPianoKeyView == null) return;
         if (mStaffView == null) return;
+        if (mProgessView == null) return;
+        if (mPullView2 == null) return;
         this.mStaffView = mStaffView;
         this.mPrgoressView = mProgessView;
+        this.mPullView2 = mPullView2;
         mAttributess = null;
         mAttributess = mStaffView.getmAttributess();
         if (mAttributess == null) return;
         if (mStaffView.getPullData() == null) return;
-        if (mProgessView == null) return;
+
         if (mStaffView.getFristSingLenth() == null) return;
         initAllData();
         fristSingLenth = mStaffView.getFristSingLenth();
@@ -228,6 +225,9 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         } else {
             mData.get(minI).getSecond().get(minJ).setLastNode(true);
         }
+        if (isFrist) {
+            mPullView2.setData(mData, mWhiteKeyWidth);
+        }
     }
 
     /**
@@ -239,7 +239,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
             return;
         }
         isPlay = isplay;
-//        mStaffView.setMove(isPlay);
+        mPullView2.play(isplay);
         if (thread != null) {
             thread.interrupt();
             thread = null;
@@ -324,31 +324,38 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                 if (isPlay) {
                     synchronized (holder) {
                         //锁定canvas
+                        time = System.currentTimeMillis();
                         mCanvas = holder.lockCanvas();
                         //canvas 执行一系列画的动作
                         if (mCanvas != null) {
-                            time = System.currentTimeMillis();
                             mCanvas.drawColor(Color.BLACK);
                             //canvas 执行一系列画的动作
-                            int size = Math.min(mData.size(), (index + 3));
-                            mBackList.clear();
-                            if (move == 0) ScoreHelper.getInstance().initData();//初始化打分
-//                            move += mTimesLenth / mReta;
                             move += mLenth * mReta;
-                            for (int i = index; i < size; i++) {
-                                List<SaveTimeData> frist_hide = mData.get(i).getFrist();
-                                List<SaveTimeData> second_hide = mData.get(i).getSecond();
-                                for (int j = 0; j < frist_hide.size(); j++) {
-                                    move(mCanvas, frist_hide.get(j), true, i, j);
+                            long time2 = 0;
+                            //显示瀑布流就绘制
+                            if (isShowPullView) {
+                                int size = Math.min(mData.size(), (index + 3));
+                                mBackList.clear();
+                                if (mPullView2 != null) mPullView2.setMove(move, index, size);
+                                if (move == 0) ScoreHelper.getInstance().initData();//初始化打分
+                                for (int i = index; i < size; i++) {
+                                    List<SaveTimeData> frist_hide = mData.get(i).getFrist();
+                                    for (int j = 0; j < frist_hide.size(); j++) {
+                                        move(mCanvas, frist_hide.get(j), i, j);
+                                    }
                                 }
-                                for (int j = 0; j < second_hide.size(); j++) {
-                                    move(mCanvas, second_hide.get(j), false, i, j);
-                                }
-                            }
-
-                            for (int k = 0; k < mBackList.size(); k++) {
-                                //引导条
-                                mCanvas.drawRect(new RectF(mBackList.get(k).getLeft(), 0, mBackList.get(k).getRight(), mLayoutHeight), mBackgroundPaint);
+                                long time1 = System.currentTimeMillis();
+                                MyLogUtils.e(TAG,"瀑布流"+(time1-time));
+//                                for (int k = 0; k < mBackList.size(); k++) {
+//                                    //引导条
+//                                    mRectF.left = mBackList.get(k).getLeft();
+//                                    mRectF.top = 0;
+//                                    mRectF.right = mBackList.get(k).getRight();
+//                                    mRectF.bottom = mLayoutHeight;
+//                                    mCanvas.drawRect(mRectF, mBackgroundPaint);
+//                                }
+                                time2 = System.currentTimeMillis();
+                                MyLogUtils.e(TAG,"背景"+(time2-time1));
                             }
                             try {
                                 //释放canvas对象，并发送到SurfaceView
@@ -357,11 +364,13 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-
+                            long time3 = System.currentTimeMillis();
+                            MyLogUtils.e(TAG,"释放"+(time3-time2));
+                            //驱动五线谱
                             if (isMoveStaff) {
 //                                staff += mTimesLenth / mReta;
                                 staff += mLenth * mReta;
-                                int center = mLayoutWith / 2 - (mLayoutWith - mPrgoressView.getmLayoutWidth());
+                                int center = mLayoutWith / 2 - (mLayoutWith - mStaffView.getmLayoutWidth());
                                 if (staff < center) {
                                     handler.post(new Runnable() {
                                         @Override
@@ -374,16 +383,10 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                                     mStaffView.remove(staff - centerX, index);
                                 }
                             }
+                            long time4 = System.currentTimeMillis();
+                            MyLogUtils.e(TAG,"移动"+(time4-time3));
                             time = System.currentTimeMillis() - time;
                             try {
-//                                int mTime = (int) (mTimesTime / mReta);
-//                                timeError += mTimesTime / mReta - mTime;
-//                                timeError += mTimesTime / mReta - mTime;
-//                                if (timeError > 1) {
-//                                    timeError -= 1;
-//                                    mTime += 1;
-//                                }
-//                                MyLogUtils.e(TAG, "mTime：" + mTime);
                                 MyLogUtils.e(TAG, "time：" + time);
                                 Thread.sleep(Math.max(0, mTimess - time));
                             } catch (InterruptedException e) {
@@ -547,17 +550,16 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
      *
      * @param canvas
      * @param saveTimeData
-     * @param firstLine
      * @param i
      * @param j
      */
-    private void move(Canvas canvas, final SaveTimeData saveTimeData, final boolean firstLine, final int i, final int j) {
+    private void move(Canvas canvas, final SaveTimeData saveTimeData, final int i, final int j) {
         mRectF.left = saveTimeData.getLeft();
         mRectF.top = saveTimeData.getTop() + move;
         mRectF.right = saveTimeData.getRight();
         mRectF.bottom = saveTimeData.getBottom() + move;
         ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, mLayoutHeight);
-        if (firstLine && saveTimeData.getArriveBottomState() == 1) {
+        if (saveTimeData.getArriveBottomState() == 1) {
             //该数据对应的音符第一次达到pullview底部
             if (j == 0) {
                 if (i == 0) {
@@ -566,7 +568,6 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                         @Override
                         public void run() {
                             mPrgoressView.setIsShow(true);
-
                         }
                     });
                 }
@@ -576,7 +577,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         }
         if (mRectF.bottom > 0 && mRectF.top < mLayoutHeight) {
             if (!saveTimeData.isRest()) {
-                canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, !firstLine ? mPaint : mYellowPaint);
+                canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, mYellowPaint);
                 //保存引导条
                 boolean isSave = false;
                 for (int k = 0; k < mBackList.size(); k++) {
@@ -623,6 +624,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         move = 0;
         timeError = 0;
         mStaffView.remove(0, index);
+        mPullView2.setMove(0, 0, 0);
 //        mStaffView.setStartIndex(0);
         handler.post(new Runnable() {
             @Override
@@ -667,29 +669,21 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     /**
      * 加速
      */
-    public float accelerate() {
-//        DEFAULT_TIME_NUM += 10;
-//        if (DEFAULT_TIME_NUM > 200) DEFAULT_TIME_NUM = 200;
-////        mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions()));
-//        mTimesTime = 60 * 1000 / DEFAULT_TIME_NUM;
-//        if (DEFAULT_TIME_NUM > 50) mReta = 10;
-        mReta += 0.1;
-        if (mReta >= 1.5) mReta = 1.5f;
-        return mReta;
+    public String accelerate() {
+        mReta += 0.1f;
+        if (mReta >= 1.5f) mReta = 1.5f;
+        DecimalFormat decimalFormat=new DecimalFormat("0.0");
+        return decimalFormat.format(mReta);
     }
 
     /**
      * 减速
      */
-    public float deceleration() {
-//        DEFAULT_TIME_NUM -= 10;
-//        if (DEFAULT_TIME_NUM < 20) DEFAULT_TIME_NUM = 20;
-////        mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * Integer.valueOf(mAttributess.getDivisions()));
-//        mTimesTime = 60 * 1000 / DEFAULT_TIME_NUM;
-//        if (DEFAULT_TIME_NUM > 50) mReta = 20;
-        mReta -= 0.1;
-        if (mReta <= 0.5) mReta = 0.5f;
-        return mReta;
+    public String deceleration() {
+        mReta -= 0.1f;
+        if (mReta <= 0.5f) mReta = 0.5f;
+        DecimalFormat decimalFormat=new DecimalFormat("0.0");
+        return decimalFormat.format(mReta);
     }
 
     /**
@@ -698,15 +692,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
      * @param isShowPull
      */
     public void isShow(boolean isShowPull) {
-        if (!isShowPull) {
-            mPaint.setColor(getResources().getColor(R.color.none));
-            mYellowPaint.setColor(getResources().getColor(R.color.none));
-            mBackgroundPaint.setColor(getResources().getColor(R.color.none));
-        } else {
-            mPaint.setColor(getResources().getColor(R.color.blue));
-            mYellowPaint.setColor(getResources().getColor(R.color.yellow));
-            mBackgroundPaint.setColor(getResources().getColor(R.color.pullcolor));
-        }
+        isShowPullView = isShowPull;
     }
 
     public void onDrestry() {
@@ -720,12 +706,9 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
-//    public int getTimes() {
-//        return DEFAULT_TIME_NUM;
-//    }
 
-
-    public float getmReta() {
-        return  mReta;
+    public String getmReta() {
+        DecimalFormat decimalFormat=new DecimalFormat("0.0");
+        return decimalFormat.format(mReta);
     }
 }

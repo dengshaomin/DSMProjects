@@ -40,7 +40,6 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-import jp.kshoji.driver.midi.device.MidiInputDevice;
 
 /**
  * 登陆界面,主界面
@@ -70,7 +69,7 @@ public class MainActivity extends BaseActivity {
         if (PreManger.instance().getStatus().equals("2")) {
             button.setVisibility(View.VISIBLE);
         }
-        startActivity(new Intent(MainActivity.this, PianoActivity.class));
+//        startActivity(new Intent(MainActivity.this, PianoActivity.class));
         button.setSelected(true);
         cheackedPermisition();
     }

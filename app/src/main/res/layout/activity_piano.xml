@@ -105,13 +105,20 @@
             android:layout_width="match_parent"
             android:layout_height="@dimen/com_0dp"
             android:layout_weight="1">
-
-            <com.yizu.intelligentpiano.widget.PullView
-                android:id="@+id/pullview"
+            <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentTop="true" />
+                android:layout_height="match_parent">
+                <com.yizu.intelligentpiano.widget.SecondPullView
+                    android:id="@+id/pullview2"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    />
+                <com.yizu.intelligentpiano.widget.PullView
+                    android:id="@+id/pullview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    />
+            </RelativeLayout>
 
             <LinearLayout
                 android:layout_width="wrap_content"
