@@ -12,6 +12,8 @@ import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.chillingvan.canvasgl.ICanvasGL;
+import com.chillingvan.canvasgl.glview.GLContinuousView;
 import com.yizu.intelligentpiano.R;
 import com.yizu.intelligentpiano.bean.PullBack;
 import com.yizu.intelligentpiano.bean.PullData;
@@ -32,7 +34,7 @@ import java.util.List;
  * All Rights Reserved by YiZu
  */
 
-public class PullView extends SurfaceView implements SurfaceHolder.Callback {
+public class PullView extends GLContinuousView {
     private final static String TAG = "PullView";
     //白键宽度
     private int mWhiteKeyWidth;
@@ -94,11 +96,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public PullView(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, 0);
-    }
-
-    public PullView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
+        super(context, attrs);
         holder = getHolder();//获取SurfaceHolder对象，同时指定callback
         holder.addCallback(this);
 
@@ -122,6 +120,61 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         mBackgroundPaint.setColor(getResources().getColor(R.color.pullcolor));
         mBackgroundPaint.setAntiAlias(true);
     }
+
+    @Override
+    protected void onGLDraw(ICanvasGL canvas) {
+        long time = System.currentTimeMillis();
+        move += mLenth * mReta;
+        //显示瀑布流就绘制
+        if (isShowPullView) {
+            int size = Math.min(mData.size(), (index + 3));
+            mBackList.clear();
+            if (move == 0) ScoreHelper.getInstance().initData();//初始化打分
+            for (int i = index; i < size; i++) {
+                List<SaveTimeData> frist_hide = mData.get(i).getFrist();
+                for (int j = 0; j < frist_hide.size(); j++) {
+                    move(mCanvas, frist_hide.get(j), i, j, true);
+                }
+            }
+            for (int i = index; i < size; i++) {
+                List<SaveTimeData> second_hide = mData.get(i).getSecond();
+                for (int j = 0; j < second_hide.size(); j++) {
+                    move(mCanvas, second_hide.get(j), i, j, false);
+                }
+            }
+            for (int k = 0; k < mBackList.size(); k++) {
+                //引导条
+                mRectF.left = mBackList.get(k).getLeft();
+                mRectF.top = 0;
+                mRectF.right = mBackList.get(k).getRight();
+                mRectF.bottom = mLayoutHeight;
+                mCanvas.drawRect(mRectF, mBackgroundPaint);
+            }
+        }
+        try {
+            //释放canvas对象，并发送到SurfaceView
+            holder.unlockCanvasAndPost(mCanvas);
+            mCanvas = null;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        //驱动五线谱
+        if (isMoveStaff) {
+            staff += mLenth * mReta;
+            int center = mLayoutWith / 2 - (mLayoutWith - mStaffView.getmLayoutWidth());
+            if (staff < center) {
+                centerX = staff;
+            }
+            mStaffView.remove(staff - centerX, index, centerX);
+        }
+        try {
+            Thread.sleep((long) Math.max(0f,System.currentTimeMillis() - time));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        invalidate();
+    }
+
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
