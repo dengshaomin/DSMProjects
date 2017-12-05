@@ -284,7 +284,6 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     private List<List<Tia>> mAllRestTia = new ArrayList();
 
     private float mProgressLeft = 0;
-    private Bitmap mBitMap;
 
     /**
      * ******************************************************************
