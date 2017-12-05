@@ -12,6 +12,9 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
+
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.FormBody;
@@ -30,27 +33,43 @@ import okhttp3.Response;
 public class OkHttpUtils {
     private final static String TAG = "OkHttpUtils";
     private static OkHttpClient okHttpClient;
-    // 超时时间
-    public static final int TIMEOUT = 1000 * 60;
-
-    //json请求
-    public static final MediaType JSON = MediaType
-            .parse("application/json; charset=utf-8");
+    // 超时时间（一分钟）
+    private static final int TIMEOUT = 1000 * 60;
 
     private static Handler handler = new Handler(Looper.getMainLooper());
     private static Gson gson;
+    private static OkHttpUtils mInstance = null;
+
+    public static synchronized OkHttpUtils getInstance() {
+        if (mInstance == null) {
+            mInstance = new OkHttpUtils();
+        }
+        return mInstance;
+    }
 
     private OkHttpUtils() {
     }
 
-    //    初始化OkHttpClient
-    public static void init() {
+    /**
+     * 初始化OkHttpClient
+     *
+     * @param type 请求类型
+     */
+    public void init(RequestType type) {
         if (okHttpClient == null) {
-            okHttpClient = new OkHttpClient();
-            // 设置超时时间
-            okHttpClient.newBuilder().connectTimeout(TIMEOUT, TimeUnit.SECONDS)
+            OkHttpClient.Builder builder = new OkHttpClient().newBuilder()
+                    .connectTimeout(TIMEOUT, TimeUnit.SECONDS)// 设置超时时间（60s）
                     .writeTimeout(TIMEOUT, TimeUnit.SECONDS)
-                    .readTimeout(TIMEOUT, TimeUnit.SECONDS).build();
+                    .readTimeout(TIMEOUT, TimeUnit.SECONDS);
+            if (type == RequestType.HTTPS) {
+                builder.hostnameVerifier(new HostnameVerifier() {
+                    @Override
+                    public boolean verify(String hostname, SSLSession session) {
+                        return true;//跳过https安全认证
+                    }
+                });
+            }
+            okHttpClient = builder.build();
             gson = new Gson();
         }
 
@@ -60,7 +79,8 @@ public class OkHttpUtils {
     /**
      * post请求(Map类型的数据)
      */
-    public static void postMap(final String url, Map<String, String> map, final IOkHttpCallBack callBack) {
+    public static void postMap(final String url, Map<String, String> map,
+                               final IOkHttpCallBack callBack) {
         if (callBack == null) {
             return;
         }
@@ -131,7 +151,6 @@ public class OkHttpUtils {
 
     }
 
-
     /**
      * json转成bean类型
      *
@@ -142,5 +161,10 @@ public class OkHttpUtils {
      */
     public static <T> T Json2Bean(String json, Class<T> tClass) {
         return gson.fromJson(json, tClass);
+    }
+
+    public enum RequestType {
+        HTTP,
+        HTTPS
     }
 }

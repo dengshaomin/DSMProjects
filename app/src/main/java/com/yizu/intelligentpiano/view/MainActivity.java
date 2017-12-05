@@ -69,9 +69,9 @@ public class MainActivity extends BaseActivity {
         if (PreManger.instance().getStatus().equals("2")) {
             button.setVisibility(View.VISIBLE);
         }
-//        startActivity(new Intent(MainActivity.this, PianoActivity.class));
-        button.setSelected(true);
-        cheackedPermisition();
+        startActivity(new Intent(MainActivity.this, PianoActivity.class));
+//        button.setSelected(true);
+//        cheackedPermisition();
     }
 
     private void setRegisterReceiver() {
@@ -318,17 +318,17 @@ public class MainActivity extends BaseActivity {
         OkHttpUtils.postMap(HttpUrls.LOGOUT, map, new IOkHttpCallBack() {
             @Override
             public void success(String result) {
-                Login bean = OkHttpUtils.Json2Bean(result, Login.class);
-                if (bean.getCode().equals("000")) {
-                    //是微信小程序登陆退出
-                    //发送activity可以结束的广播
-                    Intent intent = new Intent(Constents.ACTION);
-                    intent.putExtra("what", Constents.LOGOUT_FINISH);
-                    MainActivity.this.sendBroadcast(intent);
-                    MyLogUtils.e(TAG, "app发出结束广播，app分发");
-                } else {
-//                    logout();
-                }
+                //是微信小程序登陆退出
+                //发送activity可以结束的广播
+                Intent intent = new Intent(Constents.ACTION);
+                intent.putExtra("what", Constents.LOGOUT_FINISH);
+                MainActivity.this.sendBroadcast(intent);
+                MyLogUtils.e(TAG, "app发出结束广播，app分发");
+//                Login bean = OkHttpUtils.Json2Bean(result, Login.class);
+//                if (bean.getCode().equals("000")) {
+//                } else {
+////                    logout();
+//                }
             }
         });
     }

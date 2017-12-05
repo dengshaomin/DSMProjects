@@ -24,8 +24,8 @@ public class MyAppliction extends Application {
     public void onCreate() {
         super.onCreate();
         mContext = getApplicationContext();
-        MyLogUtils.init(true, true);
-        OkHttpUtils.init();
+        MyLogUtils.init(true, false);
+        OkHttpUtils.getInstance().init(OkHttpUtils.RequestType.HTTP);
         PreManger.instance().init(mContext);
         initCloudChannel(mContext);
     }

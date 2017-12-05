@@ -35,10 +35,8 @@ import com.yizu.intelligentpiano.utils.OkHttpUtils;
 import com.yizu.intelligentpiano.utils.PreManger;
 import com.yizu.intelligentpiano.utils.SDCardUtils;
 import com.yizu.intelligentpiano.utils.XmlPrareUtils;
-import com.yizu.intelligentpiano.widget.PianoKeyView;
-import com.yizu.intelligentpiano.widget.PrgoressView;
+import com.yizu.intelligentpiano.widget.KeyView;
 import com.yizu.intelligentpiano.widget.PullView;
-import com.yizu.intelligentpiano.widget.SecondPullView;
 import com.yizu.intelligentpiano.widget.StaffView;
 
 import java.util.HashMap;
@@ -52,11 +50,9 @@ import jp.kshoji.driver.midi.device.MidiInputDevice;
 public class PianoActivity extends BaseActivity implements View.OnClickListener {
     private static final String TAG = "PianoActivity";
     private MyBroadcastReceiver receiver;
-    private PianoKeyView mPianoKeyView;
+    private KeyView mPianoKeyView;
     private StaffView mStaffView;
     private PullView mPullView;
-    private SecondPullView mPullView2;
-    private PrgoressView mProgessView;
     private RelativeLayout mTime;
     private RelativeLayout mScore;
     private TextView score_score, score_again, score_exit, score_songname;
@@ -101,27 +97,6 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     private MyThred myThred;
 
 
-    private Handler prassHandler = new Handler(new Handler.Callback() {
-        @Override
-        public boolean handleMessage(Message msg) {
-            if (msg.what > 20 && msg.what < 109) {
-                mPianoKeyView.painoKeyPress(msg.what);
-                ScoreHelper.getInstance().caCorrectKey(msg.what);
-            }
-            return true;
-        }
-    });
-    private Handler canclePrassHandler = new Handler(new Handler.Callback() {
-        @Override
-        public boolean handleMessage(Message msg) {
-            if (msg.what > 20 && msg.what < 109) {
-                mPianoKeyView.painoKeyCanclePress(msg.what);
-////                打分
-//                ScoreHelper.getInstance().caCorrectKey(msg.what, false);
-            }
-            return true;
-        }
-    });
     //键盘断开
     private Handler keyCancleHandler = new Handler(new Handler.Callback() {
         @Override
@@ -137,11 +112,6 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-//        //隐藏标题
-//        requestWindowFeature(Window.FEATURE_NO_TITLE);
-//        //设置全屏
-//        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-//                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_piano);
     }
@@ -186,13 +156,8 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
         mStaffView.setStaffData(bean.getList(), new IFinish() {
             @Override
             public void success() {
-                new Handler(Looper.getMainLooper()).post(new Runnable() {
-                    @Override
-                    public void run() {
-                        mProgessView.setPrgoressData(mStaffView);
-                    }
-                });                //更新PullView的数据
-                mPullView.setPullData(mStaffView, mPianoKeyView, mProgessView, mPullView2, new IPlay() {
+                //更新PullView的数据
+                mPullView.setPullData(mStaffView, mPianoKeyView, new IPlay() {
                     @Override
                     public void ReadyFinish() {
                         mTimesSpeed.setText(mPullView.getmReta());
@@ -237,8 +202,8 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     @Override
     protected void setData() {
         setRegisterReceiver();
-        getSongsData();
-//        test();
+//        getSongsData();
+        test();
     }
 
     private void test() {
@@ -297,7 +262,6 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
         MyLogUtils.e(TAG, "isShowPull：" + isShowPull);
         //设置是否显示瀑布流
         mPullView.isShow(isShowPull);
-        mPullView2.isShow(isShowPull);
 
         if (!isShowPull) realyTimeScore.setVisibility(View.GONE);
         mNickName.setText(nickName);
@@ -345,11 +309,9 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
         mPianoKeyView = findViewById(R.id.piano_key);
         mStaffView = findViewById(R.id.staffview);
         mPullView = findViewById(R.id.pullview);
-        mPullView2 = findViewById(R.id.pullview2);
         mPlay = findViewById(R.id.play);
         mSpeed = findViewById(R.id.speed);
         mRewind = findViewById(R.id.rewind);
-        mProgessView = findViewById(R.id.prgoressView);
         mTime = findViewById(R.id.time);
         mScore = findViewById(R.id.score_view);
         score_score = findViewById(R.id.score_score);
@@ -403,16 +365,25 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     protected void onResume() {
         super.onResume();
         mPullView.onResume();
-        mPullView2.onResume();
         mStaffView.onResume();
+        mPianoKeyView.onResume();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         mPullView.onPause();
-        mPullView2.onPause();
         mStaffView.onPause();
+        mPianoKeyView.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        mStaffView.onDrestry();
+        mPullView.onDrestry();
+        mPianoKeyView.onDrestry();
+        super.onDestroy();
+        unregisterReceiver(receiver);
     }
 
     @Override
@@ -458,30 +429,20 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
                     } else if (mTime.getVisibility() == View.VISIBLE) {
                         mTime.setVisibility(View.GONE);
                     }
-                    if (mPlay.isSelected()) {
-                        mPlay.setSelected(false);
-                        mPullView.play(false);
-                    }
                     if (mStaffView != null) {
                         mStaffView.resetPullView();
                     }
                     if (mPullView != null) {
                         mPullView.resetPullView();
                     }
-                    if (mPullView2 != null) mPullView2.resetPullView();
+                    if (mPlay.isSelected()) {
+                        mPlay.setSelected(false);
+                        mPullView.play(false);
+                    }
                     getSongsData();
                     break;
             }
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        mStaffView.onDrestry();
-        mPullView.onDrestry();
-        mPullView2.onDrestry();
-        super.onDestroy();
-        unregisterReceiver(receiver);
     }
 
     @Override
@@ -581,13 +542,16 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
 
     @Override
     protected void onNoteOn(MidiInputDevice midiInputDevice, int i, int i1, int i2, int i3) {
-        prassHandler.sendEmptyMessage(i2);
+//        prassHandler.sendEmptyMessage(i2);
+        mPianoKeyView.painoKeyPress(i2,true);
+        ScoreHelper.getInstance().caCorrectKey(i2);
         MyLogUtils.e(TAG, "onMidiNoteOn" + "NoteOn cable: " + i + ",  channel: " + i1 + ", note: " + i2 + ", velocity: " + i3);
     }
 
     @Override
     protected void onNoteOff(MidiInputDevice midiInputDevice, int i, int i1, int i2, int i3) {
-        canclePrassHandler.sendEmptyMessage(i2);
+//        canclePrassHandler.sendEmptyMessage(i2);
+        mPianoKeyView.painoKeyPress(i2,false);
         MyLogUtils.e(TAG, "onMidiNoteOff" + "NoteOn cable: " + i + ",  channel: " + i1 + ", note: " + i2 + ", velocity: " + i3);
     }
 }

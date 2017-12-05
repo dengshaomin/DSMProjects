@@ -1,6 +1,7 @@
 package com.yizu.intelligentpiano.widget;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -12,7 +13,6 @@ import android.graphics.drawable.ScaleDrawable;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -99,7 +99,10 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     private Paint mBeamPaint;
 
     private Paint mLinsPaint2;
-
+    //进度条矩形
+    private RectF mProgessRectF;
+    //绘制进度条的画笔
+    private Paint mBluePaint;
     /**
      * 一个间间距
      */
@@ -280,6 +283,8 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     //休止符号(贝塞尔曲线)
     private List<List<Tia>> mAllRestTia = new ArrayList();
 
+    private float mProgressLeft = 0;
+    private Bitmap mBitMap;
 
     /**
      * ******************************************************************
@@ -427,6 +432,12 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         mBeamPaint.setAntiAlias(true);
         mBeamPaint.setColor(getResources().getColor(R.color.black));
         mBeamPaint.setStyle(Paint.Style.STROKE);
+
+        mBluePaint = new Paint();
+        mBluePaint.setAntiAlias(true);
+        mBluePaint.setColor(getResources().getColor(R.color.violet));
+        mBluePaint.setStyle(Paint.Style.FILL);
+        mBluePaint.setAlpha(70);//0-255
     }
 
     @Override
@@ -529,13 +540,16 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                                 mCanvas.drawColor(Color.WHITE);
                                 //canvas 执行一系列画的动作
                                 initStaff(mCanvas);
+                                MyLogUtils.e(TAG, "绘制时间" + (System.currentTimeMillis() - time));
                             }
                         } catch (Exception e) {
                         } finally {
                             try {
                                 //释放canvas对象，并发送到SurfaceView
-                                holder.unlockCanvasAndPost(mCanvas);
-                                mCanvas = null;
+                                if (mCanvas != null) {
+                                    holder.unlockCanvasAndPost(mCanvas);
+                                    mCanvas = null;
+                                }
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -555,8 +569,8 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     private void initStaff(Canvas canvas) {
         if (mAttributess != null) {
             mPath = new Path();
-            //初始化五线谱(条数)
             drawStaffLines(mAttributess, canvas, (fristSingLenth.size() == 0 || moveLenth < fristSingLenth.get(1)));
+            //初始化五线谱(条数)
             if (isSaveData) {
                 MyLogUtils.e(TAG, "绘制");
 //                清除所有数据
@@ -568,8 +582,32 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
             } else {
                 //选择绘制
                 selectDraw(canvas);
+                setProgresBar(canvas, mProgressLeft);
             }
         }
+    }
+
+    /**
+     * 设置进度条
+     *
+     * @param canvas
+     */
+    private void setProgresBar(Canvas canvas, float mLeft) {
+        if (mLeft == 0) return;
+        if (mProgessRectF == null) {
+            mProgessRectF = new RectF();
+        }
+        mProgessRectF.left = mLeft;
+        mProgessRectF.top = 10;
+//        mProgessRectF.right = mLeft + mLinsRoomWidth * 3;
+        mProgessRectF.right = mLeft + 5;
+        if (isTowStaff) {
+            mProgessRectF.bottom = mLayoutHeight - 10;
+            canvas.drawRoundRect(mProgessRectF, 90, 90, mBluePaint);
+        } else {
+            mProgessRectF.bottom = twoStaff_fristLins_up + mLinsRoomWidth * 4;
+        }
+        canvas.drawRoundRect(mProgessRectF, 90, 90, mBluePaint);
     }
 
     /**
@@ -587,7 +625,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                     data.getBottoms(), mLinsPaint);
         }
 //            黑色弧形延音线
-        mPath = new Path();
+        mPath.reset();
         for (int i = 0; i < mBlackTia.size(); i++) {
             Tia tia = mBlackTia.get(i);
             if (tia.getRightss() - moveLenth < 0) continue;
@@ -597,7 +635,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
             canvas.drawPath(mPath, mLinsPaint);
         }
 //        红色弧形延音线
-        mPath = new Path();
+        mPath.reset();
         for (int i = 0; i < mRedTia.size(); i++) {
             Tia tia = mRedTia.get(i);
             if (tia.getLefts() - moveLenth > mLayoutWidth) continue;
@@ -724,7 +762,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                         data.getRightss() - moveLenth,
                         data.getBottoms(), mBeamPaint);
             }
-            mPath = new Path();
+            mPath.reset();
             List<Tial> tial = mAllTial.get(j);
             for (int i = 0; i < tial.size(); i++) {
                 Tial tia = tial.get(i);
@@ -2831,7 +2869,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * @param staffData
      */
     public void setStaffData(List<Measure> staffData, IFinish iFinish) {
-        MyLogUtils.e(TAG,"初始化五线谱");
+        MyLogUtils.e(TAG, "初始化五线谱");
         init();
         initStaffData();
         if (iFinish != null) {
@@ -2978,6 +3016,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         mSpeedTime = 0;
         isMove = false;
         moveLenth = 0;
+        mProgressLeft = 0;
         index = 0;
     }
 
@@ -3448,11 +3487,13 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * 五线谱移动
      *
      * @param lenth
+     * @param progress
      */
-    public void remove(float lenth, int index) {
+    public void remove(float lenth, int index, float progress) {
         moveLenth = lenth;
         this.index = index;
         isMove = true;
+        mProgressLeft = progress;
     }
 
     public void onResume() {
@@ -3469,6 +3510,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
 
         isSaveData = false;
         moveLenth = 0;
+        mProgressLeft = 0;
         index = 0;
 //        startIndex = 0;
         if (thread != null) {

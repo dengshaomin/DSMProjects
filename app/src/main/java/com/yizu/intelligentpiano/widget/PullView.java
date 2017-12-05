@@ -4,13 +4,11 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -57,7 +55,6 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     private Paint mBackgroundPaint;
 
     private RectF mRectF;
-    private PrgoressView mPrgoressView;
     private StaffView mStaffView;
     //第一条无线谱的每一小节的第一个音符
     List<Float> fristSingLenth;
@@ -85,7 +82,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     long time = 0;
     //缩小时间的误差
     float timeError = 0;
-    private SecondPullView mPullView2;
+    private Paint mPaint;
 
     private Handler handler = new Handler(Looper.getMainLooper());
     /************只管时间不管速度(200拍的速度是最快的，减小速度只需要缩短每次移动的长度)**************/
@@ -105,11 +102,20 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         holder = getHolder();//获取SurfaceHolder对象，同时指定callback
         holder.addCallback(this);
 
+//        //整个界面透明
+//        holder.setFormat(PixelFormat.TRANSPARENT);
+//        setZOrderOnTop(true);
+
         mYellowPaint = new Paint();
         mYellowPaint.setStyle(Paint.Style.FILL);
         mYellowPaint.setColor(getResources().getColor(R.color.yellow));
         mYellowPaint.setAntiAlias(true);
         mRectF = new RectF();
+
+        mPaint = new Paint();
+        mPaint.setStyle(Paint.Style.FILL);
+        mPaint.setColor(getResources().getColor(R.color.blue));
+        mPaint.setAntiAlias(true);
 
         mBackgroundPaint = new Paint();
         mBackgroundPaint.setStyle(Paint.Style.FILL);
@@ -131,20 +137,14 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
      *
      * @param mStaffView
      * @param mPianoKeyView
-     * @param mProgessView
-     * @param mPullView2
      * @param iPlay
      */
-    public void setPullData(StaffView mStaffView, PianoKeyView mPianoKeyView,
-                            PrgoressView mProgessView, SecondPullView mPullView2, final IPlay iPlay) {
+    public void setPullData(StaffView mStaffView, KeyView mPianoKeyView,
+                            final IPlay iPlay) {
         MyLogUtils.e(TAG, "初始化第一条瀑布流");
         if (mPianoKeyView == null) return;
         if (mStaffView == null) return;
-        if (mProgessView == null) return;
-        if (mPullView2 == null) return;
         this.mStaffView = mStaffView;
-        this.mPrgoressView = mProgessView;
-        this.mPullView2 = mPullView2;
         mAttributess = null;
         mAttributess = mStaffView.getmAttributess();
         if (mAttributess == null) return;
@@ -158,8 +158,8 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
 //        //每个duration多少毫秒
 //        mSpeedTime = mStaffView.getmSpeedTime();
 //        mTimesTime = 60 * 1000 / mStaffView.getTimes();
-//        mLenth = mSpeedLenth * Float.valueOf(mAttributess.getDivisions()) / 10;
-        mLenth = 5;
+        mLenth = mSpeedLenth * Float.valueOf(mAttributess.getDivisions()) / 20;
+//        mLenth = 5;
         //默认每分钟88拍
 //        DEFAULT_TIME_NUM = mStaffView.getTimes();
 //        MyLogUtils.e(TAG, "拍数：" + DEFAULT_TIME_NUM);
@@ -228,9 +228,6 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         } else {
             mData.get(minI).getSecond().get(minJ).setLastNode(true);
         }
-        if (isFrist) {
-            mPullView2.setData(mData, mWhiteKeyWidth);
-        }
     }
 
     /**
@@ -242,7 +239,6 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
             return;
         }
         isPlay = isplay;
-        mPullView2.play(isplay);
         if (thread != null) {
             thread.interrupt();
             thread = null;
@@ -256,6 +252,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
     public void resetPullView() {
         isPlay = false;
         staff = 0;
+        centerX = 0;
         index = 0;
         move = 0;
         isMoveStaff = false;
@@ -328,8 +325,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                     synchronized (holder) {
                         //锁定canvas
                         time = System.currentTimeMillis();
-                        if (mCanvas == null)
-                            mCanvas = holder.lockCanvas();
+                        mCanvas = holder.lockCanvas();
                         //canvas 执行一系列画的动作
                         if (mCanvas != null) {
                             mCanvas.drawColor(Color.BLACK);
@@ -339,49 +335,47 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
                             if (isShowPullView) {
                                 int size = Math.min(mData.size(), (index + 3));
                                 mBackList.clear();
-                                if (mPullView2 != null) mPullView2.setMove(move, index, size);
                                 if (move == 0) ScoreHelper.getInstance().initData();//初始化打分
                                 for (int i = index; i < size; i++) {
                                     List<SaveTimeData> frist_hide = mData.get(i).getFrist();
                                     for (int j = 0; j < frist_hide.size(); j++) {
-                                        move(mCanvas, frist_hide.get(j), i, j);
+                                        move(mCanvas, frist_hide.get(j), i, j, true);
                                     }
                                 }
-//                                for (int k = 0; k < mBackList.size(); k++) {
-//                                    //引导条
-//                                    mRectF.left = mBackList.get(k).getLeft();
-//                                    mRectF.top = 0;
-//                                    mRectF.right = mBackList.get(k).getRight();
-//                                    mRectF.bottom = mLayoutHeight;
-//                                    mCanvas.drawRect(mRectF, mBackgroundPaint);
-//                                }
-                            }
-//                            try {
-//                                //释放canvas对象，并发送到SurfaceView
-////                                holder.unlockCanvasAndPost(mCanvas);
-////                                mCanvas = null;
-//                            } catch (Exception e) {
-//                                e.printStackTrace();
-//                            }
-                            //驱动五线谱
-                            if (isMoveStaff) {
-//                                staff += mTimesLenth / mReta;
-                                staff += mLenth * mReta;
-                                int center = mLayoutWith / 2 - (mLayoutWith - mStaffView.getmLayoutWidth());
-                                if (staff < center) {
-                                    handler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            mPrgoressView.setMove(staff);
-                                        }
-                                    });
-                                } else {
-                                    if (centerX == 0) centerX = staff;
-                                    mStaffView.remove(staff - centerX, index);
+                                for (int i = index; i < size; i++) {
+                                    List<SaveTimeData> second_hide = mData.get(i).getSecond();
+                                    for (int j = 0; j < second_hide.size(); j++) {
+                                        move(mCanvas, second_hide.get(j), i, j, false);
+                                    }
+                                }
+                                for (int k = 0; k < mBackList.size(); k++) {
+                                    //引导条
+                                    mRectF.left = mBackList.get(k).getLeft();
+                                    mRectF.top = 0;
+                                    mRectF.right = mBackList.get(k).getRight();
+                                    mRectF.bottom = mLayoutHeight;
+                                    mCanvas.drawRect(mRectF, mBackgroundPaint);
                                 }
                             }
                             try {
-                                Thread.sleep(16 - (System.currentTimeMillis() - time));
+                                //释放canvas对象，并发送到SurfaceView
+                                holder.unlockCanvasAndPost(mCanvas);
+                                mCanvas = null;
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            //驱动五线谱
+                            if (isMoveStaff) {
+                                staff += mLenth * mReta;
+                                int center = mLayoutWith / 2 - (mLayoutWith - mStaffView.getmLayoutWidth());
+                                if (staff < center) {
+                                    centerX = staff;
+                                }
+                                mStaffView.remove(staff - centerX, index, centerX);
+                            }
+                            try {
+
+                                Thread.sleep(Math.max(0, (30 - (System.currentTimeMillis() - time))));
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
@@ -545,24 +539,19 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
      * @param saveTimeData
      * @param i
      * @param j
+     * @param isFrist
      */
-    private void move(Canvas canvas, final SaveTimeData saveTimeData, final int i, final int j) {
+    private void move(Canvas canvas, final SaveTimeData saveTimeData, final int i, final int j, boolean isFrist) {
         mRectF.left = saveTimeData.getLeft();
         mRectF.top = saveTimeData.getTop() + move;
         mRectF.right = saveTimeData.getRight();
         mRectF.bottom = saveTimeData.getBottom() + move;
         ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, mLayoutHeight);
-        if (saveTimeData.getArriveBottomState() == 1) {
+        if (isFrist && saveTimeData.getArriveBottomState() == 1) {
             //该数据对应的音符第一次达到pullview底部
             if (j == 0) {
                 if (i == 0) {
                     isMoveStaff = true;
-                    handler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            mPrgoressView.setIsShow(true);
-                        }
-                    });
                 }
                 staff = fristSingLenth.get(i);
                 index = i;
@@ -570,7 +559,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         }
         if (mRectF.bottom > 0 && mRectF.top < mLayoutHeight) {
             if (!saveTimeData.isRest()) {
-                canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, mYellowPaint);
+                canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, isFrist ? mYellowPaint : mPaint);
                 //保存引导条
                 boolean isSave = false;
                 for (int k = 0; k < mBackList.size(); k++) {
@@ -617,17 +606,7 @@ public class PullView extends SurfaceView implements SurfaceHolder.Callback {
         index = 0;
         move = 0;
         timeError = 0;
-        mStaffView.remove(0, index);
-        mPullView2.setMove(0, 0, 0);
-//        mStaffView.setStartIndex(0);
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                //进度条屏蔽
-                mPrgoressView.setIsShow(false);
-                mPrgoressView.setMove(0);
-            }
-        });
+        mStaffView.remove(0, index, centerX);
     }
 
     /**

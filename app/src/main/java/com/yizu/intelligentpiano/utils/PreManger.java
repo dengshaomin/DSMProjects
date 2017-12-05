@@ -4,7 +4,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 /**
- * Created by Administrator on 2016/8/23.
+ * Author：Created by liuxiaozhu on 2016/8/23.
+ * Email: chenhuixueba@163.com
  */
 public class PreManger {
     /*PreferenceManger自己的实例*/
@@ -20,7 +21,7 @@ public class PreManger {
     }
 
     /*获取当前类的实例*/
-    public static PreManger instance() {
+    public synchronized static PreManger instance() {
         if (mInstance == null) {
             mInstance = new PreManger();
         }
