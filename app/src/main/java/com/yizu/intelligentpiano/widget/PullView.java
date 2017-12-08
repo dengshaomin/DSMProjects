@@ -9,11 +9,15 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.chillingvan.canvasgl.ICanvasGL;
+import com.chillingvan.canvasgl.glcanvas.GLCanvas;
+import com.chillingvan.canvasgl.glcanvas.GLPaint;
 import com.chillingvan.canvasgl.glview.GLContinuousView;
+import com.chillingvan.canvasgl.shapeFilter.BasicDrawShapeFilter;
 import com.yizu.intelligentpiano.R;
 import com.yizu.intelligentpiano.bean.PullBack;
 import com.yizu.intelligentpiano.bean.PullData;
@@ -35,14 +39,19 @@ import java.util.List;
  */
 
 public class PullView extends GLContinuousView {
+
     private final static String TAG = "PullView";
+
     //白键宽度
     private int mWhiteKeyWidth;
+
     private int mBlackKeyWidth;
 
 
     private int mLayoutWith;
+
     private int mLayoutHeight;
+
     private Attributess mAttributess;
 
     private List<PullData> mData;
@@ -51,44 +60,61 @@ public class PullView extends GLContinuousView {
     private float mSpeedLenth = 0;
 
     private float mReta = 0.8f;
+
     //默认显示瀑布流
     private boolean isShowPullView = true;
+
     private Paint mYellowPaint;
-    private Paint mBackgroundPaint;
+
+    private GLPaint mBackgroundPaint;
 
     private RectF mRectF;
+
     private StaffView mStaffView;
+
     //第一条无线谱的每一小节的第一个音符
     List<Float> fristSingLenth;
 
     SurfaceHolder holder;
-    MysurfaceviewThread thread;
+
+
     private IPlayEnd iPlayEnd;
 
     //五线谱移动的距离
     private float staff = 0;
+
     //是否播放五线谱
     private boolean isPlay = false;
+
     //是否移动五线谱
     private boolean isMoveStaff = false;
-    private Canvas mCanvas;
+
+
     //用来保存瀑布流灰色背景
     private List<PullBack> mBackList = new ArrayList<>();
+
     //用来保存光标的位置
     private float centerX = 0;
+
     //瀑布流从第几小节开始
     private int index = 0;
+
     //瀑布流下落得距离
     private float move = 0;
+
     //用来保存开始计算的时间（毫秒数）
     long time = 0;
+
     //缩小时间的误差
     float timeError = 0;
-    private Paint mPaint;
+
+    private GLPaint mPaint;
 
     private Handler handler = new Handler(Looper.getMainLooper());
+
     /************只管时间不管速度(200拍的速度是最快的，减小速度只需要缩短每次移动的长度)**************/
     private int mTimess = 60;
+
     private float mLenth;//100拍的长度
 
     public PullView(Context context) {
@@ -110,69 +136,66 @@ public class PullView extends GLContinuousView {
         mYellowPaint.setAntiAlias(true);
         mRectF = new RectF();
 
-        mPaint = new Paint();
+        mPaint = new GLPaint();
         mPaint.setStyle(Paint.Style.FILL);
         mPaint.setColor(getResources().getColor(R.color.blue));
-        mPaint.setAntiAlias(true);
+//        mPaint.setAntiAlias(true);
 
-        mBackgroundPaint = new Paint();
+        mBackgroundPaint = new GLPaint();
         mBackgroundPaint.setStyle(Paint.Style.FILL);
         mBackgroundPaint.setColor(getResources().getColor(R.color.pullcolor));
-        mBackgroundPaint.setAntiAlias(true);
+//        mBackgroundPaint.setAntiAlias(true);
     }
 
     @Override
     protected void onGLDraw(ICanvasGL canvas) {
-        long time = System.currentTimeMillis();
-        move += mLenth * mReta;
-        //显示瀑布流就绘制
-        if (isShowPullView) {
-            int size = Math.min(mData.size(), (index + 3));
-            mBackList.clear();
-            if (move == 0) ScoreHelper.getInstance().initData();//初始化打分
-            for (int i = index; i < size; i++) {
-                List<SaveTimeData> frist_hide = mData.get(i).getFrist();
-                for (int j = 0; j < frist_hide.size(); j++) {
-                    move(mCanvas, frist_hide.get(j), i, j, true);
+        if (isPlay) {
+            long time = System.currentTimeMillis();
+            move += mLenth * mReta;
+            //显示瀑布流就绘制
+            if (isShowPullView) {
+                int size = Math.min(mData.size(), (index + 3));
+                mBackList.clear();
+                if (move == 0) {
+                    ScoreHelper.getInstance().initData();//初始化打分
                 }
-            }
-            for (int i = index; i < size; i++) {
-                List<SaveTimeData> second_hide = mData.get(i).getSecond();
-                for (int j = 0; j < second_hide.size(); j++) {
-                    move(mCanvas, second_hide.get(j), i, j, false);
+                for (int i = index; i < size; i++) {
+                    List<SaveTimeData> frist_hide = mData.get(i).getFrist();
+                    for (int j = 0; j < frist_hide.size(); j++) {
+                        move(canvas, frist_hide.get(j), i, j, true);
+                    }
                 }
+                for (int i = index; i < size; i++) {
+                    List<SaveTimeData> second_hide = mData.get(i).getSecond();
+                    for (int j = 0; j < second_hide.size(); j++) {
+                        move(canvas, second_hide.get(j), i, j, false);
+                    }
+                }
+//                for (int k = 0; k < mBackList.size(); k++) {
+//                    //引导条
+//                    mRectF.left = mBackList.get(k).getLeft();
+//                    mRectF.top = 0;
+//                    mRectF.right = mBackList.get(k).getRight();
+//                    mRectF.bottom = mLayoutHeight;
+//                    mCanvas.drawRect(mRectF, mBackgroundPaint);
+//                }
             }
-            for (int k = 0; k < mBackList.size(); k++) {
-                //引导条
-                mRectF.left = mBackList.get(k).getLeft();
-                mRectF.top = 0;
-                mRectF.right = mBackList.get(k).getRight();
-                mRectF.bottom = mLayoutHeight;
-                mCanvas.drawRect(mRectF, mBackgroundPaint);
+            //驱动五线谱
+            if (isMoveStaff) {
+                staff += mLenth * mReta;
+                int center = mLayoutWith / 2 - (mLayoutWith - mStaffView.getmLayoutWidth());
+                if (staff < center) {
+                    centerX = staff;
+                }
+                mStaffView.remove(staff - centerX, index, centerX);
+            }
+            try {
+                Log.e("code",(System.currentTimeMillis() - time) + "");
+                Thread.sleep((long) Math.max(0f, 16 - (System.currentTimeMillis() - time)));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
-        try {
-            //释放canvas对象，并发送到SurfaceView
-            holder.unlockCanvasAndPost(mCanvas);
-            mCanvas = null;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        //驱动五线谱
-        if (isMoveStaff) {
-            staff += mLenth * mReta;
-            int center = mLayoutWith / 2 - (mLayoutWith - mStaffView.getmLayoutWidth());
-            if (staff < center) {
-                centerX = staff;
-            }
-            mStaffView.remove(staff - centerX, index, centerX);
-        }
-        try {
-            Thread.sleep((long) Math.max(0f,System.currentTimeMillis() - time));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        invalidate();
     }
 
 
@@ -187,23 +210,29 @@ public class PullView extends GLContinuousView {
 
     /**
      * 设置瀑布流数据
-     *
-     * @param mStaffView
-     * @param mPianoKeyView
-     * @param iPlay
      */
     public void setPullData(StaffView mStaffView, KeyView mPianoKeyView,
-                            final IPlay iPlay) {
+            final IPlay iPlay) {
         MyLogUtils.e(TAG, "初始化第一条瀑布流");
-        if (mPianoKeyView == null) return;
-        if (mStaffView == null) return;
+        if (mPianoKeyView == null) {
+            return;
+        }
+        if (mStaffView == null) {
+            return;
+        }
         this.mStaffView = mStaffView;
         mAttributess = null;
         mAttributess = mStaffView.getmAttributess();
-        if (mAttributess == null) return;
-        if (mStaffView.getPullData() == null) return;
+        if (mAttributess == null) {
+            return;
+        }
+        if (mStaffView.getPullData() == null) {
+            return;
+        }
 
-        if (mStaffView.getFristSingLenth() == null) return;
+        if (mStaffView.getFristSingLenth() == null) {
+            return;
+        }
         initAllData();
         fristSingLenth = mStaffView.getFristSingLenth();
 //        //每个duration多少像素
@@ -218,7 +247,9 @@ public class PullView extends GLContinuousView {
 //        MyLogUtils.e(TAG, "拍数：" + DEFAULT_TIME_NUM);
 
         mData = mStaffView.getPullData();
-        if (mData == null) return;
+        if (mData == null) {
+            return;
+        }
         if (mWhiteKeyWidth == 0) {
             mWhiteKeyWidth = mPianoKeyView.getmWhiteKeyWidth();
             mBlackKeyWidth = mPianoKeyView.getmBlackKeyWidth();
@@ -234,8 +265,6 @@ public class PullView extends GLContinuousView {
 
     /**
      * 计算所有位置
-     *
-     * @param isFrist:是不是第一次计算
      */
     private void caAllPosition(boolean isFrist) {
         int size = mData.size();
@@ -292,14 +321,17 @@ public class PullView extends GLContinuousView {
             return;
         }
         isPlay = isplay;
-        if (thread != null) {
-            thread.interrupt();
-            thread = null;
+        if (isplay) {
+            invalidate();
         }
-        if (isPlay) {
-            thread = new MysurfaceviewThread();
-            thread.start();
-        }
+//        if (thread != null) {
+//            thread.interrupt();
+//            thread = null;
+//        }
+//        if (isPlay) {
+//            thread = new MysurfaceviewThread();
+//            thread.start();
+//        }
     }
 
     public void resetPullView() {
@@ -309,45 +341,17 @@ public class PullView extends GLContinuousView {
         index = 0;
         move = 0;
         isMoveStaff = false;
-        if (thread != null) {
-            thread.interrupt();
-            thread = null;
-        }
         endRefreshCanvas();
     }
 
-    @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-    }
-
-    @Override
-    public void surfaceCreated(SurfaceHolder holder) {
-        // 当SurfaceView被创建时，将画图Thread启动起来。
-        if (thread != null) {
-            isPlay = true;
-        }
-    }
-
-    @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
-        // 当SurfaceView被销毁时，释放资源。
-        synchronized (holder) {
-            isPlay = false;
-        }
-    }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        if (thread != null) {
-            thread.interrupt();
-            thread = null;
-        }
-        isPlay = !isPlay;
     }
 
     public void onResume() {
-        isPlay = true;
+//        isPlay = true;
     }
 
     public void onPause() {
@@ -358,93 +362,9 @@ public class PullView extends GLContinuousView {
         this.iPlayEnd = iPlayEnd;
     }
 
-    /**
-     * 内部类 MysurfaceviewThread,该类主要实现对canvas的具体操作。
-     *
-     * @author xu duzhou
-     */
-    class MysurfaceviewThread extends Thread {
-
-        public MysurfaceviewThread() {
-            super();
-        }
-
-        @Override
-        public void run() {
-            super.run();
-            MyLogUtils.e(TAG, "线程开启");
-            while (true) {
-                if (isPlay) {
-                    synchronized (holder) {
-                        //锁定canvas
-                        time = System.currentTimeMillis();
-                        mCanvas = holder.lockCanvas();
-                        //canvas 执行一系列画的动作
-                        if (mCanvas != null) {
-                            mCanvas.drawColor(Color.BLACK);
-                            //canvas 执行一系列画的动作
-                            move += mLenth * mReta;
-                            //显示瀑布流就绘制
-                            if (isShowPullView) {
-                                int size = Math.min(mData.size(), (index + 3));
-                                mBackList.clear();
-                                if (move == 0) ScoreHelper.getInstance().initData();//初始化打分
-                                for (int i = index; i < size; i++) {
-                                    List<SaveTimeData> frist_hide = mData.get(i).getFrist();
-                                    for (int j = 0; j < frist_hide.size(); j++) {
-                                        move(mCanvas, frist_hide.get(j), i, j, true);
-                                    }
-                                }
-                                for (int i = index; i < size; i++) {
-                                    List<SaveTimeData> second_hide = mData.get(i).getSecond();
-                                    for (int j = 0; j < second_hide.size(); j++) {
-                                        move(mCanvas, second_hide.get(j), i, j, false);
-                                    }
-                                }
-                                for (int k = 0; k < mBackList.size(); k++) {
-                                    //引导条
-                                    mRectF.left = mBackList.get(k).getLeft();
-                                    mRectF.top = 0;
-                                    mRectF.right = mBackList.get(k).getRight();
-                                    mRectF.bottom = mLayoutHeight;
-                                    mCanvas.drawRect(mRectF, mBackgroundPaint);
-                                }
-                            }
-                            try {
-                                //释放canvas对象，并发送到SurfaceView
-                                holder.unlockCanvasAndPost(mCanvas);
-                                mCanvas = null;
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                            //驱动五线谱
-                            if (isMoveStaff) {
-                                staff += mLenth * mReta;
-                                int center = mLayoutWith / 2 - (mLayoutWith - mStaffView.getmLayoutWidth());
-                                if (staff < center) {
-                                    centerX = staff;
-                                }
-                                mStaffView.remove(staff - centerX, index, centerX);
-                            }
-                            try {
-
-                                Thread.sleep(Math.max(0, (30 - (System.currentTimeMillis() - time))));
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     /**
      * 计算每个音符的位置
-     *
-     * @param saveTimeData
-     * @param isFrist
-     * @return
      */
     private void calculationPosiotion(SaveTimeData saveTimeData, boolean isFrist) {
         if (isFrist) {
@@ -587,14 +507,8 @@ public class PullView extends GLContinuousView {
 
     /**
      * 移动无线谱
-     *
-     * @param canvas
-     * @param saveTimeData
-     * @param i
-     * @param j
-     * @param isFrist
      */
-    private void move(Canvas canvas, final SaveTimeData saveTimeData, final int i, final int j, boolean isFrist) {
+    private void move(ICanvasGL canvas, final SaveTimeData saveTimeData, final int i, final int j, boolean isFrist) {
         mRectF.left = saveTimeData.getLeft();
         mRectF.top = saveTimeData.getTop() + move;
         mRectF.right = saveTimeData.getRight();
@@ -612,7 +526,7 @@ public class PullView extends GLContinuousView {
         }
         if (mRectF.bottom > 0 && mRectF.top < mLayoutHeight) {
             if (!saveTimeData.isRest()) {
-                canvas.drawRoundRect(mRectF, mWhiteKeyWidth / 4, mWhiteKeyWidth / 4, isFrist ? mYellowPaint : mPaint);
+                canvas.drawRect(mRectF, mPaint);
                 //保存引导条
                 boolean isSave = false;
                 for (int k = 0; k < mBackList.size(); k++) {
@@ -621,7 +535,9 @@ public class PullView extends GLContinuousView {
                         return;
                     }
                 }
-                if (!isSave) mBackList.add(new PullBack(mRectF.left, mRectF.right));
+                if (!isSave) {
+                    mBackList.add(new PullBack(mRectF.left, mRectF.right));
+                }
             }
         }
 
@@ -666,29 +582,29 @@ public class PullView extends GLContinuousView {
      * 绘制结束刷新画布
      */
     private void endRefreshCanvas() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                SurfaceHolder surfaceHolder = holder;
-                synchronized (surfaceHolder) {
-                    //锁定canvas
-                    try {
-                        Canvas canvas = surfaceHolder.lockCanvas();
-                        //canvas 执行一系列画的动作
-                        if (canvas != null) {
-                            canvas.drawColor(Color.BLACK);
-                            surfaceHolder.unlockCanvasAndPost(canvas);
-                        }
-                    } catch (Exception e) {
-                    }
-                }
-            }
-        }).start();
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//                    Thread.sleep(500);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//                SurfaceHolder surfaceHolder = holder;
+//                synchronized (surfaceHolder) {
+//                    //锁定canvas
+//                    try {
+//                        Canvas canvas = surfaceHolder.lockCanvas();
+//                        //canvas 执行一系列画的动作
+//                        if (canvas != null) {
+//                            canvas.drawColor(Color.BLACK);
+//                            surfaceHolder.unlockCanvasAndPost(canvas);
+//                        }
+//                    } catch (Exception e) {
+//                    }
+//                }
+//            }
+//        }).start();
     }
 
 
@@ -697,7 +613,9 @@ public class PullView extends GLContinuousView {
      */
     public String accelerate() {
         mReta += 0.1f;
-        if (mReta >= 1.5f) mReta = 1.5f;
+        if (mReta >= 1.5f) {
+            mReta = 1.5f;
+        }
         DecimalFormat decimalFormat = new DecimalFormat("0.0");
         return decimalFormat.format(mReta);
     }
@@ -707,29 +625,21 @@ public class PullView extends GLContinuousView {
      */
     public String deceleration() {
         mReta -= 0.1f;
-        if (mReta <= 0.5f) mReta = 0.5f;
+        if (mReta <= 0.5f) {
+            mReta = 0.5f;
+        }
         DecimalFormat decimalFormat = new DecimalFormat("0.0");
         return decimalFormat.format(mReta);
     }
 
     /**
      * 是否显示画笔
-     *
-     * @param isShowPull
      */
     public void isShow(boolean isShowPull) {
         isShowPullView = isShowPull;
     }
 
     public void onDrestry() {
-        if (mCanvas != null) {
-            holder.unlockCanvasAndPost(mCanvas);
-            mCanvas = null;
-        }
-        if (thread != null) {
-            thread.interrupt();
-            thread = null;
-        }
     }
 
 
