@@ -19,6 +19,7 @@ import com.yizu.intelligentpiano.constens.IDwonLoader;
 import com.yizu.intelligentpiano.utils.DownloadUtils;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
 import com.yizu.intelligentpiano.utils.SDCardUtils;
+import com.yizu.intelligentpiano.widget.MyVideoView;
 
 import jp.kshoji.driver.midi.device.MidiInputDevice;
 
@@ -28,8 +29,7 @@ import jp.kshoji.driver.midi.device.MidiInputDevice;
 public class VideoActivity extends BaseActivity {
     private final static String TAG = "VideoActivity";
     private MyBroadcastReceiver receiver;
-    private VideoView mVideoView;
-    private boolean isOk = false;
+    private MyVideoView mVideoView;
     private ImageView play;
     private RelativeLayout mTime;
 
@@ -78,7 +78,9 @@ public class VideoActivity extends BaseActivity {
         //播放完成回调
         mVideoView.setOnCompletionListener(new MyPlayerOnCompletionListener());
         mVideoView.setVideoPath(urls);
-        isOk = true;
+        play.setSelected(true);
+        //播放
+        mVideoView.start();
     }
 
     /**
@@ -90,6 +92,7 @@ public class VideoActivity extends BaseActivity {
      */
     private void downLoadFile(String fileUrl, final String fileName, final String saveUrl) {
 //        "http://piano.sinotransfer.com/Uploads/Download/2017-09-20/59c21068ef4b5.xml"
+        if (fileUrl==null)return;
         new DownloadUtils(this).downloadFile(fileUrl,
                 fileName, DownloadUtils.FileType.VIDEO, saveUrl, new IDwonLoader() {
                     @Override
@@ -158,20 +161,8 @@ public class VideoActivity extends BaseActivity {
                     }
                 }
                 return true;
-            case KeyEvent.KEYCODE_ENTER:
-                if (mTime.getVisibility() == View.VISIBLE) {
-                    mTime.setVisibility(View.GONE);
-                } else {
-                    if (play.isSelected()) {
-                        play.setSelected(false);
-                        //暂停
-                        mVideoView.pause();
-                    } else {
-                        play.setSelected(true);
-                        //播放
-                        mVideoView.start();
-                    }
-                }
+            case KeyEvent.KEYCODE_BACK:
+                finish();
                 return true;
         }
         return super.onKeyDown(keyCode, event);
@@ -182,7 +173,17 @@ public class VideoActivity extends BaseActivity {
         @Override
         public void onCompletion(MediaPlayer mp) {
             //播放完毕
-            finish();
+//            finish();
+            play.setSelected(false);
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(mVideoView!=null){
+            mVideoView.suspend();  //将VideoView所占用的资源释放掉
+        }
+        if (receiver!=null) unregisterReceiver(receiver);
     }
 }

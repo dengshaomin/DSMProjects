@@ -6,7 +6,7 @@
     android:keepScreenOn="true"
     tools:context="com.yizu.intelligentpiano.view.VideoActivity">
 
-    <VideoView
+    <com.yizu.intelligentpiano.widget.MyVideoView
         android:id="@+id/vedioview"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
@@ -15,7 +15,8 @@
         android:id="@+id/play"
         android:layout_width="@dimen/com_120px"
         android:layout_height="@dimen/com_120px"
-        android:layout_centerInParent="true"
+        android:layout_marginLeft="@dimen/com_100px"
+        android:layout_marginTop="@dimen/com_100px"
         android:src="@drawable/selecter_staff_play" />
 
     <RelativeLayout

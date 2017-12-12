@@ -36,21 +36,17 @@ import com.yizu.intelligentpiano.utils.SDCardUtils;
 import com.yizu.intelligentpiano.utils.XmlPrareUtils;
 import com.yizu.intelligentpiano.widget.PianoKeyView;
 import com.yizu.intelligentpiano.widget.PullView;
-import com.yizu.intelligentpiano.widget.StaffView;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import jp.kshoji.driver.midi.device.MidiInputDevice;
 
-/**
- * 钢琴演奏
- */
-public class PianoActivity extends BaseActivity implements View.OnClickListener {
-    private static final String TAG = "PianoActivity";
+public class PullViewActivity extends BaseActivity implements View.OnClickListener {
+
+    private static final String TAG = "PullViewActivity";
     private MyBroadcastReceiver receiver;
     private PianoKeyView mPianoKeyView;
-    private StaffView mStaffView;
     private PullView mPullView;
     private RelativeLayout mTime;
     private RelativeLayout mScore;
@@ -62,10 +58,9 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     private ImageView mSpeed;
     //慢放
     private ImageView mRewind;
+    //当前得分
     private TextView realyTimeScore;
 
-    //是否显示瀑布流
-    private boolean isShowPull = true;
     //是否处理按键，默认连接键盘
     private boolean KeyIsOk = true;
     //实时得分
@@ -120,11 +115,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
         public boolean handleMessage(Message msg) {
             if (msg.what == 0) {
                 mPlay.setSelected(false);
-                if (isShowPull) {
-                    mPullView.play(false);
-                } else {
-                    mStaffView.play(false);
-                }
+                mPullView.play(false);
             }
             return true;
         }
@@ -134,7 +125,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_piano);
+        setContentView(R.layout.activity_pull_view);
     }
 
     /**
@@ -177,42 +168,21 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
         StaffDataHelper.getInstence().AnalyticStaffData(bean.getList(), new IFinish() {
             @Override
             public void success() {
-                if (isShowPull) {
-                    mStaffView.endRefreshCanvas(0);
-                    //显示瀑布流,更新PullView的数据
-                    mPullView.setPullData(mPianoKeyView, new IPlay() {
-                        @Override
-                        public void ReadyFinish() {
-                            MyLogUtils.e(TAG,"瀑布流初始化完成");
-                            if (KeyIsOk) {
-                                mPlay.setSelected(true);
-                                mTimesSpeed.setText(mPullView.getmReta());
-                                mPullView.play(true);
-                            } else {
-                                MyToast.ShowLong("请连接键盘");
-                                mPlay.setSelected(false);
-                            }
+                //显示瀑布流,更新PullView的数据
+                mPullView.setPullData(mPianoKeyView, new IPlay() {
+                    @Override
+                    public void ReadyFinish() {
+                        MyLogUtils.e(TAG,"瀑布流初始化完成");
+                        if (KeyIsOk) {
+                            mPlay.setSelected(true);
+                            mTimesSpeed.setText(mPullView.getmReta());
+                            mPullView.play(true);
+                        } else {
+                            MyToast.ShowLong("请连接键盘");
+                            mPlay.setSelected(false);
                         }
-                    });
-                } else {
-//                    mPullView.endRefreshCanvas(0);
-                    //显示五线谱
-                    mStaffView.setStaffData(new IPlay() {
-                        @Override
-                        public void ReadyFinish() {
-                            MyLogUtils.e(TAG,"五线谱初始化完成");
-                            if (KeyIsOk) {
-                                mPlay.setSelected(true);
-                                mTimesSpeed.setText(mStaffView.getmReta());
-                                mStaffView.play(true);
-                            } else {
-                                MyToast.ShowLong("请连接键盘");
-                                mPlay.setSelected(false);
-                            }
-                        }
-                    });
-
-                }
+                    }
+                });
             }
         });
 
@@ -223,32 +193,23 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
         mPlay.setOnClickListener(this);
         mSpeed.setOnClickListener(this);
         mRewind.setOnClickListener(this);
-        if (isShowPull) {
-            //实时打分
-            ScoreHelper.getInstance().setCallback(new ScoreHelper.ScoreCallBack() {
-                @Override
-                public void callBack(int score) {
-                    realyScore = score;
-                    realyTimeScore.setText("当前得分：" + realyScore + "分");
-                }
-            });
-            //播放结束
-            mPullView.setiPlayEnd(new IPlayEnd() {
-                @Override
-                public void end() {
-                    mPlay.setSelected(false);
-                    //上传打分
-                    addMusicHistory();
-                }
-            });
-        } else {
-            mStaffView.setiPlayEnd(new IPlayEnd() {
-                @Override
-                public void end() {
-                    mPlay.setSelected(false);
-                }
-            });
-        }
+        //实时打分
+        ScoreHelper.getInstance().setCallback(new ScoreHelper.ScoreCallBack() {
+            @Override
+            public void callBack(int score) {
+                realyScore = score;
+                realyTimeScore.setText("当前得分：" + realyScore + "分");
+            }
+        });
+        //播放结束
+        mPullView.setiPlayEnd(new IPlayEnd() {
+            @Override
+            public void end() {
+                mPlay.setSelected(false);
+                //上传打分
+                addMusicHistory();
+            }
+        });
     }
 
     @Override
@@ -294,15 +255,14 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
             public void data(String nickname, String icon, boolean isShowPull,
                              String music_type, String music_title, String music_auther,
                              String music_xml, String music_id) {
-                PianoActivity.this.nickName = nickname;
-                PianoActivity.this.icon = icon;
-                PianoActivity.this.isShowPull = isShowPull;
+                PullViewActivity.this.nickName = nickname;
+                PullViewActivity.this.icon = icon;
 
-                PianoActivity.this.music_type = music_type.replace("|", ".");
-                PianoActivity.this.music_title = music_title;
-                PianoActivity.this.music_auther = music_auther;
-                PianoActivity.this.music_xml = music_xml;
-                PianoActivity.this.music_id = music_id;
+                PullViewActivity.this.music_type = music_type.replace("|", ".");
+                PullViewActivity.this.music_title = music_title;
+                PullViewActivity.this.music_auther = music_auther;
+                PullViewActivity.this.music_xml = music_xml;
+                PullViewActivity.this.music_id = music_id;
             }
         });
         MyLogUtils.e(TAG, "nickName：" + nickName);
@@ -311,11 +271,9 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
         MyLogUtils.e(TAG, "auther：" + music_auther);
         MyLogUtils.e(TAG, "xml：" + music_xml);
         MyLogUtils.e(TAG, "type：" + music_type);
-        MyLogUtils.e(TAG, "isShowPull：" + isShowPull);
 
-        if (!isShowPull)realyTimeScore.setVisibility(View.GONE);
         mNickName.setText(nickName);
-        Glide.with(PianoActivity.this).load(icon).into(mIcon);
+        Glide.with(PullViewActivity.this).load(icon).into(mIcon);
         mSongName.setText(music_title + "—" + music_auther);
         if (myThred != null) {
             myThred.interrupt();
@@ -357,7 +315,6 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     protected void initView() {
         realyTimeScore = findViewById(R.id.realyTimeScore);
         mPianoKeyView = findViewById(R.id.piano_key);
-        mStaffView = findViewById(R.id.staffview);
         mPullView = findViewById(R.id.pullview);
         mPlay = findViewById(R.id.play);
         mSpeed = findViewById(R.id.speed);
@@ -414,19 +371,16 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
     protected void onResume() {
         super.onResume();
         mPullView.onResume();
-        mStaffView.onResume();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         mPullView.onPause();
-        mStaffView.onPause();
     }
 
     @Override
     protected void onDestroy() {
-        mStaffView.onDrestry();
         super.onDestroy();
         unregisterReceiver(receiver);
     }
@@ -437,36 +391,19 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
             case R.id.play:
                 if (mPlay.isSelected()) {
                     mPlay.setSelected(false);
-                    if (isShowPull) {
-                        mPullView.play(false);
-                    } else {
-                        mStaffView.play(false);
-                    }
-
+                    mPullView.play(false);
                 } else {
                     mPlay.setSelected(true);
-                    if (isShowPull) {
-                        mPullView.play(true);
-                    } else {
-                        mStaffView.play(true);
-                    }
+                    mPullView.play(true);
                 }
                 break;
             case R.id.speed:
                 //快放
-                if (isShowPull) {
-                    mTimesSpeed.setText(mPullView.accelerate());
-                } else {
-                    mTimesSpeed.setText(mStaffView.accelerate());
-                }
+                mTimesSpeed.setText(mPullView.accelerate());
                 break;
             case R.id.rewind:
 //                慢放
-                if (isShowPull) {
-                    mTimesSpeed.setText(mPullView.deceleration());
-                } else {
-                    mTimesSpeed.setText(mStaffView.deceleration());
-                }
+                mTimesSpeed.setText(mPullView.deceleration());
                 break;
         }
     }
@@ -477,16 +414,12 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
             switch (intent.getStringExtra(Constents.KEY)) {
                 case Constents.LOGOUT_FINISH:
                     //activity直接退出
-                    PianoActivity.this.finish();
+                    PullViewActivity.this.finish();
                     break;
                 case Constents.NOTIME_5:
                     //剩余5分钟
                     mTime.setVisibility(View.VISIBLE);
-                    if (isShowPull) {
-                        mPullView.play(false);
-                    } else {
-                        mStaffView.play(false);
-                    }
+                    mPullView.play(false);
                     break;
                 case Constents.MUSIC:
                     //推送音乐
@@ -495,19 +428,12 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
                     } else if (mTime.getVisibility() == View.VISIBLE) {
                         mTime.setVisibility(View.GONE);
                     }
-                    if (mStaffView != null) {
-                        mStaffView.resetPullView();
-                    }
                     if (mPullView != null) {
                         mPullView.resetPullView();
                     }
                     if (mPlay.isSelected()) {
                         mPlay.setSelected(false);
-                        if (isShowPull) {
-                            mPullView.play(false);
-                        } else {
-                            mStaffView.play(false);
-                        }
+                        mPullView.play(false);
                     }
                     getSongsData();
                     break;
@@ -528,11 +454,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
 
                     } else {
                         //慢放
-                        if (isShowPull) {
-                            mTimesSpeed.setText(mPullView.deceleration());
-                        } else {
-                            mTimesSpeed.setText(mStaffView.deceleration());
-                        }
+                        mTimesSpeed.setText(mPullView.deceleration());
                     }
                     return true;
                 case KeyEvent.KEYCODE_DPAD_RIGHT:
@@ -543,11 +465,7 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
                     } else if (mTime.getVisibility() == View.VISIBLE) {
                     } else {
                         //快放
-                        if (isShowPull) {
-                            mTimesSpeed.setText(mPullView.accelerate());
-                        } else {
-                            mTimesSpeed.setText(mStaffView.accelerate());
-                        }
+                        mTimesSpeed.setText(mPullView.accelerate());
                     }
                     return true;
                 case KeyEvent.KEYCODE_DPAD_CENTER:
@@ -558,33 +476,20 @@ public class PianoActivity extends BaseActivity implements View.OnClickListener 
                             //再来一次
                             mScore.setVisibility(View.GONE);
                             mPlay.setSelected(true);
-                            if (isShowPull) {
-                                mPullView.play(true);
-                            } else {
-                                mStaffView.play(true);
-                            }
-//                            DriveHelper.getInstence().start();
+                            mPullView.play(true);
                         } else {
                             //退出
                             mScore.setVisibility(View.GONE);
-                            PianoActivity.this.finish();
+                            PullViewActivity.this.finish();
                         }
                     } else {
                         //播放，暂停
                         if (mPlay.isSelected()) {
                             mPlay.setSelected(false);
-                            if (isShowPull) {
-                                mPullView.play(false);
-                            } else {
-                                mStaffView.play(false);
-                            }
+                            mPullView.play(false);
                         } else {
                             mPlay.setSelected(true);
-                            if (isShowPull) {
-                                mPullView.play(true);
-                            } else {
-                                mStaffView.play(true);
-                            }
+                            mPullView.play(true);
                         }
                     }
                     return true;

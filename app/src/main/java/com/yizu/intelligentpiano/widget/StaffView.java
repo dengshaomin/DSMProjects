@@ -1,7 +1,6 @@
 package com.yizu.intelligentpiano.widget;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -10,6 +9,8 @@ import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ScaleDrawable;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
@@ -22,9 +23,8 @@ import com.yizu.intelligentpiano.bean.Dot;
 import com.yizu.intelligentpiano.bean.Dwon;
 import com.yizu.intelligentpiano.bean.HeadData;
 import com.yizu.intelligentpiano.bean.Legato;
-import com.yizu.intelligentpiano.bean.PullData;
 import com.yizu.intelligentpiano.bean.Rest;
-import com.yizu.intelligentpiano.bean.SaveTimeData;
+import com.yizu.intelligentpiano.bean.StaffJump;
 import com.yizu.intelligentpiano.bean.Tia;
 import com.yizu.intelligentpiano.bean.Tial;
 import com.yizu.intelligentpiano.bean.Tie;
@@ -36,9 +36,12 @@ import com.yizu.intelligentpiano.bean.xml.Measure;
 import com.yizu.intelligentpiano.bean.xml.MeasureBase;
 import com.yizu.intelligentpiano.bean.xml.Notes;
 import com.yizu.intelligentpiano.bean.StaffSaveData;
-import com.yizu.intelligentpiano.constens.IFinish;
+import com.yizu.intelligentpiano.constens.IPlay;
+import com.yizu.intelligentpiano.constens.IPlayEnd;
+import com.yizu.intelligentpiano.helper.StaffDataHelper;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,13 +57,6 @@ import java.util.Map;
 public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
 
     private final static String TAG = "StaffView";
-
-    //    //该view划分为6个五线谱
-//    private static final int STAFF_NUMS = 6;
-//    //一个五线谱的间数
-//    private static final int STAFF_LINS_NUM = 4;
-//    //总的间数
-//    private static final int STAFF_ALL_TAIL_NUMS = STAFF_NUMS * STAFF_LINS_NUM;
     //乐谱线的基本宽度
     private static final int STAFF_LINS_WSITH = 1;
 
@@ -164,8 +160,6 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     private int twoStaff_fiveLins_down;
     private int twoStaff_threeLins_down;
 
-    //保存绘制瀑布流的数据
-    private List<PullData> pullData;
 
     /**
      * 钢琴移动相关
@@ -174,19 +168,14 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
 
     //默认每分钟88拍
     private int DEFAULT_TIME_NUM = 80;
-    private IFinish iFinish;
 
     //连音（处理）
     private List<Tie> mTie = new ArrayList<>();
     private List<Tie> mSlur = new ArrayList<>();
-    //保存每个音符符杠的坐标
-//    private List<List<Legato>> legatosList = new ArrayList<>();
+
     //保存第一个音符所有短连音符
     private List<Legato> forwardHook = new ArrayList<>();
     private Map<Integer, List<Legato>> legatosMap = new HashMap<>();
-
-    //保存整个谱子升降音的数组
-    private String[] fifth;
 
 
     //每小节多少Duration
@@ -203,6 +192,8 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     SurfaceHolder holder;
     MysurfaceviewThread thread;
     private boolean isUpfifth = false;
+    //保存整个谱子升降音的数组
+    private String[] fifth;
     //是否保存五线谱移动的数据
     private boolean isSaveData = false;
     private boolean isMove = false;
@@ -221,7 +212,10 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     private Canvas mCanvas;
 //    private boolean isSteam = false;
 
-    private int index = 0;
+//    private int index = 0;
+
+    private float mLenth;//1拍的长度
+    private float mReta = 0.8f;//80拍
 
 
     /**
@@ -268,10 +262,13 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     private List<List<HeadData>> mAllHead = new ArrayList();
     //延音符
     private List<List<Dot>> mAllDot = new ArrayList();
+
+
     //头部间线（超出五线谱范围的）
     private List<List<StaffSaveData>> mAllHeadLins = new ArrayList<>();
     //符杠
     private List<List<StaffSaveData>> mAllLins = new ArrayList<>();
+
     //底部连音线
     private List<List<StaffSaveData>> mAllSlurLins = new ArrayList<>();
     //八分音符的符尾
@@ -284,6 +281,10 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     private List<List<Tia>> mAllRestTia = new ArrayList();
 
     private float mProgressLeft = 0;
+
+    private float lastX = 0;
+
+    private IPlayEnd mIPlayEnd;
 
     /**
      * ******************************************************************
@@ -515,6 +516,11 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
 
     }
 
+    public void setiPlayEnd(IPlayEnd iPlayEnd) {
+        mIPlayEnd = iPlayEnd;
+    }
+
+
     class MysurfaceviewThread extends Thread {
 
         public MysurfaceviewThread() {
@@ -525,63 +531,80 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         public void run() {
             // TODO Auto-generated method stub
             super.run();
-//            SurfaceHolder surfaceHolder = holder;
             while (true) {
                 if (isMove) {
-                    isMove = false;
                     synchronized (holder) {
                         //锁定canvas
                         mCanvas = holder.lockCanvas();
-                        try {
-                            //canvas 执行一系列画的动作
-                            if (mCanvas != null) {
+                        //canvas 执行一系列画的动作
+                        if (mCanvas != null) {
+                            mCanvas.drawColor(Color.WHITE);
+                            if (isSaveData) {
+                                if (mAttributess != null) {
+                                    mPath = new Path();
+                                    moveLenth = 0;
+                                    drawStaffLines(mAttributess, mCanvas, (fristSingLenth.size() == 0 || moveLenth < fristSingLenth.get(1)));
+                                    //初始化五线谱(条数)
+                                    MyLogUtils.e(TAG, "绘制");
+                                    //清除所有数据
+                                    initData();
+                                    //绘制音符
+                                    drawSgin(mCanvas);
+                                    isSaveData = false;
+                                    lastX = mFristStaffWidth;
+                                    MyLogUtils.e(TAG, "绘制结束");
+                                }
+                            } else {
                                 long time = System.currentTimeMillis();
-                                mCanvas.drawColor(Color.WHITE);
-                                //canvas 执行一系列画的动作
-                                initStaff(mCanvas);
-                                MyLogUtils.e(TAG, "绘制时间" + (System.currentTimeMillis() - time));
+                                if (mProgressLeft < Math.max(0, mLayoutWidth - 1920)) {
+//                                if (mProgressLeft < Math.max(0, mLayoutWidth - 500)) {
+                                    if (mProgressLeft < 0) {
+                                        isMove = false;
+                                        if (mIPlayEnd != null) {
+                                            new Handler().post(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    mIPlayEnd.end();
+                                                }
+                                            });
+                                        }
+                                    }
+                                    mProgressLeft += mLenth * mReta;
+                                } else {
+                                    moveLenth += mLenth * mReta;
+                                }
+                                if (mAttributess != null) {
+                                    mPath = new Path();
+                                    drawStaffLines(mAttributess, mCanvas, (fristSingLenth.size() == 0 || moveLenth < fristSingLenth.get(1)));
+                                    selectDraw(mCanvas);
+                                    if (mProgressLeft > 0) {
+                                        setProgresBar(mCanvas, mProgressLeft);
+                                    }
+                                }
+                                if (moveLenth + mProgressLeft >= lastX) {
+                                    mProgressLeft = -mLenth * mReta;
+                                    moveLenth = 0;
+                                }
+                                try {
+                                    MyLogUtils.e(TAG, "绘制时间" + (System.currentTimeMillis() - time));
+                                    Thread.sleep(Math.max(0, (100 - (System.currentTimeMillis() - time))));
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                        try {
+                            //释放canvas对象，并发送到SurfaceView
+                            if (mCanvas != null) {
+                                holder.unlockCanvasAndPost(mCanvas);
+                                mCanvas = null;
                             }
                         } catch (Exception e) {
-                        } finally {
-                            try {
-                                //释放canvas对象，并发送到SurfaceView
-                                if (mCanvas != null) {
-                                    holder.unlockCanvasAndPost(mCanvas);
-                                    mCanvas = null;
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
+                            e.printStackTrace();
                         }
                     }
                 }
-            }
 
-        }
-    }
-
-    /**
-     * 绘制五线谱
-     *
-     * @param canvas
-     */
-    private void initStaff(Canvas canvas) {
-        if (mAttributess != null) {
-            mPath = new Path();
-            drawStaffLines(mAttributess, canvas, (fristSingLenth.size() == 0 || moveLenth < fristSingLenth.get(1)));
-            //初始化五线谱(条数)
-            if (isSaveData) {
-                MyLogUtils.e(TAG, "绘制");
-//                清除所有数据
-                initData();
-                //绘制音符
-                drawSgin(canvas);
-                isSaveData = false;
-                iFinish.success();
-            } else {
-                //选择绘制
-                selectDraw(canvas);
-                setProgresBar(canvas, mProgressLeft);
             }
         }
     }
@@ -592,14 +615,13 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * @param canvas
      */
     private void setProgresBar(Canvas canvas, float mLeft) {
-        if (mLeft == 0) return;
         if (mProgessRectF == null) {
             mProgessRectF = new RectF();
         }
         mProgessRectF.left = mLeft;
         mProgessRectF.top = 10;
-//        mProgessRectF.right = mLeft + mLinsRoomWidth * 3;
-        mProgessRectF.right = mLeft + 5;
+        mProgessRectF.right = mLeft + 10;
+//        mProgessRectF.right = mLeft + 5;
         if (isTowStaff) {
             mProgessRectF.bottom = mLayoutHeight - 10;
             canvas.drawRoundRect(mProgessRectF, 90, 90, mBluePaint);
@@ -615,6 +637,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * @param canvas
      */
     private void selectDraw(Canvas canvas) {
+
         //10条间线
         for (int i = 0; i < mStaffViewLins.size(); i++) {
             StaffSaveData data = mStaffViewLins.get(i);
@@ -644,7 +667,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                     tia.getRightss() - moveLenth, tia.getBottoms());
             canvas.drawPath(mPath, mRedPaint);
         }
-        int num = Math.max(0, index - 1);
+        int num = 0;
         int max = mAllHead.size();
         //一小节的分割线
         for (int i = num; i < max; i++) {
@@ -665,7 +688,6 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
             }
         }
         for (int j = num; j < max; j++) {
-            if (fristSingLenth.get(j) - moveLenth > mLayoutWidth) break;
             //绘制全音符符头
             List<HeadData> wholeHead = mAllWholeHead.get(j);
             for (int i = 0; i < wholeHead.size(); i++) {
@@ -732,7 +754,6 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                 if (dot.getCx() - moveLenth > mLayoutWidth) continue;
                 canvas.drawCircle(dot.getCx() - moveLenth, dot.getCy(), mLinsRoomWidth / 3, mBlackPaint);
             }
-
             //绘制音符短间线
             List<StaffSaveData> headLins = mAllHeadLins.get(j);
             for (int i = 0; i < headLins.size(); i++) {
@@ -2865,126 +2886,31 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     /**
      * 设置绘制五线谱的数据
      *
-     * @param staffData
+     * @param iPlay
      */
-    public void setStaffData(List<Measure> staffData, IFinish iFinish) {
+    public void setStaffData(final IPlay iPlay) {
         MyLogUtils.e(TAG, "初始化五线谱");
         init();
         initStaffData();
-        if (iFinish != null) {
-            this.iFinish = iFinish;
-        }
-        if (mFristStaffData != null) {
-            mFristStaffData.clear();
-        } else {
-            mFristStaffData = new ArrayList<>();
-        }
-        if (mSecondStaffData != null) {
-            mSecondStaffData.clear();
-        } else {
-            mSecondStaffData = new ArrayList<>();
-        }
-        isSaveData = true;
-        //初始化瀑布流的数据
-        if (pullData == null) {
-            pullData = new ArrayList<>();
-        } else {
-            pullData.clear();
-        }
-        //将mAttributess置空
-        mAttributess = null;
-        fifth = null;
-        //该音符之前的总duration
-        int fristTimeDuration = 0;
-        int secondTimeDuration = 0;
-        //总node个数，用于计分
-        int totalNodes = 0;
-        for (int j = 0; j < staffData.size(); j++) {
-            totalNodes += staffData.get(j).getMeasure().size();
-            List<MeasureBase> list = new ArrayList<>();
-            List<MeasureBase> list1 = new ArrayList<>();
-            List<SaveTimeData> fristTime = new ArrayList<>();
-            List<SaveTimeData> secondTime = new ArrayList<>();
-
-            boolean isBackUp = false;
-            int measureSize = staffData.get(j).getMeasure().size();
-            for (int k = 0; k < measureSize; k++) {
-                if (mAttributess == null && staffData.get(j).getMeasure().get(k).getAttributes() != null) {
-                    //五线谱信息
-                    mAttributess = staffData.get(j).getMeasure().get(k).getAttributes();
-                    //处理整条五线谱的升降音
-                    initFifthData(mAttributess.getKey().getFifths());
-                    if (mAttributess.getStaves() != null && mAttributess.getStaves().equals("2")) {
-                        isTowStaff = true;
-                        if (mBackUPData == null) {
-                            mBackUPData = new ArrayList<>();
-                        } else {
-                            mBackUPData.clear();
-                        }
-                    } else {
-                        isTowStaff = false;
-                    }
-                } else if (staffData.get(j).getMeasure().get(k).getSound() != null) {
-//                    建议拍数
-                    DEFAULT_TIME_NUM = Integer.valueOf(staffData.get(j).getMeasure().get(k).getSound());
-                } else {
-                    if (staffData.get(j).getMeasure().get(k).getBackup() != null) {
-                        isBackUp = true;
-//                        往前移动backup个距离
-                        secondTimeDuration = fristTimeDuration - Integer.valueOf(staffData.get(j).getMeasure().get(k).getBackup().getDuration());
-                        //保存backup数据
-                        mBackUPData.add(Integer.valueOf(staffData.get(j).getMeasure().get(k).getBackup().getDuration()));
-                    } else {
-                        if (!isBackUp) {
-                            list.add(staffData.get(j).getMeasure().get(k));
-                            Notes notes = staffData.get(j).getMeasure().get(k).getNotes();
-                            if (notes != null) {
-                                if (notes.getRest()) {
-                                    fristTime.add(new SaveTimeData(fristTimeDuration, Integer.valueOf(notes.getDuration()), true));
-                                    fristTimeDuration += Integer.valueOf(notes.getDuration());
-                                } else if (notes.getPitch() != null) {
-                                    //重新设置瀑布流数据
-                                    fristTimeDuration = setPullView(fristTime, fristTimeDuration, notes);
-                                }
-                            }
-                        } else {
-                            //五线谱第二条线
-                            list1.add(staffData.get(j).getMeasure().get(k));
-                            //瀑布流第二线数据
-                            Notes notes = staffData.get(j).getMeasure().get(k).getNotes();
-                            if (notes != null) {
-                                if (notes.getRest()) {
-                                    secondTime.add(new SaveTimeData(secondTimeDuration, Integer.valueOf(notes.getDuration()), true));
-                                    secondTimeDuration += Integer.valueOf(notes.getDuration());
-                                } else if (notes.getPitch() != null) {
-                                    secondTimeDuration = setPullView(secondTime, secondTimeDuration, notes);
-//                                    MyLogUtils.e(TAG, "ccc" + secondTimeDuration);
-                                }
-                            }
-
-                        }
-                    }
-                }
+        new android.os.Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                iPlay.ReadyFinish();
             }
-            mFristStaffData.add(new Measure(list));
-            mSecondStaffData.add(new Measure(list1));
-            pullData.add(new PullData(fristTime, secondTime));
+        });
+    }
+
+    /**
+     * 播放/暂停
+     */
+    public void play(boolean isplay) {
+        isMove = isplay;
+        if (thread != null) {
+            thread.interrupt();
+            thread = null;
         }
-        divisions = Integer.valueOf(mAttributess.getDivisions());
-        beats = Integer.valueOf(mAttributess.getTime().getBeats());
-        //每个duraction的时间
-        mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * divisions);
-
-        //每一小节的duraction数量
-        measureDurationNum = divisions * beats;
-
-//        每小节长度为320
-        mSpeedLenth = 320 / measureDurationNum;
-        if (mSpeedLenth < 3) mSpeedLenth = 3;//每个druction不小于3
-
-        if (thread == null) {
+        if (isMove) {
             thread = new MysurfaceviewThread();
-            isMove = true;
             thread.start();
         }
     }
@@ -2993,506 +2919,32 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * 初始化五线谱数据
      */
     private void initStaffData() {
-//        startIndex = 0;
         mFristStaffWidth = 0;
         mScendStaffWidth = 0;
-        //true：二条五线谱上
-        isTowStaff = false;
         //是否绘制符尾（八分音符以后的倾斜符尾）
         isDrawTial = false;
-        if (mFristStaffData != null) mFristStaffData.clear();
-        if (mSecondStaffData != null) mSecondStaffData.clear();
-        if (mBackUPData != null) mBackUPData.clear();
         if (fristSingLenth != null) fristSingLenth.clear();
-        mAttributess = null;
-//是否保存五线谱移动的数据
+        //是否保存五线谱移动的数据
         isSaveData = true;
-        DEFAULT_TIME_NUM = 80;
-        iFinish = null;
-        //保存整个谱子升降音的数组
-        fifth = null;
-        measureDurationNum = 0;
-        mSpeedTime = 0;
-        isMove = false;
         moveLenth = 0;
         mProgressLeft = 0;
-        index = 0;
-    }
 
-    /**
-     * 从新设置瀑布流数据
-     *
-     * @param list
-     * @param duration
-     * @param notes
-     */
-    private int setPullView(List<SaveTimeData> list, int duration, Notes notes) {
-        //键组
-        int octave = Integer.valueOf(notes.getPitch().getOctave());
-        //音域
-        String step = notes.getPitch().getStep();
-        String saveStep = step;
-        String alter = notes.getPitch().getAlter();//本音符是否生姜
-        int black = 0;
-
-        //处理单个音符的升降
-        if (alter != null) {
-            if (octave == 0) {
-                switch (step) {
-                    case "A":
-                        switch (alter) {
-                            case "1":
-                                black = 1;
-                                break;
-                            case "2":
-                                step = "B";
-                                break;
-                        }
-                        break;
-                    case "B":
-                        switch (alter) {
-                            case "-2":
-                                step = "A";
-                                break;
-                            case "-1":
-                                black = -1;
-                                break;
-                            case "1":
-                                black = 1;
-                                break;
-                            case "2":
-                                step = "C";
-                                octave++;
-                                black = 0;
-                                break;
-                        }
-                        break;
-                }
-            } else {
-                switch (step) {
-                    case "C":
-                        switch (alter) {
-                            case "-2":
-                                step = "B";
-                                octave--;
-                                black = 0;
-                                break;
-                            case "-1":
-                                black = -1;
-                                break;
-                            case "1":
-                                black = 1;
-                                break;
-                            case "2":
-                                step = "D";
-                                break;
-                        }
-                        break;
-                    case "D":
-                        switch (alter) {
-                            case "-2":
-                                step = "C";
-                                break;
-                            case "-1":
-                                black = -1;
-                                break;
-                            case "1":
-                                black = 1;
-                                break;
-                            case "2":
-                                step = "E";
-                                break;
-                        }
-                        break;
-                    case "E":
-                        switch (alter) {
-                            case "-2":
-                                step = "D";
-                                break;
-                            case "-1":
-                                black = -1;
-                                break;
-                            case "1":
-                                black = 1;
-                                break;
-                            case "2":
-                                step = "F";
-                                black = 0;
-                                break;
-                        }
-                        break;
-                    case "F":
-                        switch (alter) {
-                            case "-2":
-                                step = "E";
-                                black = -0;
-                                break;
-                            case "-1":
-                                black = -1;
-                                break;
-                            case "1":
-                                black = 1;
-                                break;
-                            case "2":
-                                step = "G";
-                                break;
-                        }
-                        break;
-                    case "G":
-                        switch (alter) {
-                            case "-2":
-                                step = "F";
-                                break;
-                            case "-1":
-                                black = -1;
-                                break;
-                            case "1":
-                                black = 1;
-                                break;
-                            case "2":
-                                step = "A";
-                                break;
-                        }
-                        break;
-                    case "A":
-                        switch (alter) {
-                            case "-2":
-                                step = "G";
-                                break;
-                            case "-1":
-                                black = -1;
-                                break;
-                            case "1":
-                                black = 1;
-                                break;
-                            case "2":
-                                step = "B";
-                                break;
-                        }
-                        break;
-                    case "B":
-                        switch (alter) {
-                            case "-2":
-                                step = "A";
-                                break;
-                            case "-1":
-                                black = -1;
-                                break;
-                            case "1":
-                                black = 1;
-                                break;
-                            case "2":
-                                step = "C";
-                                octave++;
-                                black = 0;
-                                break;
-                        }
-                        break;
-                }
-            }
-        }
-
-        //整条五线谱升降调
-        if (fifth != null) {
-            for (int i = 0; i < fifth.length; i++) {
-                if (fifth[i] == saveStep && !alter.equals("0")) {
-                    if (octave == 0) {
-                        switch (step) {
-                            case "A":
-                                if (isUpfifth) {
-                                    if (black == 1) {
-                                        step = "B";
-                                        black = 0;
-                                    } else {
-                                        black++;
-                                    }
-                                }
-                                break;
-                            case "B":
-                                if (isUpfifth) {
-                                    //升调
-                                    if (black == 1) {
-                                        octave = 1;
-                                        step = "C";
-                                        black = 0;
-                                    } else {
-                                        black++;
-                                    }
-                                } else {
-                                    if (black == -1) {
-                                        step = "A";
-                                        black = 0;
-                                    } else {
-                                        black--;
-                                    }
-                                }
-                                break;
-                        }
-                    } else {
-                        switch (step) {
-                            case "C":
-                                if (isUpfifth) {
-                                    //升调
-                                    if (black == 1) {
-                                        step = "D";
-                                        black = 0;
-                                    } else {
-                                        black++;
-                                    }
-                                } else {
-                                    if (black == -1) {
-                                        octave = 0;
-                                        step = "B";
-                                    } else {
-                                        black--;
-                                    }
-
-                                }
-                                break;
-                            case "D":
-                                if (isUpfifth) {
-                                    //升调
-                                    if (black == 1) {
-                                        step = "E";
-                                        black = 0;
-                                    } else {
-                                        black++;
-                                    }
-                                } else {
-                                    if (black == -1) {
-                                        step = "C";
-                                        black = 0;
-                                    } else {
-                                        black--;
-                                    }
-                                }
-                                break;
-                            case "E":
-                                if (isUpfifth) {
-                                    //升调
-                                    if (black == 1) {
-                                        step = "F";
-                                        black = 0;
-                                    } else {
-                                        black++;
-                                    }
-
-                                } else {
-                                    if (black == -1) {
-                                        step = "D";
-                                        black = 0;
-                                    } else {
-                                        black--;
-                                    }
-                                }
-                                break;
-                            case "F":
-                                if (isUpfifth) {
-                                    //升调
-                                    if (black == 1) {
-                                        step = "G";
-                                        black = 0;
-                                    } else {
-                                        black++;
-                                    }
-                                } else {
-                                    if (black == -1) {
-                                        step = "E";
-                                        black = 0;
-                                    } else {
-                                        black--;
-                                    }
-
-                                }
-                                break;
-                            case "G":
-                                if (isUpfifth) {
-                                    //升调
-                                    if (black == 1) {
-                                        step = "A";
-                                        black = 0;
-                                    } else {
-                                        black++;
-                                    }
-                                } else {
-                                    if (black == -1) {
-                                        step = "F";
-                                        black = 0;
-                                    } else {
-                                        black--;
-                                    }
-                                }
-                                break;
-                            case "A":
-                                if (isUpfifth) {
-                                    //升调
-                                    if (black == 1) {
-                                        step = "B";
-                                        black = 0;
-                                    } else {
-                                        black++;
-                                    }
-                                } else {
-                                    if (black == -1) {
-                                        step = "G";
-                                        black = 0;
-                                    } else {
-                                        black--;
-                                    }
-                                }
-                                break;
-                            case "B":
-                                if (isUpfifth) {
-                                    //升调
-                                    if (black == 1) {
-                                        octave++;
-                                        step = "C";
-                                        black = 0;
-                                    } else {
-                                        black++;
-                                    }
-                                } else {
-                                    if (black == -1) {
-                                        step = "A";
-                                        black = 0;
-                                    } else {
-                                        black--;
-                                    }
-                                }
-                                break;
-                        }
-                    }
-                }
-            }
-        }
-        boolean istia = false;
-        if (notes.getTie() != null && notes.getTie().size() != 0) {
-            if (notes.getTie().get(0).equals("start")) istia = true;
-        }
-        SaveTimeData time = new SaveTimeData(duration, Integer.valueOf(notes.getDuration()), octave, step, black, istia);
-
-        if (!notes.getChord()) {
-            duration += Integer.valueOf(notes.getDuration());
-        } else {
-            time.setmAddDuration(list.get(list.size() - 1).getmAddDuration());
-        }
-        list.add(time);
-        return duration;
-    }
-
-    /**
-     * 初始化整个五线谱的升降音
-     *
-     * @param fifths
-     */
-    private void initFifthData(String fifths) {
-        if (fifths == null) return;
-        switch (fifths) {
-            case "1":
-                isUpfifth = true;
-                fifth = new String[]{"F"};
-                break;
-            case "2":
-                isUpfifth = true;
-                fifth = new String[]{"F", "C"};
-                break;
-            case "3":
-                isUpfifth = true;
-                fifth = new String[]{"F", "C", "G"};
-                break;
-            case "4":
-                isUpfifth = true;
-                fifth = new String[]{"F", "C", "G", "D"};
-                break;
-            case "5":
-                isUpfifth = true;
-                fifth = new String[]{"F", "C", "G", "D", "A"};
-                break;
-            case "6":
-                isUpfifth = true;
-                fifth = new String[]{"F", "C", "G", "D", "A", "E"};
-                break;
-            case "7":
-                isUpfifth = true;
-                fifth = new String[]{"F", "C", "G", "D", "A", "E", "B"};
-                break;
-            case "-1":
-                fifth = new String[]{"B"};
-                break;
-            case "-2":
-                fifth = new String[]{"B", "E"};
-                break;
-            case "-3":
-                fifth = new String[]{"B", "E", "A"};
-                break;
-            case "-4":
-                fifth = new String[]{"B", "E", "A", "D"};
-                break;
-            case "-5":
-                fifth = new String[]{"B", "E", "A", "D", "G"};
-                break;
-            case "-6":
-                fifth = new String[]{"B", "E", "A", "D", "G", "C"};
-                break;
-            case "-7":
-                fifth = new String[]{"B", "E", "A", "D", "G", "C", "F"};
-                break;
-        }
-    }
-
-
-    public Attributess getmAttributess() {
-        return mAttributess;
-    }
-
-    public List<PullData> getPullData() {
-        return pullData;
-    }
-
-    public float getmSpeedTime() {
-        return mSpeedTime;
-    }
-
-    public int getmLinsRoomWidth() {
-        return mLinsRoomWidth;
-    }
-
-    public int getTwoStaff_fristLins_up() {
-        return twoStaff_fristLins_up;
-    }
-
-    public boolean isTowStaff() {
-        return isTowStaff;
-    }
-
-    public List<Float> getFristSingLenth() {
-        return fristSingLenth;
-    }
-
-    public float getmSpeedLenth() {
-        return mSpeedLenth;
-    }
-
-    /**
-     * 拍子
-     *
-     * @return
-     */
-    public int getTimes() {
-        return DEFAULT_TIME_NUM;
-    }
-
-    /**
-     * 五线谱移动
-     *
-     * @param lenth
-     * @param progress
-     */
-    public void remove(float lenth, int index, float progress) {
-        moveLenth = lenth;
-        this.index = index;
-        isMove = true;
-        mProgressLeft = progress;
+        //true：二条五线谱上
+        isTowStaff = StaffDataHelper.getInstence().isTowStaff();
+        mFristStaffData = StaffDataHelper.getInstence().getmFristStaffData();
+        mSecondStaffData = StaffDataHelper.getInstence().getmSecondStaffData();
+        mBackUPData = StaffDataHelper.getInstence().getmBackUPData();
+        mAttributess = StaffDataHelper.getInstence().getmAttributess();
+        DEFAULT_TIME_NUM = StaffDataHelper.getInstence().getDEFAULT_TIME_NUM();
+        //保存整个谱子升降音的数组
+        fifth = StaffDataHelper.getInstence().getFifth();
+        measureDurationNum = StaffDataHelper.getInstence().getMeasureDurationNum();
+        mSpeedTime = StaffDataHelper.getInstence().getmSpeedTime();
+        mSpeedLenth = StaffDataHelper.getInstence().getmSpeedLenth();
+        isUpfifth = StaffDataHelper.getInstence().isUpfifth();
+        divisions = StaffDataHelper.getInstence().getDivisions();
+        beats = StaffDataHelper.getInstence().getBeats();
+        mLenth = mSpeedLenth * Float.valueOf(mAttributess.getDivisions()) / 6;
     }
 
     public void onResume() {
@@ -3510,8 +2962,6 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         isSaveData = false;
         moveLenth = 0;
         mProgressLeft = 0;
-        index = 0;
-//        startIndex = 0;
         if (thread != null) {
             thread.interrupt();
             thread = null;
@@ -3533,7 +2983,59 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
-    public int getmLayoutWidth() {
-        return mLayoutWidth;
+    public void endRefreshCanvas(final long millis) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(millis);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                SurfaceHolder surfaceHolder = holder;
+                synchronized (surfaceHolder) {
+                    //锁定canvas
+                    try {
+                        Canvas canvas = surfaceHolder.lockCanvas();
+                        //canvas 执行一系列画的动作
+                        if (canvas != null) {
+                            canvas.drawColor(Color.WHITE);
+                            surfaceHolder.unlockCanvasAndPost(canvas);
+                        }
+                    } catch (Exception e) {
+                    }
+                }
+            }
+        }).start();
+    }
+
+    /**
+     * 获取速度
+     *
+     * @return
+     */
+    public String getmReta() {
+        DecimalFormat decimalFormat = new DecimalFormat("0.0");
+        return decimalFormat.format(mReta);
+    }
+
+    /**
+     * 加速
+     */
+    public String accelerate() {
+        mReta += 0.1f;
+        if (mReta >= 1.5f) mReta = 1.5f;
+        DecimalFormat decimalFormat = new DecimalFormat("0.0");
+        return decimalFormat.format(mReta);
+    }
+
+    /**
+     * 减速
+     */
+    public String deceleration() {
+        mReta -= 0.1f;
+        if (mReta <= 0.5f) mReta = 0.5f;
+        DecimalFormat decimalFormat = new DecimalFormat("0.0");
+        return decimalFormat.format(mReta);
     }
 }

@@ -14,9 +14,10 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- 获取网络状态的权限 -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!--获取usb MIDI权限-->
+    <!-- 获取usb MIDI权限 -->
     <uses-feature android:name="android.hardware.usb.host" />
-    <uses-feature android:name="android.software.midi">android:required="true"</uses-feature>
+    <uses-feature android:name="android.software.midi">
+        android:required="true"</uses-feature>
 
     <application
         android:name=".appliction.MyAppliction"
@@ -38,9 +39,10 @@
             android:configChanges="screenSize|keyboardHidden|orientation"
             android:screenOrientation="landscape">
             <intent-filter>
-            <action android:name="android.intent.action.MAIN" />
-            <category android:name="android.intent.category.LAUNCHER" />
-        </intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
         <activity
             android:name=".view.UpdataActivity"
@@ -49,15 +51,16 @@
         <activity
             android:name=".view.SelectActivity"
             android:configChanges="screenSize|keyboardHidden|orientation"
-            android:screenOrientation="landscape"></activity>
+            android:screenOrientation="landscape" />
         <activity
             android:name=".view.PianoActivity"
             android:configChanges="screenSize|keyboardHidden|orientation"
             android:screenOrientation="landscape">
-            <!--<intent-filter>-->
-                <!--<action android:name="android.intent.action.MAIN" />-->
-                <!--<category android:name="android.intent.category.LAUNCHER" />-->
-            <!--</intent-filter>-->
+
+            <!-- <intent-filter> -->
+            <!-- <action android:name="android.intent.action.MAIN" /> -->
+            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
+            <!-- </intent-filter> -->
         </activity>
 
         <!-- (PUSH)消息接收监听器 （用户可自主扩展） -->
@@ -95,6 +98,7 @@
             <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
             <!-- </intent-filter> -->
         </activity>
+        <activity android:name=".view.PullViewActivity"></activity>
     </application>
 
 </manifest>

@@ -328,15 +328,15 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/com_20dp"
+                android:layout_height="@dimen/com_60px"
                 android:background="@drawable/shape_song"
                 android:gravity="center"
                 android:orientation="horizontal">
 
                 <ImageView
-                    android:layout_width="@dimen/com_20dp"
-                    android:layout_height="@dimen/com_20dp"
-                    android:padding="@dimen/com_5dp"
+                    android:layout_width="@dimen/com_60px"
+                    android:layout_height="@dimen/com_60px"
+                    android:padding="@dimen/com_20px"
                     android:src="@mipmap/muicss" />
 
                 <TextView
@@ -345,7 +345,7 @@
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:textColor="@color/white"
-                    android:textSize="@dimen/com_7sp" />
+                    android:textSize="@dimen/com_20px" />
             </LinearLayout>
 
             <LinearLayout
@@ -353,23 +353,23 @@
                 android:layout_height="wrap_content"
                 android:gravity="center_horizontal"
                 android:orientation="horizontal"
-                android:paddingBottom="@dimen/com_15dp"
-                android:paddingTop="@dimen/com_15dp">
+                android:paddingBottom="@dimen/com_60px"
+                android:paddingTop="@dimen/com_60px">
 
                 <ImageView
                     android:id="@+id/dialog_satisfied"
-                    android:layout_width="70dp"
-                    android:layout_height="70dp"
-                    android:layout_marginLeft="@dimen/com_30dp"
-                    android:layout_marginRight="@dimen/com_10dp"
+                    android:layout_width="@dimen/com_200px"
+                    android:layout_height="@dimen/com_200px"
+                    android:layout_marginLeft="@dimen/com_80px"
+                    android:layout_marginRight="@dimen/com_80px"
                     android:src="@drawable/selector_satisfied" />
 
                 <ImageView
                     android:id="@+id/dialog_play"
-                    android:layout_width="70dp"
-                    android:layout_height="70dp"
-                    android:layout_marginLeft="@dimen/com_10dp"
-                    android:layout_marginRight="@dimen/com_30dp"
+                    android:layout_width="@dimen/com_200px"
+                    android:layout_height="@dimen/com_200px"
+                    android:layout_marginLeft="@dimen/com_30px"
+                    android:layout_marginRight="@dimen/com_80px"
                     android:src="@drawable/selector_play" />
             </LinearLayout>
         </LinearLayout>

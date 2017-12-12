@@ -1,15 +1,10 @@
-package com.yizu.intelligentpiano.constens;
+package com.yizu.intelligentpiano.helper;
 
-import android.content.Context;
 import android.graphics.RectF;
-import android.graphics.drawable.Drawable;
-import android.nfc.Tag;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
 import com.yizu.intelligentpiano.bean.SaveTimeData;
-import com.yizu.intelligentpiano.utils.MyLogUtils;
 
 import java.util.ArrayList;
 import java.util.List;

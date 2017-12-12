@@ -79,6 +79,7 @@ public class Songs {
             private String music_id;
             private String title;
             private String auther;
+            private String video_xml;
             private String music_xml;
             private String category_id;
 
@@ -120,6 +121,14 @@ public class Songs {
 
             public void setCategory_id(String category_id) {
                 this.category_id = category_id;
+            }
+
+            public String getVideo_xml() {
+                return video_xml;
+            }
+
+            public void setVideo_xml(String video_xml) {
+                this.video_xml = video_xml;
             }
         }
     }

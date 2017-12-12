@@ -503,6 +503,29 @@ public class SelectActivity extends BaseActivity {
         popLeftImg.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                popLeftImg.setSelected(true);
+                popRigetImg.setSelected(false);
+                if (selectView.getVisibility() == View.VISIBLE) {
+                    selectView.setVisibility(View.GONE);
+                    if (nickname == null || nickname.equals("")) return;
+                    if (icon == null || icon.equals("")) return;
+                    if (music_title == null || music_title.equals("")) return;
+                    if (music_auther == null || music_auther.equals("")) return;
+                    if (music_xml == null || music_xml.equals("")) return;
+                    if (music_id == null || music_id.equals("")) return;
+                    isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
+                    Intent intent = new Intent(SelectActivity.this, PianoActivity.class);
+                    startActivity(intent);
+                } else {
+                    setPopWinndow();
+                }
+            }
+        });
+        popRigetImg.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                popLeftImg.setSelected(false);
+                popRigetImg.setSelected(true);
                 if (selectView.getVisibility() == View.VISIBLE) {
                     selectView.setVisibility(View.GONE);
                     if (nickname == null || nickname.equals("")) return;
@@ -738,7 +761,7 @@ public class SelectActivity extends BaseActivity {
                         Intent intent = new Intent(SelectActivity.this, VideoActivity.class);
                         intent.putExtra("title", popData.getTitle());
                         intent.putExtra("auther", popData.getAuther());
-                        intent.putExtra("xml", popData.getMusic_xml());
+                        intent.putExtra("xml", popData.getVideo_xml());
                         startActivity(intent);
                     }
                 }
