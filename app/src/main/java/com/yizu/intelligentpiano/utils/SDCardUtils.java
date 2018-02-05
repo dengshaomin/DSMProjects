@@ -3,6 +3,8 @@ package com.yizu.intelligentpiano.utils;
 import android.os.Environment;
 import android.os.StatFs;
 
+import com.yizu.intelligentpiano.constens.Constents;
+
 import java.io.File;
 
 /**
@@ -41,10 +43,10 @@ public class SDCardUtils {
     /**
      * 获取SD卡剩余空间的大小
      *
-     * @return
+     * @return mb
      */
-    public static String getSDFreeSize() {
-        String size = "0MB";
+    public static float getSDFreeSize() {
+        float size = 0f;
         if (getExternalStorageDirectory().equals("")) {
             return size;
         }
@@ -60,13 +62,13 @@ public class SDCardUtils {
         //return (freeBlocks * blockSize)/1024;   //单位KB
 //        return (freeBlocks * blockSize) / 1024 / 1024; //单位MB
         if (freeBlocks * blockSize > 0) {
-            size = (freeBlocks * blockSize / 1024 / 1024) + "MB";
+            size = (freeBlocks * blockSize / 1024 / 1024);
         }
         return size;
     }
 
     /**
-     * 获取SD卡剩余空间的大小
+     * 获取SD卡空间的大小
      *
      * @return
      */
@@ -161,6 +163,12 @@ public class SDCardUtils {
         }
     }
 
+    /**
+     * 查看文件是否存在
+     *
+     * @param filePath
+     * @return
+     */
     public static String getIsHave(String filePath) {
         String url = getExternalStorageDirectory().concat(filePath);
         File file = new File(url);
@@ -169,5 +177,39 @@ public class SDCardUtils {
         } else {
             return "";
         }
+    }
+
+    /**
+     * 创建文件或文件夹
+     *
+     * @param filePath
+     */
+    public static void creatFile(String filePath) {
+        File file = new File(filePath);
+        if (!file.exists()) {
+            file.mkdirs();
+        }
+    }
+
+    /**
+     * 创建本地文件
+     */
+    public static void creatFile() {
+        final String sd = SDCardUtils.getExternalStorageDirectory();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (!sd.equals("")) {
+                    //智能钢琴
+                    SDCardUtils.creatFile(sd.concat(Constents.PIANO_URL));
+                    //apk
+                    SDCardUtils.creatFile(sd.concat(Constents.APK_URL));
+                    //video
+                    SDCardUtils.creatFile(sd.concat(Constents.VIDEO_URL));
+                    //歌曲
+                    SDCardUtils.creatFile(sd.concat(Constents.XML));
+                }
+            }
+        }).start();
     }
 }

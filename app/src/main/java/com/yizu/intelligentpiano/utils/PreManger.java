@@ -108,4 +108,17 @@ public class PreManger {
         }
         return "";
     }
+
+    public void setClintId(String client_id) {
+        if (mEditor != null) {
+            mEditor.putString("client_id", client_id);
+            mEditor.commit();
+        }
+    }
+    public String getClintId() {
+        if (mPreferences != null) {
+            return mPreferences.getString("client_id", "");
+        }
+        return "";
+    }
 }

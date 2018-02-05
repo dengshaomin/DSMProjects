@@ -26,6 +26,8 @@ public interface HttpUrls {
     //歌曲分类
     String GETLIST = "/Music/getList";
     //打分记录上传
-    String addMusicHistory = "/Music/addMusicHistory  ";
+    String addMusicHistory = "/Music/addMusicHistory";
+    String GETONEMUSIC = "/Music/getOneMusic";
 
+    String WEB_Url ="ws:47.97.222.107:8282";
 }

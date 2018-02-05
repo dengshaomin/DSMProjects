@@ -14,7 +14,7 @@
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="@dimen/com_0dp"
+            android:layout_height="@dimen/com_0px"
             android:layout_weight="1">
             <com.yizu.intelligentpiano.widget.PullView
                 android:id="@+id/pullview"
@@ -29,10 +29,9 @@
                 <LinearLayout
                     android:layout_width="@dimen/com_500px"
                     android:layout_height="@dimen/com_240px"
-                    android:background="@color/blue"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="@dimen/com_10dp">
+                    android:padding="@dimen/com_30px">
 
                     <com.yizu.intelligentpiano.widget.XCRoundImageView
                         android:id="@+id/user_icon"
@@ -47,7 +46,7 @@
                         android:layout_height="match_parent"
                         android:gravity="center_vertical"
                         android:orientation="vertical"
-                        android:paddingLeft="@dimen/com_5dp">
+                        android:paddingLeft="@dimen/com_15px">
 
                         <TextView
                             android:id="@+id/user_name"
@@ -133,9 +132,7 @@
                     android:textColor="@color/red"
                     android:textSize="@dimen/com_30px" />
             </LinearLayout>
-
         </RelativeLayout>
-
         <com.yizu.intelligentpiano.widget.PianoKeyView
             android:id="@+id/piano_key"
             android:layout_width="match_parent"
@@ -144,66 +141,16 @@
             />
     </LinearLayout>
 
-    <RelativeLayout
-        android:id="@+id/time"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/translucent"
-        android:gravity="center"
-        android:visibility="gone">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/shape_select"
-            android:gravity="center_horizontal"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/com_60px"
-                android:background="@drawable/shape_song"
-                android:gravity="center"
-                android:text="@string/prompt"
-                android:textColor="@color/white"
-                android:textSize="@dimen/com_20px" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/com_76px"
-                android:layout_marginLeft="@dimen/com_238px"
-                android:layout_marginRight="@dimen/com_238px"
-                android:layout_marginTop="@dimen/com_76px"
-                android:text="@string/time"
-                android:textColor="@color/black"
-                android:textSize="@dimen/com_25px" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/com_60px"
-                android:layout_marginLeft="@dimen/com_312px"
-                android:layout_marginRight="@dimen/com_312px"
-                android:background="@drawable/selector_button"
-                android:gravity="center"
-                android:paddingBottom="@dimen/com_20px"
-                android:paddingTop="@dimen/com_20px"
-                android:text="知道了"
-                android:textColor="@drawable/selector_text"
-                android:textSize="@dimen/com_20px" />
-        </LinearLayout>
-    </RelativeLayout>
 
     <RelativeLayout
         android:id="@+id/score_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentStart="true"
-        android:layout_below="@+id/time"
         android:background="@color/translucent"
         android:gravity="center"
-        android:visibility="gone">
+        android:visibility="gone"
+        >
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -258,7 +205,7 @@
                     android:background="@mipmap/score_good"
                     android:gravity="center"
                     android:textColor="@color/white"
-                    android:textSize="@dimen/com_7sp" />
+                    android:textSize="@dimen/com_20px" />
             </RelativeLayout>
 
             <LinearLayout

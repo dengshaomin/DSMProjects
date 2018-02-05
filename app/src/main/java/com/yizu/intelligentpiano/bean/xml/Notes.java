@@ -13,7 +13,7 @@ public class Notes {
     private String duration;
     private String voice;
     private String type;
-    private String stem;
+    private String stem = "dwon";
     private String staff;
     //和弦，是和前一个音符一起弹奏
     private boolean isChords = false;
@@ -25,7 +25,6 @@ public class Notes {
 
     private List<String> tie;//黑色延音线 start ，stop 弧线
     private List<String> slur;//红色延音线 start ，stop 弧线
-
 
     public Pitch getPitch() {
         return pitch;

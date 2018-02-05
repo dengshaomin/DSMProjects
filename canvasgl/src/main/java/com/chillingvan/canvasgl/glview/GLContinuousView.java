@@ -42,7 +42,7 @@ public abstract class GLContinuousView extends GLView {
     @Override
     protected void init() {
         super.init();
-        setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+        setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);//连续刷新
     }
 
 

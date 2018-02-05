@@ -41,7 +41,7 @@
         android:id="@+id/song_img"
         android:layout_width="@dimen/com_100px"
         android:layout_height="@dimen/com_100px"
-        android:padding="@dimen/com_40dp"
+        android:padding="@dimen/com_120px"
         android:src="@mipmap/music"
         />
 </LinearLayout>

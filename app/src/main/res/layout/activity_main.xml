@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/login"
     android:layout_width="match_parent"
     android:layout_height="@dimen/com_760px"
     android:background="@mipmap/login"
@@ -8,8 +9,8 @@
     android:orientation="horizontal"
     tools:context="com.yizu.intelligentpiano.view.MainActivity">
     <TextView
-        android:layout_width="@dimen/com_0dp"
-        android:layout_height="@dimen/com_0dp"
+        android:layout_width="@dimen/com_0px"
+        android:layout_height="@dimen/com_0px"
         android:layout_weight="1"
         />
     <LinearLayout
@@ -24,22 +25,23 @@
             android:layout_height="wrap_content"
             android:text="@string/love_piano"
             android:textColor="@color/white"
-            android:textSize="@dimen/com_15sp" />
+            android:textSize="@dimen/com_45px" />
 
         <TextView
             android:id="@+id/login_button"
-            android:layout_width="@dimen/com_100dp"
-            android:layout_height="@dimen/com_30dp"
+            android:layout_width="@dimen/com_300px"
+            android:layout_height="@dimen/com_90px"
             android:layout_marginTop="@dimen/com_72px"
-            android:background="@drawable/selector_button"
+            android:background="@drawable/shape_login"
             android:gravity="center"
             android:text="默认登陆"
-            android:textColor="@drawable/selector_text"
-            android:textSize="@dimen/com_15sp"
-            android:visibility="gone" />
+            android:textColor="@color/white"
+            android:textSize="@dimen/com_45px"
+            android:visibility="gone"
+             />
     </LinearLayout>
     <TextView
-        android:layout_width="@dimen/com_0dp"
+        android:layout_width="@dimen/com_0px"
         android:layout_height="0dp"
         android:layout_weight="2"
         />
@@ -59,10 +61,10 @@
             android:layout_marginTop="@dimen/com_22px"
             android:text="@string/wx_login"
             android:textColor="@color/white"
-            android:textSize="@dimen/com_10sp" />
+            android:textSize="@dimen/com_30px" />
     </LinearLayout>
     <TextView
-        android:layout_width="@dimen/com_0dp"
+        android:layout_width="@dimen/com_0px"
         android:layout_height="0dp"
         android:layout_weight="1"
         />

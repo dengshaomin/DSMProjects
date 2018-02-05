@@ -84,6 +84,7 @@ public interface ICanvasGL {
 
 
     void drawRect(@NonNull RectF rect, @NonNull GLPaint paint);
+    void drawEllipse(@NonNull RectF rect, @NonNull GLPaint paint);
 
     void drawRect(@NonNull Rect r, @NonNull GLPaint paint);
 

@@ -7,6 +7,8 @@ import android.os.Looper;
 import com.yizu.intelligentpiano.bean.SaveTimeData;
 
 import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -21,12 +23,17 @@ public class ScoreHelper {
     //当前的总的音符数量
     private int hasGoneNodes = 0;
     //可以弹奏的音符
-    private List<SaveTimeData> correctKeys;
-    //正在按的钢琴键
-    private List<Integer> physicKeys;
+    private List<SaveTimeData> correctKeys = new ArrayList<>();
+    //保存midi键盘
+    private List<Integer> physicKeys = new ArrayList<>();
+    //绘制动画
+    private List<SaveTimeData> map = new ArrayList<>();
+//    private List<Integer> key = new ArrayList<>();
+    private BitSet key = new BitSet(109);
     private ScoreCallBack callback;
     //当前分数
     private int realScore = 0;
+//    private IBubble iBubble;
 
     public void setCallback(ScoreCallBack callback) {
         this.callback = callback;
@@ -46,19 +53,25 @@ public class ScoreHelper {
     /**
      * 设置当前
      *
+     * @param isFrist
+     * @param j
      * @param rectF
      * @param saveTimeData
      * @param bottom
      */
-    public synchronized void setCorrectKey(RectF rectF, SaveTimeData saveTimeData, int bottom) {
-        if (correctKeys == null) correctKeys = new ArrayList<>();
+    public synchronized void setCorrectKey(boolean isFrist, int j, RectF rectF,
+                                           SaveTimeData saveTimeData, int bottom) {
         if (rectF.bottom >= bottom && rectF.top <= bottom) {
             //设置当前音符的位置的状态。0:未到弹奏 1：开始弹奏 2.结束弹奏
             if (saveTimeData.getArriveBottomState() == 0) {
+                if (isFrist && j == 0) {
+                    map.clear();
+                }
                 saveTimeData.setArriveBottomState(1);
                 //不计算休止符号
                 if (!saveTimeData.isRest()) {
                     correctKeys.add(saveTimeData);
+                    map.add(saveTimeData);
                     hasGoneNodes++;
                 }
             } else if (saveTimeData.getArriveBottomState() == 1) {
@@ -78,8 +91,9 @@ public class ScoreHelper {
                     }
                 });
             }
-        } else if (rectF.top > bottom && correctKeys.contains(saveTimeData)) {
-            correctKeys.remove(saveTimeData);
+        } else if (rectF.top > bottom && !saveTimeData.isRest()) {
+            if (map.contains(saveTimeData))map.remove(saveTimeData);
+            if (correctKeys.contains(saveTimeData))correctKeys.remove(saveTimeData);
         }
     }
 
@@ -88,12 +102,11 @@ public class ScoreHelper {
      *
      * @param physicKey
      */
-    public synchronized void caCorrectKey(int physicKey) {
-        if (correctKeys == null) return;
-        if (physicKeys == null) physicKeys = new ArrayList<>();
-        if (!physicKeys.contains(physicKey)) {
+    public synchronized void caCorrectKey(int physicKey,boolean isPrass) {
+        if (isPrass&&!physicKeys.contains(physicKey)) {
             physicKeys.add(physicKey);
         }
+        key.set(physicKey,isPrass);
     }
 
     /**
@@ -103,12 +116,14 @@ public class ScoreHelper {
      */
     private int caRealTimeScores() {
         if (hasGoneNodes == 0) return 0;
-        for (SaveTimeData saveTimeData : correctKeys) {
-            if (physicKeys == null) physicKeys = new ArrayList<>();
+        Iterator it = correctKeys.iterator();
+        while (it.hasNext()) {
+            SaveTimeData saveTimeData = (SaveTimeData) it.next();
             for (int i = 0; i < physicKeys.size(); i++) {
                 if (physicKeys.get(i) == saveTimeData.getPhysicalKey()) {
                     correctNodes++;
                     physicKeys.remove(i);
+                    it.remove();
                     break;
                 }
             }
@@ -120,11 +135,10 @@ public class ScoreHelper {
      * 谱子结束，初始化打分
      */
     public void initData() {
-        if (correctKeys != null) {
-            correctKeys.clear();
-            correctKeys = null;
-        }
-        if (physicKeys != null) physicKeys.clear();
+        correctKeys.clear();
+        map.clear();
+        physicKeys.clear();
+        key.clear();
         realScore = 0;
         hasGoneNodes = 0;
         correctNodes = 0;
@@ -132,5 +146,13 @@ public class ScoreHelper {
 
     public interface ScoreCallBack {
         void callBack(int score);
+    }
+
+    public List<SaveTimeData> getCorrectKeys() {
+        return map;
+    }
+
+    public BitSet getKey() {
+        return key;
     }
 }

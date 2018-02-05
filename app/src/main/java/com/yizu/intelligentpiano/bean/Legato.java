@@ -7,13 +7,11 @@ package com.yizu.intelligentpiano.bean;
 
 public class Legato {
     private float startX = 0;
-    private float stopX = 0;
-    private int startY = 0;
-    private int stopY = 0;
+    private float startY = 0;
+    private float stopY = 0;
 
-    public Legato(float startX, int startY, float stopX, int stopY) {
+    public Legato(float startX, float startY, float stopY) {
         this.startX = startX;
-        this.stopX = stopX;
         this.startY = startY;
         this.stopY = stopY;
     }
@@ -22,31 +20,23 @@ public class Legato {
         return startX;
     }
 
-    public void setStartX(int startX) {
+    public void setStartX(float startX) {
         this.startX = startX;
     }
 
-    public float getStopX() {
-        return stopX;
-    }
-
-    public void setStopX(int stopX) {
-        this.stopX = stopX;
-    }
-
-    public int getStartY() {
+    public float getStartY() {
         return startY;
     }
 
-    public void setStartY(int startY) {
+    public void setStartY(float startY) {
         this.startY = startY;
     }
 
-    public int getStopY() {
+    public float getStopY() {
         return stopY;
     }
 
-    public void setStopY(int stopY) {
+    public void setStopY(float stopY) {
         this.stopY = stopY;
     }
 }

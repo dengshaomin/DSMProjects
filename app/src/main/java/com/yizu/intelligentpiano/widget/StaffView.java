@@ -9,8 +9,6 @@ import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ScaleDrawable;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
@@ -19,14 +17,9 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.yizu.intelligentpiano.R;
-import com.yizu.intelligentpiano.bean.Dot;
-import com.yizu.intelligentpiano.bean.Dwon;
-import com.yizu.intelligentpiano.bean.HeadData;
 import com.yizu.intelligentpiano.bean.Legato;
-import com.yizu.intelligentpiano.bean.Rest;
-import com.yizu.intelligentpiano.bean.StaffJump;
-import com.yizu.intelligentpiano.bean.Tia;
-import com.yizu.intelligentpiano.bean.Tial;
+import com.yizu.intelligentpiano.bean.ReverseTie;
+import com.yizu.intelligentpiano.bean.RiseRecord;
 import com.yizu.intelligentpiano.bean.Tie;
 import com.yizu.intelligentpiano.bean.xml.Attributess;
 import com.yizu.intelligentpiano.bean.xml.AttributessTime;
@@ -35,15 +28,14 @@ import com.yizu.intelligentpiano.bean.xml.Clef;
 import com.yizu.intelligentpiano.bean.xml.Measure;
 import com.yizu.intelligentpiano.bean.xml.MeasureBase;
 import com.yizu.intelligentpiano.bean.xml.Notes;
-import com.yizu.intelligentpiano.bean.StaffSaveData;
+import com.yizu.intelligentpiano.constens.Constents;
 import com.yizu.intelligentpiano.constens.IPlay;
-import com.yizu.intelligentpiano.constens.IPlayEnd;
 import com.yizu.intelligentpiano.helper.StaffDataHelper;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -57,15 +49,11 @@ import java.util.Map;
 public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
 
     private final static String TAG = "StaffView";
-    //乐谱线的基本宽度
-    private static final int STAFF_LINS_WSITH = 1;
 
     private Context mContext;
     private int mLayoutWidth;
     private int mLayoutHeight;
     private int mLayoutCenterHeight;
-    //true：二条五线谱上
-    private boolean isTowStaff = false;
     //是否绘制符尾（八分音符以后的倾斜符尾）
     private boolean isDrawTial = true;
 
@@ -90,15 +78,10 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     private Paint mTailPaint;
     //绘制主要基线
     private Paint mLinsPaint;
-    private Paint mCrudePaint;
     private Paint mRedPaint;
     private Paint mBeamPaint;
 
-    private Paint mLinsPaint2;
-    //进度条矩形
-    private RectF mProgessRectF;
-    //绘制进度条的画笔
-    private Paint mBluePaint;
+    private Paint mPathPaint;
     /**
      * 一个间间距
      */
@@ -110,6 +93,8 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     private int mLinsRoomWidth6;
     private int mLinsRoomWidth7;
     private int mLinsRoomWidth8;
+    private int mLinsRoomWidth9;
+    private int mLinsRoomWidth30;
 
     //第一条五线谱总的宽度
     private float mFristStaffWidth;
@@ -164,40 +149,30 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     /**
      * 钢琴移动相关
      */
+    private List<Tie> mFristTie = new ArrayList<>();
+    private List<Tie> mSecondTie = new ArrayList<>();
+
+    private List<Tie> mFristSlur = new ArrayList<>();
+    private List<Tie> mSecondSlur = new ArrayList<>();
 
 
-    //默认每分钟88拍
-    private int DEFAULT_TIME_NUM = 80;
+    //保存第一个音符所有短连音符（向后）
+    private int forwardHook = 0;
+    //保存最后一个音符所有短连音符（向前）
+    private int backwardHook = 0;
 
-    //连音（处理）
-    private List<Tie> mTie = new ArrayList<>();
-    private List<Tie> mSlur = new ArrayList<>();
-
-    //保存第一个音符所有短连音符
-    private List<Legato> forwardHook = new ArrayList<>();
+    //保存连音符的数据
     private Map<Integer, List<Legato>> legatosMap = new HashMap<>();
-
 
     //每小节多少Duration
     private int measureDurationNum = 0;
     //默认每个druction的长度20像素
     private int mSpeedLenth = 20;
-    //每个duration多少毫秒
-    private float mSpeedTime = 0;
-    //每一小节第一条五线谱的第一个音符的长度
-    private List<Float> fristSingLenth = new ArrayList<>();
-
-    private Path mPath;
 
     SurfaceHolder holder;
-    MysurfaceviewThread thread;
     private boolean isUpfifth = false;
     //保存整个谱子升降音的数组
     private String[] fifth;
-    //是否保存五线谱移动的数据
-    private boolean isSaveData = false;
-    private boolean isMove = false;
-    private float moveLenth;
 
     private List<Integer> HighRise;//高升
     private List<Integer> HighDrop;//高降
@@ -208,83 +183,37 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     private String[] typeString = {"whole", "half", "quarter", "eighth", "16th", "32th", "64th"};
     int divisions = 0;
     int beats = 0;
-    //    int startIndex = 0;
     private Canvas mCanvas;
-//    private boolean isSteam = false;
-
-//    private int index = 0;
-
-    private float mLenth;//1拍的长度
-    private float mReta = 0.8f;//80拍
-
+    private MysurfaceviewThread thread;
 
     /**
-     * 保存全部音符的位置信息
+     * ********************换成3行需要的参数*********************************
      */
-    //间线
-    private List<StaffSaveData> mStaffViewLins = new ArrayList<>();
-    //黑色弧形延音线
-    private List<Tia> mBlackTia = new ArrayList<>();
-    //红色弧形延音线
-    private List<Tia> mRedTia = new ArrayList<>();
-    //小结线
-    private List<StaffSaveData> mFristMeasureLins = new ArrayList<>();
-    private List<StaffSaveData> mSecoundMeasureLins = new ArrayList<>();
+    //每一行显示的小节数
+    private int measureNum = 0;
+    //每一行开始的位置（X）
+    private int start_x = 0;
+    //当前行号
+    private int mLineNum = 0;
+    private int index = 0;
+    private boolean isFrist = false;
+    private ProgresView progresView;
+    private IPlay iPlay;
+    //    进度条第一行开始的位置
+    private float x = 0;
+    //保存第一行每一小节结束的位置
+    private List<Float> fristLinsEndX = new ArrayList();
+    private List<RiseRecord> riseRecords = new ArrayList<>();
+    //默认两条五线谱
+    private boolean isTwoStaff = true;
+    //一条五线谱的时候是高音
+    private boolean isUpNote = true;
 
-    //全音符符头
-    private List<HeadData> mWholeHead;
-    //二分音符符头
-    private List<HeadData> mHalfHead;
-    //四分音符符头
-    private List<HeadData> mHead;
-    //延音符
-    private List<Dot> mDot;
-    //头部间线（超出五线谱范围的）
-    private List<StaffSaveData> mHeadLins;
-    //符杠
-    private List<StaffSaveData> mLins;
-    //底部连音线
-    private List<StaffSaveData> mSlurLins;
-    //八分音符的符尾
-    private List<Tial> mTial;
-    //降音b
-    private List<Dwon> mDwon;
-    //休止符号(直线)
-    private List<Rest> mRest;
-    //休止符号(贝塞尔曲线)
-    private List<Tia> mRestTia;
-    /*************二次保存****************/
-    //全音符符头
-    private List<List<HeadData>> mAllWholeHead = new ArrayList();
-    //二分音符符头
-    private List<List<HeadData>> mAllHalfHead = new ArrayList();
-    //四分音符符头
-    private List<List<HeadData>> mAllHead = new ArrayList();
-    //延音符
-    private List<List<Dot>> mAllDot = new ArrayList();
+    private boolean isStopBeam = false;
+    //反向的Tie
+    private ReverseTie reverseTie;
+    private boolean isSlur = false;
 
-
-    //头部间线（超出五线谱范围的）
-    private List<List<StaffSaveData>> mAllHeadLins = new ArrayList<>();
-    //符杠
-    private List<List<StaffSaveData>> mAllLins = new ArrayList<>();
-
-    //底部连音线
-    private List<List<StaffSaveData>> mAllSlurLins = new ArrayList<>();
-    //八分音符的符尾
-    private List<List<Tial>> mAllTial = new ArrayList<>();
-    //降音b
-    private List<List<Dwon>> mAllDwon = new ArrayList();
-    //休止符号(直线)
-    private List<List<Rest>> mAllRest = new ArrayList();
-    //休止符号(贝塞尔曲线)
-    private List<List<Tia>> mAllRestTia = new ArrayList();
-
-    private float mProgressLeft = 0;
-
-    private float lastX = 0;
-
-    private IPlayEnd mIPlayEnd;
 
     /**
      * ******************************************************************
@@ -309,9 +238,8 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * 初始化五线谱基本数据
      */
     private void init() {
-        if (mLinsRoomWidth != 0) return;
         //6个五线谱，每个五线谱4隔间
-        mLinsRoomWidth = 240 / 24;
+        mLinsRoomWidth = mLayoutHeight / (30 * Constents.LINE_NUM);
         mLinsRoomWidth2 = mLinsRoomWidth * 2;
         mLinsRoomWidth3 = mLinsRoomWidth * 3;
         mLinsRoomWidth4 = mLinsRoomWidth * 4;
@@ -319,17 +247,22 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         mLinsRoomWidth6 = mLinsRoomWidth * 6;
         mLinsRoomWidth7 = mLinsRoomWidth * 7;
         mLinsRoomWidth8 = mLinsRoomWidth * 8;
-        mLayoutCenterHeight = 240 / 2;
-        twoStaff_fristLins_up = mLayoutCenterHeight - mLinsRoomWidth4;
-        twoStaff_threeLins_up = mLayoutCenterHeight - mLinsRoomWidth6;
-        twoStaff_fiveLins_up = mLayoutCenterHeight - mLinsRoomWidth8;
-
-        twoStaff_fristLins_down = mLayoutCenterHeight + mLinsRoomWidth8;
-        twoStaff_threeLins_down = mLayoutCenterHeight + mLinsRoomWidth6;
-        twoStaff_fiveLins_down = mLayoutCenterHeight + mLinsRoomWidth4;
+        mLinsRoomWidth9 = mLinsRoomWidth * 9;
+        mLinsRoomWidth30 = mLinsRoomWidth * 30;
+        mLayoutCenterHeight = mLayoutHeight / (2 * Constents.LINE_NUM);
+        twoStaff_fristLins_up = mLayoutCenterHeight - mLinsRoomWidth5;
+        twoStaff_threeLins_up = mLayoutCenterHeight - mLinsRoomWidth7;
+        twoStaff_fiveLins_up = mLayoutCenterHeight - mLinsRoomWidth9;
+        twoStaff_fristLins_down = mLayoutCenterHeight + mLinsRoomWidth9;
+        twoStaff_threeLins_down = mLayoutCenterHeight + mLinsRoomWidth7;
+        twoStaff_fiveLins_down = mLayoutCenterHeight + mLinsRoomWidth5;
         initSignScan();
         initRiseDrop();
-        mBeamPaint.setStrokeWidth(mLinsRoomWidth / 2);
+        mBeamPaint.setStrokeWidth(mLinsRoomWidth / 3);
+        mTailPaint.setStrokeWidth(mLinsRoomWidth / 3);
+        mRedPaint.setStrokeWidth(mLinsRoomWidth / 3);
+        mLinsPaint.setStrokeWidth(mLinsRoomWidth / 10);
+        mPathPaint.setStrokeWidth(mLinsRoomWidth / 5);
     }
 
     /**
@@ -391,53 +324,37 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         mBlackPaint = new Paint();
         mBlackPaint.setAntiAlias(true);
         mBlackPaint.setColor(getResources().getColor(R.color.black));
-        mBlackPaint.setStyle(Paint.Style.FILL);
+        mBlackPaint.setStyle(Paint.Style.FILL_AND_STROKE);
 
         mWhitePaint = new Paint();
         mWhitePaint.setAntiAlias(true);
         mWhitePaint.setColor(getResources().getColor(R.color.white));
-        mWhitePaint.setStyle(Paint.Style.FILL);
+        mWhitePaint.setStyle(Paint.Style.FILL_AND_STROKE);
 
         mTailPaint = new Paint();
         mTailPaint.setAntiAlias(true);
         mTailPaint.setColor(getResources().getColor(R.color.black));
-        mTailPaint.setStyle(Paint.Style.STROKE);
-        mTailPaint.setStrokeWidth(STAFF_LINS_WSITH * 2);
+        mTailPaint.setStyle(Paint.Style.FILL_AND_STROKE);
 
         mLinsPaint = new Paint();
-        mLinsPaint.setAntiAlias(true);
+//        mLinsPaint.setAntiAlias(true);
         mLinsPaint.setColor(getResources().getColor(R.color.black));
         mLinsPaint.setStyle(Paint.Style.STROKE);
-        mLinsPaint.setStrokeWidth(STAFF_LINS_WSITH);
 
-        mLinsPaint2 = new Paint();
-        mLinsPaint2.setAntiAlias(true);
-        mLinsPaint2.setColor(getResources().getColor(R.color.black));
-        mLinsPaint2.setStyle(Paint.Style.STROKE);
-        mLinsPaint2.setStrokeWidth(STAFF_LINS_WSITH * 2);
+        mPathPaint = new Paint();
+        mPathPaint.setAntiAlias(true);
+        mPathPaint.setColor(getResources().getColor(R.color.black));
+        mPathPaint.setStyle(Paint.Style.STROKE);
 
         mRedPaint = new Paint();
         mRedPaint.setAntiAlias(true);
         mRedPaint.setColor(getResources().getColor(R.color.red));
         mRedPaint.setStyle(Paint.Style.STROKE);
-        mRedPaint.setStrokeWidth(STAFF_LINS_WSITH);
-
-        mCrudePaint = new Paint();
-        mCrudePaint.setAntiAlias(true);
-        mCrudePaint.setColor(getResources().getColor(R.color.black));
-        mCrudePaint.setStyle(Paint.Style.STROKE);
-        mCrudePaint.setStrokeWidth(STAFF_LINS_WSITH * 3);
 
         mBeamPaint = new Paint();
         mBeamPaint.setAntiAlias(true);
         mBeamPaint.setColor(getResources().getColor(R.color.black));
         mBeamPaint.setStyle(Paint.Style.STROKE);
-
-        mBluePaint = new Paint();
-        mBluePaint.setAntiAlias(true);
-        mBluePaint.setColor(getResources().getColor(R.color.violet));
-        mBluePaint.setStyle(Paint.Style.FILL);
-        mBluePaint.setAlpha(70);//0-255
     }
 
     @Override
@@ -446,6 +363,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
 //        MyLogUtils.e(TAG, "onMeasure");
         mLayoutWidth = MeasureSpec.getSize(widthMeasureSpec);
         mLayoutHeight = MeasureSpec.getSize(heightMeasureSpec);
+        init();
     }
 
     /**
@@ -509,373 +427,116 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        // 当SurfaceView被销毁时，释放资源。
-        synchronized (this) {
-            isMove = false;
-        }
-
     }
 
-    public void setiPlayEnd(IPlayEnd iPlayEnd) {
-        mIPlayEnd = iPlayEnd;
+    public void onDrestry() {
+        if (thread != null) {
+            thread.interrupt();
+            thread = null;
+        }
     }
 
 
     class MysurfaceviewThread extends Thread {
 
-        public MysurfaceviewThread() {
-            super();
-        }
-
         @Override
         public void run() {
             // TODO Auto-generated method stub
             super.run();
-            while (true) {
-                if (isMove) {
-                    synchronized (holder) {
-                        //锁定canvas
-                        mCanvas = holder.lockCanvas();
-                        //canvas 执行一系列画的动作
-                        if (mCanvas != null) {
-                            mCanvas.drawColor(Color.WHITE);
-                            if (isSaveData) {
-                                if (mAttributess != null) {
-                                    mPath = new Path();
-                                    moveLenth = 0;
-                                    drawStaffLines(mAttributess, mCanvas, (fristSingLenth.size() == 0 || moveLenth < fristSingLenth.get(1)));
-                                    //初始化五线谱(条数)
-                                    MyLogUtils.e(TAG, "绘制");
-                                    //清除所有数据
-                                    initData();
-                                    //绘制音符
-                                    drawSgin(mCanvas);
-                                    isSaveData = false;
-                                    lastX = mFristStaffWidth;
-                                    MyLogUtils.e(TAG, "绘制结束");
-                                }
-                            } else {
-                                long time = System.currentTimeMillis();
-                                if (mProgressLeft < Math.max(0, mLayoutWidth - 1920)) {
-//                                if (mProgressLeft < Math.max(0, mLayoutWidth - 500)) {
-                                    if (mProgressLeft < 0) {
-                                        isMove = false;
-                                        if (mIPlayEnd != null) {
-                                            new Handler().post(new Runnable() {
-                                                @Override
-                                                public void run() {
-                                                    mIPlayEnd.end();
-                                                }
-                                            });
-                                        }
-                                    }
-                                    mProgressLeft += mLenth * mReta;
-                                } else {
-                                    moveLenth += mLenth * mReta;
-                                }
-                                if (mAttributess != null) {
-                                    mPath = new Path();
-                                    drawStaffLines(mAttributess, mCanvas, (fristSingLenth.size() == 0 || moveLenth < fristSingLenth.get(1)));
-                                    selectDraw(mCanvas);
-                                    if (mProgressLeft > 0) {
-                                        setProgresBar(mCanvas, mProgressLeft);
-                                    }
-                                }
-                                if (moveLenth + mProgressLeft >= lastX) {
-                                    mProgressLeft = -mLenth * mReta;
-                                    moveLenth = 0;
-                                }
-                                try {
-                                    MyLogUtils.e(TAG, "绘制时间" + (System.currentTimeMillis() - time));
-                                    Thread.sleep(Math.max(0, (100 - (System.currentTimeMillis() - time))));
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                        try {
-                            //释放canvas对象，并发送到SurfaceView
-                            if (mCanvas != null) {
-                                holder.unlockCanvasAndPost(mCanvas);
-                                mCanvas = null;
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+            synchronized (holder) {
+                //锁定canvas
+                mCanvas = holder.lockCanvas();
+                //canvas 执行一系列画的动作
+                if (mCanvas != null) {
+                    mCanvas.drawColor(Color.WHITE);
+                    if (mAttributess != null) {
+                        //绘制音符
+                        drawSgin(mCanvas);
                     }
                 }
-
+                try {
+                    //释放canvas对象，并发送到SurfaceView
+                    holder.unlockCanvasAndPost(mCanvas);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                if (isFrist) {
+                    isFrist = false;
+                    progresView.setProgressData(StaffView.this,
+                            iPlay, mLinsRoomWidth,
+                            x, fristLinsEndX, measureNum);
+                }
             }
         }
     }
-
-    /**
-     * 设置进度条
-     *
-     * @param canvas
-     */
-    private void setProgresBar(Canvas canvas, float mLeft) {
-        if (mProgessRectF == null) {
-            mProgessRectF = new RectF();
-        }
-        mProgessRectF.left = mLeft;
-        mProgessRectF.top = 10;
-        mProgessRectF.right = mLeft + 10;
-//        mProgessRectF.right = mLeft + 5;
-        if (isTowStaff) {
-            mProgessRectF.bottom = mLayoutHeight - 10;
-            canvas.drawRoundRect(mProgessRectF, 90, 90, mBluePaint);
-        } else {
-            mProgessRectF.bottom = twoStaff_fristLins_up + mLinsRoomWidth * 4;
-        }
-        canvas.drawRoundRect(mProgessRectF, 90, 90, mBluePaint);
-    }
-
-    /**
-     * 部分绘制
-     *
-     * @param canvas
-     */
-    private void selectDraw(Canvas canvas) {
-
-        //10条间线
-        for (int i = 0; i < mStaffViewLins.size(); i++) {
-            StaffSaveData data = mStaffViewLins.get(i);
-            canvas.drawLine(Math.max(data.getLefts() - moveLenth, 0),
-                    data.getTops(),
-                    Math.min(data.getRightss() - moveLenth, mLayoutWidth),
-                    data.getBottoms(), mLinsPaint);
-        }
-//            黑色弧形延音线
-        mPath.reset();
-        for (int i = 0; i < mBlackTia.size(); i++) {
-            Tia tia = mBlackTia.get(i);
-            if (tia.getRightss() - moveLenth < 0) continue;
-            if (tia.getLefts() - moveLenth > mLayoutWidth) continue;
-            mPath.moveTo(tia.getLefts() - moveLenth, tia.getTops());
-            mPath.quadTo(tia.getX() - moveLenth, tia.getY(), tia.getRightss() - moveLenth, tia.getBottoms());
-            canvas.drawPath(mPath, mLinsPaint);
-        }
-//        红色弧形延音线
-        mPath.reset();
-        for (int i = 0; i < mRedTia.size(); i++) {
-            Tia tia = mRedTia.get(i);
-            if (tia.getLefts() - moveLenth > mLayoutWidth) continue;
-            if (tia.getRightss() - moveLenth < 0) continue;
-            mPath.moveTo(tia.getLefts() - moveLenth, tia.getTops());
-            mPath.quadTo(tia.getX() - moveLenth, tia.getY(),
-                    tia.getRightss() - moveLenth, tia.getBottoms());
-            canvas.drawPath(mPath, mRedPaint);
-        }
-        int num = 0;
-        int max = mAllHead.size();
-        //一小节的分割线
-        for (int i = num; i < max; i++) {
-            if (fristSingLenth.get(i) - moveLenth > mLayoutWidth) break;
-            StaffSaveData data = mFristMeasureLins.get(i);
-            if (data.getLefts() - moveLenth < 0) continue;
-            if (data.getLefts() - moveLenth > mLayoutWidth) continue;
-            canvas.drawLine(data.getLefts() - moveLenth, data.getTops(), data.getRightss() - moveLenth, data.getBottoms(), mLinsPaint);
-        }
-        if (isTowStaff) {
-            //每一小节的分割线
-            for (int i = num; i < max; i++) {
-                if (fristSingLenth.get(i) - moveLenth > mLayoutWidth) break;
-                StaffSaveData data = mSecoundMeasureLins.get(i);
-                if (data.getLefts() - moveLenth < 0) continue;
-                if (data.getLefts() - moveLenth > mLayoutWidth) continue;
-                canvas.drawLine(data.getLefts() - moveLenth, data.getTops(), data.getRightss() - moveLenth, data.getBottoms(), mLinsPaint);
-            }
-        }
-        for (int j = num; j < max; j++) {
-            //绘制全音符符头
-            List<HeadData> wholeHead = mAllWholeHead.get(j);
-            for (int i = 0; i < wholeHead.size(); i++) {
-                HeadData data = wholeHead.get(i);
-                if (data.getLeft1() - moveLenth > mLayoutWidth) continue;
-                if (data.getRight1() - moveLenth < 0) continue;
-                canvas.save();
-                RectF rectFs = new RectF(data.getLeft1() - moveLenth,
-                        data.getTop1(),
-                        data.getRight1() - moveLenth,
-                        data.getBottom1());
-                canvas.drawOval(rectFs, mBlackPaint);
-                canvas.rotate(30, data.getPx() - moveLenth, data.getPy());
-                RectF rectF = new RectF(data.getLeft2() - moveLenth,
-                        data.getTop2(),
-                        data.getRight2() - moveLenth,
-                        data.getBottom2());
-                canvas.drawOval(rectF, mWhitePaint);
-                canvas.restore();
-            }
-            //绘制二分音符符头
-            List<HeadData> halfHead = mAllHalfHead.get(j);
-            for (int i = 0; i < halfHead.size(); i++) {
-                HeadData data = halfHead.get(i);
-                if (data.getLeft1() - moveLenth > mLayoutWidth) continue;
-                if (data.getRight1() - moveLenth < 0) continue;
-                canvas.save();
-                RectF rectFs = new RectF(data.getLeft1() - moveLenth,
-                        data.getTop1(),
-                        data.getRight1() - moveLenth,
-                        data.getBottom1());
-                canvas.rotate(-30, data.getPx() - moveLenth, data.getPy());
-                canvas.drawOval(rectFs, mBlackPaint);
-                canvas.restore();
-                canvas.save();
-                RectF rectF = new RectF(data.getLeft2() - moveLenth,
-                        data.getTop2(),
-                        data.getRight2() - moveLenth,
-                        data.getBottom2());
-                canvas.rotate(-30, data.getPx() - moveLenth, data.getPy());
-                canvas.drawOval(rectF, mWhitePaint);
-                canvas.restore();
-            }
-            //绘制四分音符符头
-            List<HeadData> head = mAllHead.get(j);
-            for (int i = 0; i < head.size(); i++) {
-                HeadData data = head.get(i);
-                if (data.getLeft1() - moveLenth > mLayoutWidth) continue;
-                if (data.getRight1() - moveLenth < 0) continue;
-                canvas.save();
-                RectF rectFs = new RectF(data.getLeft1() - moveLenth,
-                        data.getTop1(),
-                        data.getRight1() - moveLenth,
-                        data.getBottom1());
-                canvas.rotate(-30, data.getPx() - moveLenth, data.getPy());//向上旋转30度
-                canvas.drawOval(rectFs, mBlackPaint);
-                canvas.restore();
-            }
-            //绘制延音dot
-            List<Dot> dots = mAllDot.get(j);
-            for (int i = 0; i < dots.size(); i++) {
-                Dot dot = dots.get(i);
-                if (dot.getCx() - moveLenth < 0) continue;
-                if (dot.getCx() - moveLenth > mLayoutWidth) continue;
-                canvas.drawCircle(dot.getCx() - moveLenth, dot.getCy(), mLinsRoomWidth / 3, mBlackPaint);
-            }
-            //绘制音符短间线
-            List<StaffSaveData> headLins = mAllHeadLins.get(j);
-            for (int i = 0; i < headLins.size(); i++) {
-                StaffSaveData data = headLins.get(i);
-                if (data.getLefts() - moveLenth > mLayoutWidth) continue;
-                if (data.getRightss() - moveLenth < 0) continue;
-                drawLins(canvas, data.getLefts() - moveLenth, data.getTops(), data.getRightss() - moveLenth, data.getBottoms());
-//            MyLogUtils.e(TAG, "绘制短线");
-            }
-            //绘制符杠
-            List<StaffSaveData> lins = mAllLins.get(j);
-            for (int i = 0; i < lins.size(); i++) {
-                StaffSaveData data = lins.get(i);
-                if (data.getLefts() - moveLenth > mLayoutWidth) continue;
-                if (data.getRightss() - moveLenth < 0) continue;
-                drawLins(canvas, data.getLefts() - moveLenth, data.getTops(), data.getRightss() - moveLenth, data.getBottoms());
-            }
-            //绘制符尾连音符
-            List<StaffSaveData> slurLins = mAllSlurLins.get(j);
-            for (int i = 0; i < slurLins.size(); i++) {
-                StaffSaveData data = slurLins.get(i);
-                if (data.getLefts() - moveLenth > mLayoutWidth) continue;
-                if (data.getRightss() - moveLenth < 0) continue;
-                canvas.drawLine(data.getLefts() - moveLenth,
-                        data.getTops(),
-                        data.getRightss() - moveLenth,
-                        data.getBottoms(), mBeamPaint);
-            }
-            mPath.reset();
-            List<Tial> tial = mAllTial.get(j);
-            for (int i = 0; i < tial.size(); i++) {
-                Tial tia = tial.get(i);
-                if (tia.getX() - moveLenth > mLayoutWidth) continue;
-                if (tia.getX3() - moveLenth < 0) continue;
-                mPath.moveTo(tia.getX() - moveLenth, tia.getY());
-                mPath.cubicTo(tia.getX1() - moveLenth, tia.getY1(),
-                        tia.getX2() - moveLenth, tia.getY2(),
-                        tia.getX3() - moveLenth, tia.getY3());
-                canvas.drawPath(mPath, mTailPaint);
-            }
-            List<Dwon> dwons = mAllDwon.get(j);
-            for (int i = 0; i < dwons.size(); i++) {
-                Dwon dwon = dwons.get(i);
-                if (dwon.getLeft() - moveLenth > mLayoutWidth) continue;
-                if (dwon.getRight() - moveLenth < 0) continue;
-                mPath.moveTo(dwon.getLeft() - moveLenth, dwon.getTop());
-                mPath.quadTo(dwon.getX() - moveLenth, dwon.getY(),
-                        dwon.getRight() - moveLenth, dwon.getBottom());
-                canvas.drawPath(mPath, mTailPaint);
-                drawLins(canvas, dwon.getX1() - moveLenth, dwon.getY1(),
-                        dwon.getX2() - moveLenth, dwon.getY2());
-            }
-            List<Rest> restS = mAllRest.get(j);
-            for (int i = 0; i < restS.size(); i++) {
-                Rest rest = restS.get(i);
-                if (rest.getLeft() - moveLenth > mLayoutWidth) continue;
-                if (rest.getRight() - moveLenth < 0) continue;
-                canvas.drawLine(rest.getLeft() - moveLenth, rest.getTop(),
-                        rest.getRight() - moveLenth, rest.getBottom(), mCrudePaint);
-            }
-            List<Tia> restTia = mAllRestTia.get(j);
-            for (int i = 0; i < restTia.size(); i++) {
-                Tia tia = restTia.get(i);
-                if (tia.getLefts() - moveLenth > mLayoutWidth) continue;
-                if (tia.getRightss() - moveLenth < 0) continue;
-                mPath.moveTo(tia.getLefts() - moveLenth, tia.getTops());
-                mPath.quadTo(tia.getX() - moveLenth, tia.getY(), tia.getRightss() - moveLenth, tia.getBottoms());
-                canvas.drawPath(mPath, mLinsPaint);
-            }
-        }
-    }
-
-    private void initData() {
-        mTie.clear();
-        mSlur.clear();
-        mStaffViewLins.clear();
-        mBlackTia.clear();
-        mRedTia.clear();
-        mFristMeasureLins.clear();
-        mSecoundMeasureLins.clear();
-        fristSingLenth.clear();
-
-        mAllWholeHead.clear();
-        mAllHalfHead.clear();
-        mAllHead.clear();
-        mAllDot.clear();
-        mAllHeadLins.clear();
-        mAllLins.clear();
-        mAllSlurLins.clear();
-        mAllTial.clear();
-        mAllDwon.clear();
-        mAllRest.clear();
-        mAllRestTia.clear();
-    }
-
 
     /**
      * 绘制符号
      */
     private void drawSgin(Canvas canvas) {
-        int size = mFristStaffData.size();
-        for (int j = 0; j < size; j++) {
-            initSgin();
-//          保存每一小节第一一条五线谱的以一个元素的位置
-            fristSingLenth.add(mFristStaffWidth);
+        if (index >= mFristStaffData.size()) return;
+        int size = Math.min(mFristStaffData.size(), index + measureNum * Constents.LINE_NUM);
+        for (int j = index; j < size; j++) {
+            mLineNum = (j - index) / measureNum;
+            if (j % measureNum == 0) {
+                //初始化五线谱(条数)
+                drawStaffLines(mAttributess, mCanvas);
+                if (isFrist && mLineNum == 0) {
+                    x = mFristStaffWidth;
+                }
+                //清除所有数据
+                mFristTie.clear();
+                mSecondTie.clear();
+                mFristSlur.clear();
+                mSecondSlur.clear();
+                reverseTie = null;
+            }
+            riseRecords.clear();
             List<MeasureBase> base = mFristStaffData.get(j).getMeasure();
-            List<MeasureBase> base1 = mSecondStaffData.get(j).getMeasure();
             int baseSize = base.size();
-            int base1Size = base1.size();
-            //第一个五线谱
-            for (int k = 0; k < baseSize; k++) {
-                Notes nots = base.get(k).getNotes();
-                if (nots != null) {
-                    if (k + 1 < base.size()) {
-                        drawNotes(canvas, nots, true, base.get(k + 1).getNotes());
-                    } else {
-                        drawNotes(canvas, nots, true, null);
+            if (isUpNote) {
+                //第一个五线谱
+                legatosMap.clear();
+                forwardHook = 0;
+                backwardHook = 0;
+                isStopBeam = false;
+                for (int k = 0; k < baseSize; k++) {
+                    Notes nots = base.get(k).getNotes();
+                    if (nots != null) {
+                        if (k + 1 < base.size()) {
+                            drawNotes(canvas, nots, true, base.get(k + 1).getNotes());
+                        } else {
+                            drawNotes(canvas, nots, true, null);
+                        }
                     }
                 }
+            } else {
+                //第一个五线谱
+                legatosMap.clear();
+                forwardHook = 0;
+                backwardHook = 0;
+                isStopBeam = false;
+                for (int k = 0; k < baseSize; k++) {
+                    Notes nots = base.get(k).getNotes();
+                    if (nots != null) {
+                        if (k + 1 < base.size()) {
+                            drawNotes(canvas, nots, false, base.get(k + 1).getNotes());
+                        } else {
+                            drawNotes(canvas, nots, false, null);
+                        }
+                    }
+                }
+                mFristStaffWidth = mScendStaffWidth;
             }
-            if (isTowStaff) {
+            if (isTwoStaff) {
+                legatosMap.clear();
+                forwardHook = 0;
+                backwardHook = 0;
+                isStopBeam = false;
+                List<MeasureBase> base1 = mSecondStaffData.get(j).getMeasure();
+                int base1Size = base1.size();
                 mScendStaffWidth = mFristStaffWidth - mBackUPData.get(j) * mSpeedLenth;
+                riseRecords.clear();
                 //第二条五线谱
                 for (int k = 0; k < base1Size; k++) {
                     Notes nots = base1.get(k).getNotes();
@@ -888,44 +549,31 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                     }
                 }
             }
-            mFristStaffWidth = Math.max(mFristStaffWidth, mScendStaffWidth) + mLinsRoomWidth2;
-            mScendStaffWidth = mFristStaffWidth;
-            drawMeasureLins(canvas, j, mFristStaffData.size() - 1);
-            if (j != mFristStaffData.size() - 1) {
-                mFristStaffWidth += mSpeedLenth;
-                mScendStaffWidth += mSpeedLenth;
+            if (isTwoStaff) {
+                mFristStaffWidth = Math.max(mFristStaffWidth, mScendStaffWidth) + mLinsRoomWidth2;
+                mScendStaffWidth = mFristStaffWidth;
+            } else {
+                mFristStaffWidth += mLinsRoomWidth2;
+                if (!isUpNote) {
+                    mScendStaffWidth = mFristStaffWidth;
+                }
             }
-            mAllWholeHead.add(mWholeHead);
-            mAllHalfHead.add(mHalfHead);
-            mAllHead.add(mHead);
-            mAllDot.add(mDot);
-            mAllHeadLins.add(mHeadLins);
-            mAllLins.add(mLins);
-            mAllSlurLins.add(mSlurLins);
-            mAllTial.add(mTial);
-            mAllDwon.add(mDwon);
-            mAllRest.add(mRest);
-            mAllRestTia.add(mRestTia);
+            if (isFrist && mLineNum == 0) {
+                fristLinsEndX.add(mFristStaffWidth - mLinsRoomWidth2);
+            }
+            drawMeasureLins(canvas, (j + 1) % measureNum != 0 && j + 1 != mFristStaffData.size());
+            if ((j + 1) % measureNum != 0 && j + 1 != mFristStaffData.size()) {
+                mFristStaffWidth += mLinsRoomWidth * 2;
+                if (!isUpNote) {
+                    mScendStaffWidth = mFristStaffWidth;
+                }
+                if (isTwoStaff) {
+                    mScendStaffWidth += mFristStaffWidth;
+                }
+            } else {
+                drawStaffLins(canvas);
+            }
         }
-        drawStaffLins(canvas);
-    }
-
-    private void initSgin() {
-        mWholeHead = new ArrayList<>();
-        mHalfHead = new ArrayList<>();
-        mHead = new ArrayList<>();
-        mDot = new ArrayList<>();
-        mHeadLins = new ArrayList<>();
-        mLins = new ArrayList<>();
-        mSlurLins = new ArrayList<>();
-        mTial = new ArrayList<>();
-        mDwon = new ArrayList<>();
-        mRest = new ArrayList<>();
-        mRestTia = new ArrayList<>();
-
-        legatosMap.clear();
-        forwardHook.clear();
-        legatosMap.clear();
     }
 
     /**
@@ -935,28 +583,41 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      */
     private void drawStaffLins(Canvas canvas) {
         //第一条五线谱的五条间线
-        canvas.drawLine(mLinsRoomWidth2, twoStaff_fiveLins_up, mFristStaffWidth, twoStaff_fiveLins_up, mLinsPaint);
-        canvas.drawLine(mLinsRoomWidth2, twoStaff_fiveLins_up + mLinsRoomWidth, mFristStaffWidth, twoStaff_fiveLins_up + mLinsRoomWidth, mLinsPaint);
-        canvas.drawLine(mLinsRoomWidth2, twoStaff_threeLins_up, mFristStaffWidth, twoStaff_threeLins_up, mLinsPaint);
-        canvas.drawLine(mLinsRoomWidth2, twoStaff_threeLins_up + mLinsRoomWidth, mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth, mLinsPaint);
-        canvas.drawLine(mLinsRoomWidth2, twoStaff_fristLins_up, mFristStaffWidth, twoStaff_fristLins_up, mLinsPaint);
-        mStaffViewLins.add(new StaffSaveData(mLinsRoomWidth2, twoStaff_fiveLins_up, mFristStaffWidth, twoStaff_fiveLins_up));
-        mStaffViewLins.add(new StaffSaveData(mLinsRoomWidth2, twoStaff_fiveLins_up + mLinsRoomWidth, mFristStaffWidth, twoStaff_fiveLins_up + mLinsRoomWidth));
-        mStaffViewLins.add(new StaffSaveData(mLinsRoomWidth2, twoStaff_threeLins_up, mFristStaffWidth, twoStaff_threeLins_up));
-        mStaffViewLins.add(new StaffSaveData(mLinsRoomWidth2, twoStaff_threeLins_up + mLinsRoomWidth, mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth));
-        mStaffViewLins.add(new StaffSaveData(mLinsRoomWidth2, twoStaff_fristLins_up, mFristStaffWidth, twoStaff_fristLins_up));
-        if (isTowStaff) {
-            //第一条五线谱的五条间线
-            canvas.drawLine(mLinsRoomWidth2, twoStaff_fiveLins_down, mFristStaffWidth, twoStaff_fiveLins_down, mLinsPaint);
-            canvas.drawLine(mLinsRoomWidth2, twoStaff_fiveLins_down + mLinsRoomWidth, mFristStaffWidth, twoStaff_fiveLins_down + mLinsRoomWidth, mLinsPaint);
-            canvas.drawLine(mLinsRoomWidth2, twoStaff_threeLins_down, mFristStaffWidth, twoStaff_threeLins_down, mLinsPaint);
-            canvas.drawLine(mLinsRoomWidth2, twoStaff_threeLins_down + mLinsRoomWidth, mFristStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth, mLinsPaint);
-            canvas.drawLine(mLinsRoomWidth2, twoStaff_fristLins_down, mFristStaffWidth, twoStaff_fristLins_down, mLinsPaint);
-            mStaffViewLins.add(new StaffSaveData(mLinsRoomWidth2, twoStaff_fiveLins_down, mFristStaffWidth, twoStaff_fiveLins_down));
-            mStaffViewLins.add(new StaffSaveData(mLinsRoomWidth2, twoStaff_fiveLins_down + mLinsRoomWidth, mFristStaffWidth, twoStaff_fiveLins_down + mLinsRoomWidth));
-            mStaffViewLins.add(new StaffSaveData(mLinsRoomWidth2, twoStaff_threeLins_down, mFristStaffWidth, twoStaff_threeLins_down));
-            mStaffViewLins.add(new StaffSaveData(mLinsRoomWidth2, twoStaff_threeLins_down + mLinsRoomWidth, mFristStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth));
-            mStaffViewLins.add(new StaffSaveData(mLinsRoomWidth2, twoStaff_fristLins_down, mFristStaffWidth, twoStaff_fristLins_down));
+        if (isUpNote) {
+            canvas.drawLine(mLinsRoomWidth2 + start_x, twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth, twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30, mLinsPaint);
+            canvas.drawLine(mLinsRoomWidth2 + start_x, twoStaff_fiveLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth, twoStaff_fiveLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
+            canvas.drawLine(mLinsRoomWidth2 + start_x, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30, mLinsPaint);
+            canvas.drawLine(mLinsRoomWidth2 + start_x, twoStaff_threeLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
+            canvas.drawLine(mLinsRoomWidth2 + start_x, twoStaff_fristLins_up + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth, twoStaff_fristLins_up + mLineNum * mLinsRoomWidth30, mLinsPaint);
+        } else {
+            canvas.drawLine(mLinsRoomWidth2 + start_x, twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth, twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30, mLinsPaint);
+            canvas.drawLine(mLinsRoomWidth2 + start_x, twoStaff_fiveLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth, twoStaff_fiveLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
+            canvas.drawLine(mLinsRoomWidth2 + start_x, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30, mLinsPaint);
+            canvas.drawLine(mLinsRoomWidth2 + start_x, twoStaff_threeLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
+            canvas.drawLine(mLinsRoomWidth2 + start_x, twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth, twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30, mLinsPaint);
+        }
+        if (isTwoStaff) {
+            //第二条五线谱的五条间线
+            canvas.drawLine(mLinsRoomWidth2 + start_x, twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth, twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30, mLinsPaint);
+            canvas.drawLine(mLinsRoomWidth2 + start_x, twoStaff_fiveLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth, twoStaff_fiveLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
+            canvas.drawLine(mLinsRoomWidth2 + start_x, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30, mLinsPaint);
+            canvas.drawLine(mLinsRoomWidth2 + start_x, twoStaff_threeLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
+            canvas.drawLine(mLinsRoomWidth2 + start_x, twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth, twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30, mLinsPaint);
         }
     }
 
@@ -964,34 +625,33 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * 绘制小节线
      */
 
-    private void drawMeasureLins(Canvas canvas, int j, int i) {
-        if (j < i) {
+    private void drawMeasureLins(Canvas canvas, boolean noIsLast) {
+        if (noIsLast) {
             //每小节的竖直分割线
-            canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_up,
-                    mFristStaffWidth, twoStaff_fristLins_up, mLinsPaint);
-            mFristMeasureLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fiveLins_up, mFristStaffWidth, twoStaff_fristLins_up));
-            if (isTowStaff) {
-                canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_down,
-                        mFristStaffWidth, twoStaff_fristLins_down, mLinsPaint);
-                mSecoundMeasureLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fiveLins_down,
-                        mFristStaffWidth, twoStaff_fristLins_down));
-
+            if (isUpNote) {
+                canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30,
+                        mFristStaffWidth, twoStaff_fristLins_up + mLineNum * mLinsRoomWidth30, mLinsPaint);
+            } else {
+                canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30,
+                        mFristStaffWidth, twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30, mLinsPaint);
+            }
+            if (isTwoStaff) {
+                canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30,
+                        mFristStaffWidth, twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30, mLinsPaint);
             }
         } else {
-            if (isTowStaff) {
-                //如果是两条五线谱，绘制最后一小节的尾线
-                canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_up,
-                        mFristStaffWidth, twoStaff_fristLins_down, mLinsPaint);
-                mFristMeasureLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fiveLins_up,
-                        mFristStaffWidth, twoStaff_fristLins_down));
-                mSecoundMeasureLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fiveLins_up,
-                        mFristStaffWidth, twoStaff_fristLins_down));
+            //如果是两条五线谱，绘制最后一小节的尾线
+            if (isTwoStaff) {
+                canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30,
+                        mFristStaffWidth, twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30, mLinsPaint);
             } else {
-                //如果是一条五线谱，绘制最后一小节的尾线
-                canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_up,
-                        mFristStaffWidth, twoStaff_fristLins_up, mLinsPaint);
-                mFristMeasureLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fiveLins_up,
-                        mFristStaffWidth, twoStaff_fristLins_up));
+                if (isUpNote) {
+                    canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth, twoStaff_fristLins_up + mLineNum * mLinsRoomWidth30, mLinsPaint);
+                } else {
+                    canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth, twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30, mLinsPaint);
+                }
             }
         }
     }
@@ -1012,19 +672,24 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
             if (type == null) type = getType(notes);
             drawRest(type, canvas, !isFristStaff);
         } else if (notes.getPitch() != null) {
+            isDrawTial = false;
             if (note != null) {
-                if (note.getChord() && note.getStems() != null) {
-                    if (note.getStems().equals("dwon")) {
+                if (notes.getStems().equals("up")) {
+                    if (note.getChord()) {
                         isDrawTial = false;
+                    } else {
+                        isDrawTial = true;
+                    }
+                } else {
+                    if (!notes.getChord() && note.getChord()) {
+                        isDrawTial = true;
                     } else {
                         isDrawTial = false;
                     }
-                } else {
-                    isDrawTial = true;
                 }
             }
             //音符
-            drawPitch(canvas, notes, isFristStaff);
+            drawPitch(canvas, notes, isFristStaff, note == null || !note.getChord());
         }
         if (note != null && note.getChord()) {
             //和弦不计算宽度
@@ -1043,9 +708,10 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      *
      * @param canvas
      * @param notes
+     * @param end
      * @param isFristStaff 第一条五线谱
      */
-    private void drawPitch(Canvas canvas, Notes notes, boolean isFristStaff) {
+    private void drawPitch(Canvas canvas, Notes notes, boolean isFristStaff, boolean end) {
         //加点（延音）
         boolean isAddDot = notes.getDot();
         //符尾向下
@@ -1053,46 +719,145 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         if (notes.getStems() != null) {
             isDwon = notes.getStems().equals("down");
         }
-        int y = getPatchPosiotion(notes, isFristStaff);
-        if (notes.getPitch().getAlter() != null) {
-            //绘制升降音
-            drawfitts(canvas, isFristStaff, y, notes.getPitch().getAlter());
-        }
+        float y = getPatchPosiotion(notes, isFristStaff) + mLineNum * mLinsRoomWidth30;
         String type = notes.getType();
         if (type == null) {
             type = getType(notes);
         }
         if (notes.getTie() != null) {
+            if (isSlur) isSlur = false;
             //绘制弧形延音线
             drawTie(canvas, y, notes, isFristStaff, type);
-        }
-        if (notes.getSlur() != null) {
+        } else if (notes.getSlur() != null) {
+            if (!isSlur) isSlur = true;
             //绘制红色弧形延音线
             drawSlur(canvas, y, notes, isFristStaff, type);
         }
-        if (type == null) return;
         //绘制音符符头
-        drawHeads(type, isAddDot, canvas, y, isFristStaff);
+        drawHeads(type, isAddDot, canvas, y, isFristStaff, notes);
         //符杠的X坐标
         float tialX = getTialX(isFristStaff, isDwon);
-        int tialStartY = isDwon ? y + mLinsRoomWidth : y + mLinsRoomWidth / 4;
-        int tialStopY = getTialY(type, isDwon, y);
-        if (notes.getBeam() == null) {
-            //有和音返回
-//            if (isSteam) return;
-            //绘制符杠
+        float tialStartY = isDwon ? y + mLinsRoomWidth3 / 4 : y + mLinsRoomWidth / 4;
+        float tialStopY = getTialY(type, isDwon, y);
+        //初始化符尾连音符
+        if (notes.getBeam() != null && !notes.getChord())
+            initLegato(notes.getBeam(), tialX, tialStartY, tialStopY);
+        if (notes.getChord() && legatosMap.size() != 0) {
+            int index = legatosMap.get(1).size() - 1;
+            float startY = legatosMap.get(1).get(index).getStartY();
+            float stopY = legatosMap.get(1).get(index).getStopY();
+            legatosMap.get(1).get(index)
+                    .setStartY(isDwon ? Math.min(startY, tialStartY) : Math.max(startY, tialStartY));
+            legatosMap.get(1).get(index)
+                    .setStopY(isDwon ? Math.max(stopY, tialStopY) : Math.min(stopY, tialStopY));
+        }
+        if (legatosMap.size() != 0) {
+            if (isStopBeam && end) drawLegato(isDwon, canvas);
+        } else {
             drawLins(canvas, tialX, tialStartY, tialX, tialStopY);
-            mLins.add(new StaffSaveData(tialX, tialStartY, tialX, tialStopY));
+            //绘制符号尾部（八分音符以后）
             if (isDrawTial) {
-                //绘制符号尾部（八分音符以后）
                 drawTial(canvas, isFristStaff ? mFristStaffWidth : mScendStaffWidth, y, isDwon, type, notes);
             }
-//            if (isFristStaff)MyLogUtils.e(TAG,"tial："+mFristStaffWidth);
-        } else {
-//            if (isFristStaff)MyLogUtils.e(TAG,"tialS："+mFristStaffWidth);
-            //绘制符尾连音符
-            drawLegato(notes.getBeam(), isDwon, tialX, tialStartY, tialStopY, canvas, notes.getChord());
         }
+        if (legatosMap.size() == 0 && reverseTie != null) {
+            //绘制反向Tie
+            drawReverseTie(canvas);
+        }
+    }
+
+    /**
+     * 绘制连音符
+     *
+     * @param isDwon
+     * @param canvas
+     */
+    private void drawLegato(boolean isDwon, Canvas canvas) {
+        isStopBeam = false;
+        float max = 0f;
+        int dwon = isDwon ? -1 : 1;
+        boolean isTwo = legatosMap.get(1).size() == 2;
+        float y1 = 0f;
+        float x1 = 0f;
+        float x2 = 0f;
+        float y2 = 0f;
+        if (!isTwo) {
+            List<Legato> legato = legatosMap.get(1);
+            for (int i = 0; i < legato.size(); i++) {
+                float y = legato.get(i).getStopY();
+                if (i == 0) {
+                    max = y;
+                } else {
+                    max = isDwon ? Math.max(max, y) : Math.min(max, y);
+                }
+            }
+            //绘制符杆
+            for (int i = 0; i < legato.size(); i++) {
+                float x = legato.get(i).getStartX();
+                float starY = legato.get(i).getStartY();
+                drawLins(canvas, x, starY, x, max);
+            }
+            //绘制连音线
+            for (int i = 0; i < legatosMap.size(); i++) {
+                float y = max + dwon * mLinsRoomWidth * i;
+                canvas.drawLine(legatosMap.get(i + 1).get(0).getStartX(), y,
+                        legatosMap.get(i + 1).get(legatosMap.get(i + 1).size() - 1).getStartX(), y,
+                        mBeamPaint);
+            }
+            //绘制向后短线
+            for (int i = 1; i <= forwardHook; i++) {
+                canvas.drawLine(legato.get(0).getStartX(), max + dwon * i * mLinsRoomWidth,
+                        legato.get(0).getStartX() + mLinsRoomWidth, max + dwon * i * mLinsRoomWidth,
+                        mBeamPaint);
+            }
+            //绘制向前短线
+            for (int i = 1; i <= backwardHook; i++) {
+                canvas.drawLine(legato.get(legato.size() - 1).getStartX() - mLinsRoomWidth, max + dwon * i * mLinsRoomWidth,
+                        legato.get(legato.size() - 1).getStartX(), max + dwon * i * mLinsRoomWidth,
+                        mBeamPaint);
+            }
+            if (reverseTie != null) {
+                reverseTie.setY2(max);
+            }
+        } else {
+            List<Legato> legato = legatosMap.get(1);
+            y1 = legato.get(0).getStopY();
+            y2 = legato.get(1).getStopY();
+            x1 = legato.get(0).getStartX();
+            x2 = legato.get(1).getStartX();
+            //绘制符杆
+            drawLins(canvas, x1, legato.get(0).getStartY(), x1, y1);
+            drawLins(canvas, x2, legato.get(1).getStartY(), x2, y2);
+            //绘制连音线
+            for (int i = 0; i < legatosMap.size(); i++) {
+                canvas.drawLine(legatosMap.get(i + 1).get(0).getStartX(), y1 + dwon * mLinsRoomWidth * i,
+                        legatosMap.get(i + 1).get(legatosMap.get(i + 1).size() - 1).getStartX(), y2 + dwon * mLinsRoomWidth * i,
+                        mBeamPaint);
+            }
+            //绘制向后短线
+//            float slope = ((y2 - y1) * (mLinsRoomWidth2 / 3)) / (x2 - x1);
+            for (int i = 1; i <= forwardHook; i++) {
+                canvas.drawLine(x1, y1 + dwon * i * mLinsRoomWidth,
+                        x1 + mLinsRoomWidth, y1 + dwon * i * mLinsRoomWidth,
+                        mBeamPaint);
+            }
+            //绘制向前短线
+            for (int i = 1; i <= backwardHook; i++) {
+                canvas.drawLine(x2 - mLinsRoomWidth, y2 + dwon * i * mLinsRoomWidth,
+                        x2, y2 + dwon * i * mLinsRoomWidth,
+                        mBeamPaint);
+            }
+            if (reverseTie != null) {
+                if (reverseTie.getX2() == x2) {
+                    reverseTie.setY2(y2);
+                } else {
+                    reverseTie.setY2(y1);
+                }
+            }
+        }
+        forwardHook = 0;
+        backwardHook = 0;
+        legatosMap.clear();
     }
 
     /**
@@ -1103,7 +868,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * @param y
      * @return
      */
-    private int getTialY(String type, boolean isDwon, int y) {
+    private float getTialY(String type, boolean isDwon, float y) {
         switch (type) {
             case "half":
             case "quarter":
@@ -1148,7 +913,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         if (isDwon) {
             return X + mLinsRoomWidth;
         } else {
-            return X + mLinsRoomWidth2;
+            return X + mLinsRoomWidth2 - 2;
         }
     }
 
@@ -1161,8 +926,9 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * @param canvas
      * @param y
      * @param isFristStaff
+     * @param notes
      */
-    private void drawHeads(String type, boolean isAddDot, Canvas canvas, int y, boolean isFristStaff) {
+    private void drawHeads(String type, boolean isAddDot, Canvas canvas, float y, boolean isFristStaff, Notes notes) {
         float x;
         if (isFristStaff) {
             x = mFristStaffWidth;
@@ -1181,6 +947,11 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
             default:
                 drawBlackHeads(isAddDot, canvas, x, y, isFristStaff);
                 break;
+        }
+        if (notes.getPitch().getAlter() != null) {
+            //绘制升降音
+            drawfitts(canvas, x, y, notes.getPitch().getAlter(),
+                    notes.getPitch().getStep(), notes.getPitch().getOctave());
         }
     }
 
@@ -1209,8 +980,8 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * @param isFristStaff
      * @param type
      */
-    private void drawSlur(Canvas canvas, int i, Notes notes, boolean isFristStaff, String type) {
-        mPath = new Path();
+    private void drawSlur(Canvas canvas, float i, Notes notes, boolean isFristStaff, String type) {
+        Path mPath = new Path();
         float x, y;
         if (isFristStaff) {
             x = mFristStaffWidth + mLinsRoomWidth;
@@ -1229,74 +1000,37 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         for (int j = 0; j < size; j++) {
             switch (notes.getSlur().get(j)) {
                 case "start":
-                    if (mSlur == null) {
-                        mSlur = new ArrayList<>();
+                    if (isFristStaff) {
+                        mFristSlur.add(new Tie(x + mLinsRoomWidth, y, isUp));
+                    } else {
+                        mSecondSlur.add(new Tie(x + mLinsRoomWidth, y, isUp));
                     }
-                    mSlur.add(new Tie(x + mLinsRoomWidth2, y, isUp));
                     break;
                 case "stop":
-                    if (mSlur.size() == 0) return;
-                    Tie ties = mSlur.get(0);
+                    Tie ties = null;
+                    if (isFristStaff) {
+                        if (mFristSlur.size() == 0) return;
+                        ties = mFristSlur.get(0);
+                    } else {
+                        if (mSecondSlur.size() == 0) return;
+                        ties = mSecondSlur.get(0);
+                    }
+                    if (ties == null) return;
                     mPath.moveTo(ties.getX(), ties.getY());
                     if (ties.isUp() == isUp) {
-                        mPath.quadTo((ties.getX() + x) / 2, getTieZ(ties, x - mLinsRoomWidth, y), x - mLinsRoomWidth, y);
-                        mRedTia.add(new Tia(ties.getX(), ties.getY(),
-                                (ties.getX() + x) / 2, getTieZ(ties, x - mLinsRoomWidth, y), x - mLinsRoomWidth, y));
+                        mPath.quadTo((ties.getX() + x) / 2, getTieZ(ties, x - mLinsRoomWidth / 2, y), x - mLinsRoomWidth / 2, y);
+                        canvas.drawPath(mPath, mRedPaint);
                     } else {
-                        y = getTieY(ties, y, type);
-                        if (Math.abs(ties.getX() - x) / mLinsRoomWidth3 > Math.abs(ties.getY() - y) / mLinsRoomWidth) {
-                            mPath.quadTo((ties.getX() + x) / 2, getTieZ(ties, x - mLinsRoomWidth, y), x - mLinsRoomWidth, y);
-                            mRedTia.add(new Tia(ties.getX(), ties.getY(),
-                                    (ties.getX() + x) / 2, getTieZ(ties, x - mLinsRoomWidth, y), x - mLinsRoomWidth, y));
-                        } else {
-                            y = getTieY(ties, y, type);
-                            if (Math.abs(ties.getX() - x) / mLinsRoomWidth4 > Math.abs(ties.getY() - y) / mLinsRoomWidth) {
-                                mPath.quadTo((ties.getX() + x) / 2, getTieZ(ties, x - mLinsRoomWidth, y), x - mLinsRoomWidth, y);
-                                mRedTia.add(new Tia(ties.getX(), ties.getY(),
-                                        (ties.getX() + x) / 2, getTieZ(ties, x - mLinsRoomWidth, y), x - mLinsRoomWidth, y));
-                            } else {
-                                if (!isUp) {
-                                    if (ties.getY() < y) {
-                                        mPath.quadTo(ties.getX() + (x - ties.getX()) / 4,
-                                                ties.getY() + (y - ties.getY()) * 3 / 4,
-                                                x - mLinsRoomWidth, y);
-                                        mRedTia.add(new Tia(ties.getX(), ties.getY(),
-                                                ties.getX() + (x - ties.getX()) / 4,
-                                                ties.getY() + (y - ties.getY()) * 3 / 4,
-                                                x - mLinsRoomWidth, y));
-                                    } else {
-                                        mPath.quadTo(ties.getX() + (x - ties.getX()) * 3 / 4,
-                                                ties.getY() - (y - ties.getY()) / 4,
-                                                x - mLinsRoomWidth, y);
-                                        mRedTia.add(new Tia(ties.getX(), ties.getY(),
-                                                ties.getX() + (x - ties.getX()) * 3 / 4,
-                                                ties.getY() - (y - ties.getY()) / 4,
-                                                x - mLinsRoomWidth, y));
-                                    }
-                                } else {
-                                    if (ties.getY() < y) {
-                                        mPath.quadTo(ties.getX() + (x - ties.getX()) * 3 / 4,
-                                                ties.getY() - (y - ties.getY()) / 4,
-                                                x - mLinsRoomWidth, y);
-                                        mRedTia.add(new Tia(ties.getX(), ties.getY(),
-                                                ties.getX() + (x - ties.getX()) * 3 / 4,
-                                                ties.getY() - (y - ties.getY()) / 4,
-                                                x - mLinsRoomWidth, y));
-                                    } else {
-                                        mPath.quadTo(ties.getX() + (x - ties.getX()) / 4,
-                                                ties.getY() - (y - ties.getY()) * 3 / 4,
-                                                x - mLinsRoomWidth, y);
-                                        mRedTia.add(new Tia(ties.getX(), ties.getY(),
-                                                ties.getX() + (x - ties.getX()) / 4,
-                                                ties.getY() - (y - ties.getY()) * 3 / 4,
-                                                x - mLinsRoomWidth, y));
-                                    }
-                                }
-                            }
-                        }
+                        y = getTieY(isUp, y, type) + (isUp ? 1 : -1) * mLinsRoomWidth;
+                        reverseTie = new ReverseTie(ties.getX(), ties.getY(), ties.isUp(),
+                                x - mLinsRoomWidth, y, isUp);
                     }
-                    canvas.drawPath(mPath, mRedPaint);
-                    mSlur.remove(0);
+                    if (isFristStaff) {
+                        mFristSlur.remove(0);
+                    } else {
+                        mSecondSlur.remove(0);
+                    }
+                    mPath.reset();
                     break;
             }
         }
@@ -1312,9 +1046,8 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * @param type
      */
 
-    private void drawTie(Canvas canvas, int i, Notes notes, boolean isFristStaff, String type) {
-
-        mPath = new Path();
+    private void drawTie(Canvas canvas, float i, Notes notes, boolean isFristStaff, String type) {
+        Path mPath = new Path();
         float x, y;
         if (isFristStaff) {
             x = mFristStaffWidth + mLinsRoomWidth;
@@ -1322,7 +1055,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
             x = mScendStaffWidth + mLinsRoomWidth;
         }
         boolean isUp;
-        if (notes.getStems() != null && notes.getStems().equals("up")) {
+        if (notes.getStems().equals("up")) {
             y = i + mLinsRoomWidth;
             isUp = true;
         } else {
@@ -1333,77 +1066,88 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         for (int j = 0; j < size; j++) {
             switch (notes.getTie().get(j)) {
                 case "start":
-                    if (mTie == null) {
-                        mTie = new ArrayList<>();
+                    if (isFristStaff) {
+                        mFristTie.add(new Tie(x + mLinsRoomWidth, y, isUp));
+                    } else {
+                        mSecondTie.add(new Tie(x + mLinsRoomWidth, y, isUp));
                     }
-                    mTie.add(new Tie(x + mLinsRoomWidth2, y, isUp));
                     break;
                 case "stop":
-                    if (mTie.size() == 0) return;
-                    Tie ties = mTie.get(0);
+                    Tie ties;
+                    if (isFristStaff) {
+                        if (mFristTie.size() == 0) return;
+                        ties = mFristTie.get(0);
+                    } else {
+                        if (mSecondTie.size() == 0) return;
+                        ties = mSecondTie.get(0);
+                    }
+                    if (ties == null) return;
                     mPath.moveTo(ties.getX(), ties.getY());
                     if (ties.isUp() == isUp) {
-                        mPath.quadTo((ties.getX() + x) / 2, getTieZ(ties, x - mLinsRoomWidth, y), x - mLinsRoomWidth, y);
-                        mBlackTia.add(new Tia(ties.getX(), ties.getY(),
-                                (ties.getX() + x) / 2,
-                                getTieZ(ties, x - mLinsRoomWidth, y), x - mLinsRoomWidth, y));
+                        mPath.quadTo((ties.getX() + x) / 2, getTieZ(ties, x - mLinsRoomWidth / 2, y),
+                                x - mLinsRoomWidth / 2, y);
+                        canvas.drawPath(mPath, mPathPaint);
                     } else {
-                        y = getTieY(ties, y, type);
-                        if (Math.abs(ties.getX() - x) / mLinsRoomWidth4 > Math.abs(ties.getY() - y) / mLinsRoomWidth) {
-                            mPath.quadTo((ties.getX() + x) / 2, getTieZ(ties, x - mLinsRoomWidth, y), x - mLinsRoomWidth, y);
-                            mBlackTia.add(new Tia(ties.getX(), ties.getY(),
-                                    (ties.getX() + x) / 2, getTieZ(ties, x - mLinsRoomWidth, y), x - mLinsRoomWidth, y));
-                        } else {
-                            if (!isUp) {
-                                if (ties.getY() < y) {
-                                    mPath.quadTo(ties.getX() + (x - ties.getX()) / 4,
-                                            ties.getY() + (y - ties.getY()) * 3 / 4,
-                                            x - mLinsRoomWidth, y);
-                                    mBlackTia.add(new Tia(ties.getX(), ties.getY(),
-                                            ties.getX() + (x - ties.getX()) / 4,
-                                            ties.getY() + (y - ties.getY()) * 3 / 4,
-                                            x - mLinsRoomWidth, y));
-                                } else {
-                                    mPath.quadTo(ties.getX() + (x - ties.getX()) * 3 / 4,
-                                            ties.getY() - (y - ties.getY()) / 4,
-                                            x - mLinsRoomWidth, y);
-                                    mBlackTia.add(new Tia(ties.getX(), ties.getY(),
-                                            ties.getX() + (x - ties.getX()) * 3 / 4,
-                                            ties.getY() - (y - ties.getY()) / 4,
-                                            x - mLinsRoomWidth, y));
-                                }
-                            } else {
-                                if (ties.getY() < y) {
-                                    mPath.quadTo(ties.getX() + (x - ties.getX()) * 3 / 4,
-                                            ties.getY() - (y - ties.getY()) / 4,
-                                            x - mLinsRoomWidth, y);
-                                    mBlackTia.add(new Tia(ties.getX(), ties.getY(),
-                                            ties.getX() + (x - ties.getX()) * 3 / 4,
-                                            ties.getY() - (y - ties.getY()) / 4,
-                                            x - mLinsRoomWidth, y));
-                                } else {
-                                    mPath.quadTo(ties.getX() + (x - ties.getX()) / 4,
-                                            ties.getY() - (y - ties.getY()) * 3 / 4,
-                                            x - mLinsRoomWidth, y);
-                                    mBlackTia.add(new Tia(ties.getX(), ties.getY(),
-                                            ties.getX() + (x - ties.getX()) / 4,
-                                            ties.getY() - (y - ties.getY()) * 3 / 4,
-                                            x - mLinsRoomWidth, y));
-                                }
-                            }
-                        }
+                        y = getTieY(isUp, y, type) + (isUp ? 1 : -1) * mLinsRoomWidth;
+                        reverseTie = new ReverseTie(ties.getX(), ties.getY(), ties.isUp(),
+                                x - mLinsRoomWidth, y, isUp);
                     }
-                    canvas.drawPath(mPath, mLinsPaint);
-                    mTie.remove(0);
+                    if (isFristStaff) {
+                        mFristTie.remove(0);
+                    } else {
+                        mSecondTie.remove(0);
+                    }
                     break;
             }
         }
     }
 
+    /**
+     * 绘制方向不一样的弧线
+     * @param canvas
+     */
+    private void drawReverseTie(Canvas canvas) {
+        Path mPath = new Path();
+        float x1 = reverseTie.getX1() - mLinsRoomWidth / 2;
+        float y1 = reverseTie.getY1();
+        float x2 = reverseTie.getX2() + mLinsRoomWidth;
+        float y2 = reverseTie.getY2();
+        mPath.moveTo(x1, y1);
+        if (Math.abs(x1 - x2) / mLinsRoomWidth4 > Math.abs(y1 - y2) / mLinsRoomWidth) {
+            mPath.quadTo((x1 + x2) / 2,
+                    getTieZ(x1, x2 - mLinsRoomWidth, y2, reverseTie.isUp1()),
+                    x2 - mLinsRoomWidth / 2, y2);
+        } else {
+            if (!reverseTie.isUp2()) {
+                if (y1 < y2) {
+                    mPath.quadTo(x1 + (x2 - x1) / 4,
+                            y1 + (y2 - y1) * 3 / 4,
+                            x2 - mLinsRoomWidth / 2, y2);
+                } else {
+                    mPath.quadTo(x1 + (x2 - x1) * 3 / 4,
+                            y1 - (y1 - y2) / 4,
+                            x2 - mLinsRoomWidth / 2, y2);
+                }
+            } else {
+                if (y1 < y2) {
+                    mPath.quadTo(x1 + (x2 - x1) * 3 / 4,
+                            y1 + (y2 - y1) / 4,
+                            x2 - mLinsRoomWidth / 2, y2);
+                } else {
+                    mPath.quadTo(x1 + (x2 - x1) / 4,
+                            y1 - (y1 - y2) * 3 / 4,
+                            x2 - mLinsRoomWidth / 2, y2);
+                }
+            }
+        }
+        canvas.drawPath(mPath, isSlur ? mRedPaint : mPathPaint);
+        reverseTie = null;
+    }
+
     //获取符杠的尾部
-    private float getTieY(Tie ties, float y, String type) {
+    private float getTieY(boolean isUp, float y, String type) {
         int up;
-        if (!ties.isUp()) {
+        if (isUp) {
             up = -1;
         } else {
             up = 1;
@@ -1414,13 +1158,13 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
             case "half":
             case "quarter":
             case "eighth":
-                return y + mLinsRoomWidth5 * up;
+                return y + mLinsRoomWidth4 * up;
             case "16th":
-                return y + mLinsRoomWidth6 * up;
+                return y + mLinsRoomWidth5 * up;
             case "32th":
-                return y + mLinsRoomWidth7 * up;
+                return y + mLinsRoomWidth6 * up;
             case "64th":
-                return y + mLinsRoomWidth8 * up;
+                return y + mLinsRoomWidth7 * up;
         }
         return y;
     }
@@ -1440,22 +1184,30 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
+    private float getTieZ(float startX, float stopX, float y, boolean isUp) {
+        float num = (stopX - startX) / mLinsRoomWidth4;
+        if (num <= 0) {
+            num = 1;
+        } else if (num > 3) {
+            num = 3;
+        }
+        if (isUp) {
+            return y + mLinsRoomWidth * num;
+        } else {
+            return y - mLinsRoomWidth * num;
+        }
+    }
+
     /**
      * 绘制每个音符是否升降音
      */
-    private void drawfitts(Canvas canvas, boolean isFristStaff, int y, String alter) {
-        int alters = Integer.valueOf(alter);
-        float x;
-        if (isFristStaff) {
-            x = mFristStaffWidth;
-        } else {
-            x = mScendStaffWidth;
-        }
+    private void drawfitts(Canvas canvas, float x, float y, String alter, String step, String octave) {
+        int alters = selectFitts(Integer.valueOf(alter), step, octave);
+        if (alters == -5) return;
         switch (alters) {
             case -2:
                 //重降 bb
                 drawDownTune(canvas, x - mLinsRoomWidth, y - mLinsRoomWidth, y + mLinsRoomWidth);
-                x += mLinsRoomWidth;
                 drawDownTune(canvas, x, y - mLinsRoomWidth, y + mLinsRoomWidth);
                 break;
             case -1:
@@ -1464,67 +1216,92 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
                 break;
             case 0:
 //                还原
-                drawReduction(canvas, x, y);
+                drawReduction(canvas, x - mLinsRoomWidth / 2, y);
                 break;
             case 1:
 //                升 #
-                drawRise(canvas, x, y, 1);
+                drawRise(canvas, x - mLinsRoomWidth / 2, y, 1);
                 break;
             case 2:
                 //重升 x
-                drawRise(canvas, x, y, 2);
+                drawRise(canvas, x - mLinsRoomWidth / 2, y, 2);
                 break;
-        }
-        if (isFristStaff) {
-            mFristStaffWidth += mLinsRoomWidth2;
-        } else {
-            mScendStaffWidth += mLinsRoomWidth2;
         }
     }
 
+    private int selectFitts(int alter, String step, String octave) {
+        if (alter == 0) {
+            Iterator iterator = riseRecords.iterator();
+            while (iterator.hasNext()) {
+                RiseRecord bean = (RiseRecord) iterator.next();
+                if (bean.getOctave().equals(octave) && bean.getStep().equals(step)) {
+                    iterator.remove();
+                }
+            }
+            return 0;
+        }
+        if (alter > 0) {
+            for (int i = 0; i < riseRecords.size(); i++) {
+                RiseRecord bean = riseRecords.get(i);
+                if (bean.getOctave().equals(octave) && bean.getStep().equals(step)) {
+                    if (bean.getAlter() == alter) return -5;
+                    if (bean.getAlter() == 1 && alter == 2) {
+                        riseRecords.get(i).setAlter(2);
+                        return 1;
+                    }
+                }
+            }
+            riseRecords.add(new RiseRecord(step, octave, alter));
+            return alter;
+        } else if (alter < 0) {
+            for (int i = 0; i < riseRecords.size(); i++) {
+                RiseRecord bean = riseRecords.get(i);
+                if (bean.getOctave().equals(octave) && bean.getStep().equals(step)) {
+                    if (bean.getAlter() == alter) return -5;
+                    if (bean.getAlter() == -1 && alter == -2) {
+                        riseRecords.get(i).setAlter(-2);
+                        return -1;
+                    }
+                }
+            }
+            riseRecords.add(new RiseRecord(step, octave, alter));
+            return alter;
+        }
+        return -5;
+    }
+
     /**
-     * 绘制休止符
+     * 绘制升调
      */
-    private void drawRise(Canvas canvas, float x, int y, int alter) {
+    private void drawRise(Canvas canvas, float x, float y, int alter) {
         if (alter == 1) {
 //            #
-            drawLins(canvas, x + mLinsRoomWidth / 2, y + mLinsRoomWidth / 4,
-                    x + mLinsRoomWidth3 / 2, y - mLinsRoomWidth / 4);
-            drawLins(canvas, x + mLinsRoomWidth / 2, y + mLinsRoomWidth / 2,
-                    x + mLinsRoomWidth3 / 2, y + mLinsRoomWidth / 4);
-            drawLins(canvas, x + mLinsRoomWidth3 / 4, y - mLinsRoomWidth / 3,
-                    x + mLinsRoomWidth3 / 4, y + +mLinsRoomWidth3 / 4);
-            drawLins(canvas, x + mLinsRoomWidth5 / 4, y - mLinsRoomWidth / 3,
-                    x + mLinsRoomWidth5 / 4, y + mLinsRoomWidth3 / 4);
-            mLins.add(new StaffSaveData(x + mLinsRoomWidth / 2, y + mLinsRoomWidth / 4,
-                    x + mLinsRoomWidth3 / 2, y - mLinsRoomWidth / 4));
-            mLins.add(new StaffSaveData(x + mLinsRoomWidth / 2, y + mLinsRoomWidth / 2,
-                    x + mLinsRoomWidth3 / 2, y + mLinsRoomWidth / 4));
-            mLins.add(new StaffSaveData(x + mLinsRoomWidth3 / 4, y - mLinsRoomWidth / 3,
-                    x + mLinsRoomWidth3 / 4, y + +mLinsRoomWidth3 / 4));
-            mLins.add(new StaffSaveData(x + mLinsRoomWidth5 / 4, y - mLinsRoomWidth / 3,
-                    x + mLinsRoomWidth5 / 4, y + mLinsRoomWidth3 / 4));
+            canvas.drawLine(x, y + mLinsRoomWidth / 4,
+                    x + mLinsRoomWidth, y, mPathPaint);
+            canvas.drawLine(x, y + mLinsRoomWidth / 2,
+                    x + mLinsRoomWidth, y + mLinsRoomWidth / 4, mPathPaint);
+            //两条竖线
+            canvas.drawLine(x + mLinsRoomWidth / 4, y - mLinsRoomWidth / 3,
+                    x + mLinsRoomWidth / 4, y + mLinsRoomWidth3 / 4, mPathPaint);
+            canvas.drawLine(x + mLinsRoomWidth3 / 4, y - mLinsRoomWidth / 3,
+                    x + mLinsRoomWidth3 / 4, y + mLinsRoomWidth3 / 4, mPathPaint);
         } else {
             //x
-            drawLins(canvas, x, y, x + mLinsRoomWidth, y + mLinsRoomWidth);
-            drawLins(canvas, x + mLinsRoomWidth, y + mLinsRoomWidth, x, y);
-            mLins.add(new StaffSaveData(x, y, x + mLinsRoomWidth, y + mLinsRoomWidth));
-            mLins.add(new StaffSaveData(x + mLinsRoomWidth, y + mLinsRoomWidth, x, y));
+            canvas.drawLine(x, y, x + mLinsRoomWidth, y + mLinsRoomWidth, mPathPaint);
+            canvas.drawLine(x, y + mLinsRoomWidth, x + mLinsRoomWidth, y, mPathPaint);
         }
     }
 
     /**
      * 绘制还原符号
      */
-    private void drawReduction(Canvas canvas, float x, int y) {
-        drawLins(canvas, x, y - mLinsRoomWidth, x, y + mLinsRoomWidth);
-        drawLins(canvas, x + mLinsRoomWidth, y - mLinsRoomWidth / 2, x + mLinsRoomWidth, y + mLinsRoomWidth3 / 2);
-        drawLins(canvas, x, y, x, y - mLinsRoomWidth / 2);
-        drawLins(canvas, x, y + mLinsRoomWidth, x, y + mLinsRoomWidth / 2);
-        mLins.add(new StaffSaveData(x, y - mLinsRoomWidth, x, y + mLinsRoomWidth));
-        mLins.add(new StaffSaveData(x + mLinsRoomWidth, y - mLinsRoomWidth / 2, x + mLinsRoomWidth, y + mLinsRoomWidth3 / 2));
-        mLins.add(new StaffSaveData(x, y, x, y - mLinsRoomWidth / 2));
-        mLins.add(new StaffSaveData(x, y + mLinsRoomWidth, x, y + mLinsRoomWidth / 2));
+    private void drawReduction(Canvas canvas, float x, float y) {
+        canvas.drawLine(x, y - mLinsRoomWidth, x, y + mLinsRoomWidth, mPathPaint);
+        canvas.drawLine(x + mLinsRoomWidth, y - mLinsRoomWidth / 2,
+                x + mLinsRoomWidth, y + mLinsRoomWidth3 / 2, mPathPaint);
+        canvas.drawLine(x, y, x + mLinsRoomWidth, y - mLinsRoomWidth / 2, mPathPaint);
+        canvas.drawLine(x, y + mLinsRoomWidth,
+                x + mLinsRoomWidth, y + mLinsRoomWidth / 2, mPathPaint);
     }
 
     /**
@@ -1534,9 +1311,9 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * @param isFristStaff
      */
 
-    private int getPatchPosiotion(Notes notes, boolean isFristStaff) {
+    private float getPatchPosiotion(Notes notes, boolean isFristStaff) {
         int pa = Integer.parseInt(notes.getPitch().getOctave());
-        int posiotion = 0;
+        float posiotion = 0;
         if (!isFristStaff) {
             switch (notes.getPitch().getStep()) {
                 case "C":
@@ -1599,548 +1376,345 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * @param inTowStaffs 是否在第二线上
      */
     private void drawRest(String rest, Canvas canvas, boolean inTowStaffs) {
-        mPath = new Path();
         if (rest == null) return;
+        Path mPath = new Path();
         //休止符
         switch (rest) {
             case "long":
                 //4音节
                 if (inTowStaffs) {
                     //第二条线
-                    canvas.drawLine(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth, mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLinsRoomWidth, mCrudePaint);
-                    mRest.add(new Rest(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth, mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLinsRoomWidth));
+                    canvas.drawLine(mScendStaffWidth,
+                            twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth,
+                            twoStaff_threeLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mBeamPaint);
                 } else {
-                    canvas.drawLine(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth, mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up + mLinsRoomWidth, mCrudePaint);
-                    mRest.add(new Rest(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth, mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up + mLinsRoomWidth));
-
+                    canvas.drawLine(mFristStaffWidth,
+                            twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth,
+                            twoStaff_threeLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mBeamPaint);
                 }
                 break;
             case "breve":
                 //2音节
                 if (inTowStaffs) {
                     //第二条线
-                    canvas.drawLine(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down, mCrudePaint);
-                    mRest.add(new Rest(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down));
+                    canvas.drawLine(mScendStaffWidth,
+                            twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth,
+                            twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30,
+                            mBeamPaint);
                 } else {
-                    canvas.drawLine(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up, mCrudePaint);
-                    mRest.add(new Rest(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up));
+                    canvas.drawLine(mFristStaffWidth,
+                            twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth,
+                            twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30,
+                            mBeamPaint);
                 }
                 break;
             case "whole":
                 //1音节
                 if (inTowStaffs) {
                     //第二条线
-                    canvas.drawLine(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down - mLinsRoomWidth, mCrudePaint);
-                    mRest.add(new Rest(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down - mLinsRoomWidth));
+                    canvas.drawLine(mScendStaffWidth,
+                            twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth,
+                            twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mBeamPaint);
                 } else {
-                    canvas.drawLine(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up - mLinsRoomWidth, mCrudePaint);
-                    mRest.add(new Rest(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up - mLinsRoomWidth));
+                    canvas.drawLine(mFristStaffWidth,
+                            twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth,
+                            twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mBeamPaint);
                 }
                 break;
             case "half":
                 //二分休止符
                 if (inTowStaffs) {
                     //第二条线
-                    canvas.drawLine(mScendStaffWidth, twoStaff_threeLins_down - STAFF_LINS_WSITH * 4,
-                            mScendStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_down - STAFF_LINS_WSITH * 4, mCrudePaint);
-                    mRest.add(new Rest(mScendStaffWidth, twoStaff_threeLins_down - STAFF_LINS_WSITH * 4,
-                            mScendStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_down - STAFF_LINS_WSITH * 4));
+                    canvas.drawLine(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth3 / 2 + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 2,
+                            twoStaff_threeLins_down - mLinsRoomWidth3 / 2 + mLineNum * mLinsRoomWidth30, mBeamPaint);
                 } else {
-                    canvas.drawLine(mFristStaffWidth, twoStaff_threeLins_up - STAFF_LINS_WSITH * 4,
-                            mFristStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_up - STAFF_LINS_WSITH * 4, mCrudePaint);
-                    mRest.add(new Rest(mFristStaffWidth, twoStaff_threeLins_up - STAFF_LINS_WSITH * 4,
-                            mFristStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_up - STAFF_LINS_WSITH * 4));
+                    canvas.drawLine(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth3 / 2 + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 2,
+                            twoStaff_threeLins_up - mLinsRoomWidth3 / 2 + mLineNum * mLinsRoomWidth30, mBeamPaint);
                 }
                 break;
             case "quarter":
                 //四分休止符
                 if (inTowStaffs) {
                     //第二条线
-                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth);
-                    mPath.quadTo(mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down - mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down - mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down
-                    ));
 
-                    canvas.drawLine(mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down, mCrudePaint);
-                    mRest.add(new Rest(mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down));
-                    canvas.drawLine(mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLinsRoomWidth, mLinsPaint);
-                    mLins.add(new StaffSaveData(mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLinsRoomWidth));
-                    mPath.moveTo(mScendStaffWidth + mLinsRoomWidth, twoStaff_fristLins_down - mLinsRoomWidth);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_fristLins_down - mLinsRoomWidth,
-                            mScendStaffWidth, twoStaff_fristLins_down);
+                    canvas.drawLine(mScendStaffWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth,
+                            twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30, mBeamPaint);
+                    canvas.drawLine(mScendStaffWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
+                    mPath.moveTo(mScendStaffWidth + mLinsRoomWidth, twoStaff_fristLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_fristLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth, twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth + mLinsRoomWidth, twoStaff_fristLins_down - mLinsRoomWidth,
-                            mScendStaffWidth, twoStaff_fristLins_down - mLinsRoomWidth,
-                            mScendStaffWidth, twoStaff_fristLins_down
-                    ));
                 } else {
-                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth);
-                    mPath.quadTo(mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up - mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up - mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up
-                    ));
-                    canvas.drawLine(mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up, mCrudePaint);
-                    mRest.add(new Rest(mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up));
-                    canvas.drawLine(mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up + mLinsRoomWidth, mLinsPaint);
-                    mLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up + mLinsRoomWidth));
-                    mPath.moveTo(mFristStaffWidth + mLinsRoomWidth, twoStaff_fristLins_up - mLinsRoomWidth);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_fristLins_up - mLinsRoomWidth,
-                            mFristStaffWidth, twoStaff_fristLins_up);
+                    canvas.drawLine(mFristStaffWidth, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth,
+                            twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30, mBeamPaint);
+                    canvas.drawLine(mFristStaffWidth, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
+                    mPath.moveTo(mFristStaffWidth + mLinsRoomWidth, twoStaff_fristLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_fristLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth, twoStaff_fristLins_up + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth + mLinsRoomWidth, twoStaff_fristLins_up - mLinsRoomWidth,
-                            mFristStaffWidth, twoStaff_fristLins_up - mLinsRoomWidth,
-                            mFristStaffWidth, twoStaff_fristLins_up
-                    ));
                 }
                 break;
             case "eighth":
                 //八分休止符
                 if (inTowStaffs) {
-                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down - mLinsRoomWidth);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth,
-                            mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down - mLinsRoomWidth
-                    ));
-                    canvas.drawLine(mScendStaffWidth, twoStaff_fristLins_down - mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down - mLinsRoomWidth, mLinsPaint);
-                    mLins.add(new StaffSaveData(mScendStaffWidth, twoStaff_fristLins_down - mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down - mLinsRoomWidth));
+                    canvas.drawLine(mScendStaffWidth, twoStaff_fristLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
                 } else {
-                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up - mLinsRoomWidth);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth,
-                            mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up - mLinsRoomWidth
-                    ));
-                    canvas.drawLine(mFristStaffWidth, twoStaff_fristLins_up - mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up - mLinsRoomWidth, mLinsPaint);
-                    mLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fristLins_up - mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up - mLinsRoomWidth));
+                    canvas.drawLine(mFristStaffWidth, twoStaff_fristLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
                 }
                 break;
             case "16th":
                 //16分休止符
                 if (inTowStaffs) {
-                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_down - mLinsRoomWidth);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth,
-                            mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_down - mLinsRoomWidth
-                    ));
-
-                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 4 / 3, twoStaff_threeLins_down);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 4 / 3, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 4 / 3, twoStaff_threeLins_down));
-                    canvas.drawLine(mScendStaffWidth, twoStaff_fristLins_down,
-                            mScendStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_down - mLinsRoomWidth, mLinsPaint);
-                    mLins.add(new StaffSaveData(mScendStaffWidth, twoStaff_fristLins_down,
-                            mScendStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_down - mLinsRoomWidth));
+                    canvas.drawLine(mScendStaffWidth, twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
                 } else {
-                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_up - mLinsRoomWidth);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
 
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth,
-                            mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_up - mLinsRoomWidth));
-
-                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 4 / 3, twoStaff_threeLins_up);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 4 / 3, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 4 / 3, twoStaff_threeLins_up));
-
-                    canvas.drawLine(mFristStaffWidth, twoStaff_fristLins_up,
-                            mFristStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_up - mLinsRoomWidth, mLinsPaint);
-                    mLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fristLins_up,
-                            mFristStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_up - mLinsRoomWidth));
+                    canvas.drawLine(mFristStaffWidth, twoStaff_fristLins_up + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
                 }
                 break;
             case "32th":
                 //32分休止符
                 if (inTowStaffs) {
-                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_down - mLinsRoomWidth);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth,
-                            mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_down - mLinsRoomWidth));
-
-                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3 / 2, twoStaff_threeLins_down);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 3 / 2, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3 / 2, twoStaff_threeLins_down));
-
-                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth * 2,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLinsRoomWidth);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth * 2 + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth,
-                            mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth * 2,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLinsRoomWidth));
-
-                    canvas.drawLine(mScendStaffWidth, twoStaff_fristLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_down - mLinsRoomWidth, mLinsPaint);
-                    mLins.add(new StaffSaveData(mScendStaffWidth, twoStaff_fristLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_down - mLinsRoomWidth));
+                    canvas.drawLine(mScendStaffWidth, twoStaff_fristLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
                 } else {
-                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_up - mLinsRoomWidth);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth,
-                            mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_up - mLinsRoomWidth));
-
-                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3 / 2, twoStaff_threeLins_up);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 3 / 2, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3 / 2, twoStaff_threeLins_up));
-
-                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth * 2,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up + mLinsRoomWidth);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth * 2 + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth,
-                            mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth * 2,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_threeLins_up + mLinsRoomWidth));
-
-                    canvas.drawLine(mFristStaffWidth, twoStaff_fristLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_up - mLinsRoomWidth, mLinsPaint);
-                    mLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fristLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_up - mLinsRoomWidth));
+                    canvas.drawLine(mFristStaffWidth, twoStaff_fristLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 2, twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
                 }
                 break;
             case "64th":
                 //64分休止符
                 if (inTowStaffs) {
                     //第五线
-                    mPath.moveTo(mScendStaffWidth, twoStaff_fiveLins_down);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_fiveLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_fiveLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_fiveLins_down,
-                            mScendStaffWidth, twoStaff_fiveLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down));
                     //第四线
-                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 4 / 5, twoStaff_threeLins_down - mLinsRoomWidth);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 3 * 4 / 5, twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth,
-                            mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 4 / 5, twoStaff_threeLins_down - mLinsRoomWidth));
                     //地三线
-                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 3 / 5, twoStaff_threeLins_down);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 3 * 3 / 5, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 3 / 5, twoStaff_threeLins_down));
                     //地二线
-                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth * 2,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLinsRoomWidth * 3 * 2 / 5);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth * 2 + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLinsRoomWidth * 3 * 2 / 5 + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth,
-                            mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth * 2,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLinsRoomWidth * 3 * 2 / 5));
-
-                    canvas.drawLine(mScendStaffWidth, twoStaff_fristLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down, mLinsPaint);
-                    mLins.add(new StaffSaveData(mScendStaffWidth, twoStaff_fristLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down));
+                    canvas.drawLine(mScendStaffWidth, twoStaff_fristLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30, mLinsPaint);
                 } else {
-                    mPath.moveTo(mFristStaffWidth, twoStaff_fiveLins_up);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_fiveLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_up);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_fiveLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_fiveLins_up,
-                            mFristStaffWidth, twoStaff_fiveLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_up));
-
-
-                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 4 / 5, twoStaff_threeLins_up - mLinsRoomWidth);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 3 * 4 / 5, twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth,
-                            mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 4 / 5, twoStaff_threeLins_up - mLinsRoomWidth));
-
-                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 3 / 5, twoStaff_threeLins_up);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 3 * 3 / 5, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 3 / 5, twoStaff_threeLins_up));
-
-                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth * 2,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_fristLins_up - mLinsRoomWidth * 3 * 2 / 5);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth * 2 + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth, twoStaff_fristLins_up - mLinsRoomWidth * 3 * 2 / 5 + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth,
-                            mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth * 2,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_fristLins_up - mLinsRoomWidth * 3 * 2 / 5));
-
-                    canvas.drawLine(mFristStaffWidth, twoStaff_fristLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_up, mLinsPaint);
-                    mLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fristLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_up));
+                    canvas.drawLine(mFristStaffWidth, twoStaff_fristLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30, mLinsPaint);
                 }
                 break;
             case "128th":
                 //128分休止符
                 if (inTowStaffs) {
-                    mPath.moveTo(mScendStaffWidth, twoStaff_fiveLins_down - mLinsRoomWidth);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_fiveLins_down,
-                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down - mLinsRoomWidth);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_fiveLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_fiveLins_down - mLinsRoomWidth,
-                            mScendStaffWidth, twoStaff_fiveLins_down,
-                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down - mLinsRoomWidth));
-
                     //第五线
-                    mPath.moveTo(mScendStaffWidth, twoStaff_fiveLins_down);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_fiveLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 5 / 6, twoStaff_fiveLins_down);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_fiveLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 3 * 5 / 6, twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_fiveLins_down,
-                            mScendStaffWidth, twoStaff_fiveLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 5 / 6, twoStaff_fiveLins_down));
                     //第四线
-                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 4 / 6, twoStaff_threeLins_down - mLinsRoomWidth);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 3 * 4 / 6, twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth,
-                            mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 4 / 6, twoStaff_threeLins_down - mLinsRoomWidth));
-
                     //地三线
-                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 3 / 6, twoStaff_threeLins_down);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 3 * 3 / 6, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 3 / 6, twoStaff_threeLins_down));
                     //地二线
-                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth * 2,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLinsRoomWidth * 3 * 2 / 6);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth * 2 + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLinsRoomWidth * 3 * 2 / 6 + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth,
-                            mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth * 2,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLinsRoomWidth * 3 * 2 / 6));
-
-                    canvas.drawLine(mScendStaffWidth, twoStaff_fristLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down - mLinsRoomWidth, mLinsPaint);
-                    mLins.add(new StaffSaveData(mScendStaffWidth, twoStaff_fristLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down - mLinsRoomWidth));
+                    canvas.drawLine(mScendStaffWidth, twoStaff_fristLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
                 } else {
 
-                    mPath.moveTo(mFristStaffWidth, twoStaff_fiveLins_up - mLinsRoomWidth);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_fiveLins_up, mFristStaffWidth + mLinsRoomWidth * 3,
-                            twoStaff_fiveLins_up - mLinsRoomWidth);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_fiveLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_fiveLins_up - mLinsRoomWidth,
-                            mFristStaffWidth, twoStaff_fiveLins_up, mFristStaffWidth + mLinsRoomWidth * 3,
-                            twoStaff_fiveLins_up - mLinsRoomWidth));
-
-                    mPath.moveTo(mFristStaffWidth, twoStaff_fiveLins_up);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_fiveLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 5 / 6, twoStaff_fiveLins_up);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_fiveLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 3 * 5 / 6, twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_fiveLins_up,
-                            mFristStaffWidth, twoStaff_fiveLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 5 / 6, twoStaff_fiveLins_up));
-
-                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 4 / 6, twoStaff_threeLins_up - mLinsRoomWidth);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 3 * 4 / 6, twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth,
-                            mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 4 / 6, twoStaff_threeLins_up - mLinsRoomWidth));
-                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 3 / 6, twoStaff_threeLins_up);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 3 * 3 / 6, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 3 / 6, twoStaff_threeLins_up));
-
-                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth * 2,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_fristLins_up - mLinsRoomWidth * 3 * 2 / 6);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth * 2 + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth, twoStaff_fristLins_up - mLinsRoomWidth * 3 * 2 / 6 + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth,
-                            mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth * 2,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_fristLins_up - mLinsRoomWidth * 3 * 2 / 6));
-
-                    canvas.drawLine(mFristStaffWidth, twoStaff_fristLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_up - mLinsRoomWidth, mLinsPaint);
-                    mLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fristLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_up - mLinsRoomWidth));
+                    canvas.drawLine(mFristStaffWidth, twoStaff_fristLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
                 }
                 break;
             case "256th":
                 //256分休止符
                 if (inTowStaffs) {
-                    mPath.moveTo(mScendStaffWidth, twoStaff_fiveLins_down - mLinsRoomWidth);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_fiveLins_down,
-                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down - mLinsRoomWidth);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_fiveLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_fiveLins_down - mLinsRoomWidth,
-                            mScendStaffWidth, twoStaff_fiveLins_down,
-                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down - mLinsRoomWidth));
-
                     //第五线
-                    mPath.moveTo(mScendStaffWidth, twoStaff_fiveLins_down);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_fiveLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 7 / 7, twoStaff_fiveLins_down);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_fiveLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 3 * 7 / 7, twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_fiveLins_down,
-                            mScendStaffWidth, twoStaff_fiveLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 7 / 7, twoStaff_fiveLins_down));
                     //第四线
-                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 5 / 7, twoStaff_threeLins_down - mLinsRoomWidth);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 3 * 5 / 7, twoStaff_threeLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_threeLins_down - mLinsRoomWidth,
-                            mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 5 / 7, twoStaff_threeLins_down - mLinsRoomWidth));
                     //地三线
-                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 4 / 7, twoStaff_threeLins_down);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 3 * 4 / 7, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_threeLins_down,
-                            mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 4 / 7, twoStaff_threeLins_down));
                     //地二线
-                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth * 2,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLinsRoomWidth * 3 * 3 / 7);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth * 2 + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLinsRoomWidth * 3 * 3 / 7 + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth,
-                            mScendStaffWidth, twoStaff_threeLins_down + mLinsRoomWidth * 2,
-                            mScendStaffWidth + mLinsRoomWidth, twoStaff_threeLins_down + mLinsRoomWidth * 3 * 3 / 7));
-
-                    mPath.moveTo(mScendStaffWidth, twoStaff_fristLins_down);
-                    mPath.quadTo(mScendStaffWidth, twoStaff_fristLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 2 / 7, twoStaff_fristLins_down);
+                    mPath.moveTo(mScendStaffWidth, twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mScendStaffWidth, twoStaff_fristLins_down + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 3 * 2 / 7, twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mScendStaffWidth, twoStaff_fristLins_down,
-                            mScendStaffWidth, twoStaff_fristLins_down + mLinsRoomWidth,
-                            mScendStaffWidth + mLinsRoomWidth * 3 * 2 / 7, twoStaff_fristLins_down));
-
-                    canvas.drawLine(mScendStaffWidth, twoStaff_fristLins_down + mLinsRoomWidth * 2,
-                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down - mLinsRoomWidth, mLinsPaint);
-                    mLins.add(new StaffSaveData(mScendStaffWidth, twoStaff_fristLins_down + mLinsRoomWidth * 2,
-                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down - mLinsRoomWidth));
+                    canvas.drawLine(mScendStaffWidth, twoStaff_fristLins_down + mLinsRoomWidth * 2 + mLineNum * mLinsRoomWidth30,
+                            mScendStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_down - mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
                 } else {
 
-                    mPath.moveTo(mFristStaffWidth, twoStaff_fiveLins_up - mLinsRoomWidth);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_fiveLins_up,
-                            mFristStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_up - mLinsRoomWidth);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_fiveLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_fiveLins_up - mLinsRoomWidth,
-                            mFristStaffWidth, twoStaff_fiveLins_up,
-                            mFristStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_up - mLinsRoomWidth));
-
-                    mPath.moveTo(mFristStaffWidth, twoStaff_fiveLins_up);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_fiveLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 6 / 7, twoStaff_fiveLins_up);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_fiveLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 3 * 6 / 7, twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_fiveLins_up,
-                            mFristStaffWidth, twoStaff_fiveLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 6 / 7, twoStaff_fiveLins_up));
-
-                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 5 / 7, twoStaff_threeLins_up - mLinsRoomWidth);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 3 * 5 / 7, twoStaff_threeLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_threeLins_up - mLinsRoomWidth,
-                            mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 5 / 7, twoStaff_threeLins_up - mLinsRoomWidth));
-
-                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 4 / 7, twoStaff_threeLins_up);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 3 * 4 / 7, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_threeLins_up,
-                            mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 4 / 7, twoStaff_threeLins_up));
-
-                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth * 2,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_fristLins_up - mLinsRoomWidth * 3 * 3 / 7);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth * 2 + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth, twoStaff_fristLins_up - mLinsRoomWidth * 3 * 3 / 7 + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth,
-                            mFristStaffWidth, twoStaff_threeLins_up + mLinsRoomWidth * 2,
-                            mFristStaffWidth + mLinsRoomWidth, twoStaff_fristLins_up - mLinsRoomWidth * 3 * 3 / 7));
-
-                    mPath.moveTo(mFristStaffWidth, twoStaff_fristLins_up);
-                    mPath.quadTo(mFristStaffWidth, twoStaff_fristLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 2 / 7, twoStaff_fristLins_up);
+                    mPath.moveTo(mFristStaffWidth, twoStaff_fristLins_up + mLineNum * mLinsRoomWidth30);
+                    mPath.quadTo(mFristStaffWidth, twoStaff_fristLins_up + mLinsRoomWidth + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 3 * 2 / 7, twoStaff_fristLins_up + mLineNum * mLinsRoomWidth30);
                     canvas.drawPath(mPath, mLinsPaint);
-                    mRestTia.add(new Tia(mFristStaffWidth, twoStaff_fristLins_up,
-                            mFristStaffWidth, twoStaff_fristLins_up + mLinsRoomWidth,
-                            mFristStaffWidth + mLinsRoomWidth * 3 * 2 / 7, twoStaff_fristLins_up));
-
-                    canvas.drawLine(mFristStaffWidth, twoStaff_fristLins_up + mLinsRoomWidth * 2,
-                            mFristStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_up - mLinsRoomWidth, mLinsPaint);
-                    mLins.add(new StaffSaveData(mFristStaffWidth, twoStaff_fristLins_up + mLinsRoomWidth * 2,
-                            mFristStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_up - mLinsRoomWidth));
+                    canvas.drawLine(mFristStaffWidth, twoStaff_fristLins_up + mLinsRoomWidth * 2 + mLineNum * mLinsRoomWidth30,
+                            mFristStaffWidth + mLinsRoomWidth * 3, twoStaff_fiveLins_up - mLinsRoomWidth + mLineNum * mLinsRoomWidth30, mLinsPaint);
                 }
                 break;
         }
@@ -2151,29 +1725,31 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      *
      * @param attributess
      * @param canvas
-     * @param isDraw      是否绘制
      */
-    private void drawStaffLines(Attributess attributess, Canvas canvas, boolean isDraw) {
-        mFristStaffWidth = mLinsRoomWidth2 - moveLenth;
+    private void drawStaffLines(Attributess attributess, Canvas canvas) {
+        mFristStaffWidth = mLinsRoomWidth2 + start_x;
         mScendStaffWidth = mFristStaffWidth;
-        if (isDraw) {
-            if (isTowStaff) {
-                canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_up,
-                        mFristStaffWidth, twoStaff_fristLins_down, mLinsPaint);
+        if (isTwoStaff) {
+            canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth, twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30, mLinsPaint);
+        } else {
+            if (isUpNote) {
+                canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30,
+                        mFristStaffWidth, twoStaff_fristLins_up + mLineNum * mLinsRoomWidth30, mLinsPaint);
             } else {
-                canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_up,
-                        mFristStaffWidth, twoStaff_fristLins_up, mLinsPaint);
+                canvas.drawLine(mFristStaffWidth, twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30,
+                        mFristStaffWidth, twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30, mLinsPaint);
             }
         }
         //绘制音符
-        drawSign(canvas, attributess.getClefList(), isDraw);
-        float wigth = Math.max(mFristStaffWidth, mScendStaffWidth);
-        mFristStaffWidth = wigth;
-        mScendStaffWidth = wigth;
+        drawSign(canvas, attributess.getClefList());
+        float maxS = Math.max(mFristStaffWidth, mScendStaffWidth);
+        mFristStaffWidth = maxS;
+        mScendStaffWidth = mFristStaffWidth;
         //绘制节拍
-        drawTimes(canvas, attributess.getTime(), isDraw);
-        mFristStaffWidth = Math.max(mFristStaffWidth, mScendStaffWidth);
-        mFristStaffWidth += mSpeedLenth;
+        drawTimes(canvas, attributess.getTime());
+        float max = Math.max(mFristStaffWidth, mScendStaffWidth);
+        mFristStaffWidth = max + mLinsRoomWidth;
         mScendStaffWidth = mFristStaffWidth;
     }
 
@@ -2182,18 +1758,28 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      *
      * @param canvas
      * @param time
-     * @param isDraw
      */
-    private void drawTimes(Canvas canvas, AttributessTime time, boolean isDraw) {
-        if (isDraw) {
-            drawTime(canvas, time.getBeats(), mFristStaffWidth, twoStaff_threeLins_up - mNumHeight, mFristStaffWidth + mTrebleWidth, twoStaff_threeLins_up);
-            drawTime(canvas, time.getBeat_type(), mFristStaffWidth, twoStaff_fristLins_up - mNumHeight, mFristStaffWidth + mTrebleWidth, twoStaff_fristLins_up);
-            if (isTowStaff) {
-                drawTime(canvas, time.getBeats(), mFristStaffWidth, twoStaff_threeLins_down - mNumHeight, mFristStaffWidth + mTrebleWidth, twoStaff_threeLins_down);
-                drawTime(canvas, time.getBeat_type(), mFristStaffWidth, twoStaff_fristLins_down - mNumHeight, mFristStaffWidth + mTrebleWidth, twoStaff_fristLins_down);
-            }
+    private void drawTimes(Canvas canvas, AttributessTime time) {
+        if (isUpNote) {
+            drawTime(canvas, time.getBeats(), mFristStaffWidth, twoStaff_threeLins_up - mNumHeight + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth + mTwelveWidth, twoStaff_threeLins_up + mLineNum * mLinsRoomWidth30);
+            drawTime(canvas, time.getBeat_type(), mFristStaffWidth, twoStaff_fristLins_up - mNumHeight + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth + mTwelveWidth, twoStaff_fristLins_up + mLineNum * mLinsRoomWidth30);
+        } else {
+            drawTime(canvas, time.getBeats(), mFristStaffWidth, twoStaff_threeLins_down - mNumHeight + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth + mTwelveWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30);
+            drawTime(canvas, time.getBeat_type(), mFristStaffWidth, twoStaff_fristLins_down - mNumHeight + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth + mTwelveWidth, twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30);
+            mFristStaffWidth += mTwelveWidth + mLinsRoomWidth;
         }
-        mFristStaffWidth += mTrebleWidth + mLinsRoomWidth;
+        //第二条
+        if (isTwoStaff) {
+            drawTime(canvas, time.getBeats(), mFristStaffWidth, twoStaff_threeLins_down - mNumHeight + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth + mTwelveWidth, twoStaff_threeLins_down + mLineNum * mLinsRoomWidth30);
+            drawTime(canvas, time.getBeat_type(), mFristStaffWidth, twoStaff_fristLins_down - mNumHeight + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth + mTwelveWidth, twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30);
+        }
+        mFristStaffWidth += mTwelveWidth + mLinsRoomWidth;
     }
 
     /**
@@ -2241,52 +1827,29 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      *
      * @param canvas
      * @param clefList
-     * @param isDraw
      */
-    private void drawSign(Canvas canvas, List<Clef> clefList, boolean isDraw) {
+    private void drawSign(Canvas canvas, List<Clef> clefList) {
         mFristStaffWidth += mLinsRoomWidth2;
         mScendStaffWidth = mFristStaffWidth;
-//        MyLogUtils.e(TAG, "mFristStaffWidth:" + mFristStaffWidth);
-        //两条五线谱
-        for (int j = 0; j < clefList.size(); j++) {
-            if (j == 0) {
-                switch (clefList.get(j).getSign()) {
-                    case "G":
-                        //高音
-                        if (isDraw)
-                            drawTreble(canvas, mFristStaffWidth, mLayoutCenterHeight - mLinsRoomWidth2 - mTrebleHeight,
-                                    mFristStaffWidth + mTrebleWidth, mLayoutCenterHeight - mLinsRoomWidth2);
-                        mFristStaffWidth += mTrebleWidth + mLinsRoomWidth;
-                        drawFifths(canvas, true, true, isDraw);
-                        break;
-                    case "F":
-                        if (isDraw)
-                            drawBass(canvas, mFristStaffWidth, twoStaff_fristLins_up - mLinsRoomWidth - mBassHeight,
-                                    mFristStaffWidth + mTrebleWidth, twoStaff_fristLins_up - mLinsRoomWidth);
-                        mFristStaffWidth += mTrebleWidth + mLinsRoomWidth;
-                        drawFifths(canvas, true, false, isDraw);
-                        break;
-                }
-            } else {
-                switch (clefList.get(j).getSign()) {
-                    case "G":
-                        //高音
-                        if (isDraw)
-                            drawTreble(canvas, mScendStaffWidth, mLayoutCenterHeight + mLinsRoomWidth3,
-                                    mScendStaffWidth + mTrebleWidth, mLayoutCenterHeight + mLinsRoomWidth3 + mTrebleHeight);
-                        mScendStaffWidth += mTrebleWidth + mLinsRoomWidth;
-                        drawFifths(canvas, false, true, isDraw);
-                        break;
-                    case "F":
-                        //低音
-                        if (isDraw)
-                            drawBass(canvas, (int) mScendStaffWidth, mLayoutCenterHeight + mLinsRoomWidth4,
-                                    (int) mScendStaffWidth + mBassWidth, mLayoutCenterHeight + mLinsRoomWidth4 + mBassHeight);
-                        mScendStaffWidth += mTrebleWidth + mLinsRoomWidth;
-                        drawFifths(canvas, false, false, isDraw);
-                        break;
-                }
-            }
+        if (isUpNote) {
+            //高音
+            drawTreble(canvas, mFristStaffWidth, mLayoutCenterHeight - mLinsRoomWidth2 - mTrebleHeight + mLineNum * mLinsRoomWidth30,
+                    mFristStaffWidth + mTrebleWidth, mLayoutCenterHeight - mLinsRoomWidth2 + mLineNum * mLinsRoomWidth30);
+            mFristStaffWidth += mBassWidth + mLinsRoomWidth;
+            drawFifths(canvas, true, true);
+        } else {
+            //低音
+            drawBass(canvas, (int) mScendStaffWidth, mLayoutCenterHeight + mLinsRoomWidth4 + mLineNum * mLinsRoomWidth30,
+                    (int) mScendStaffWidth + mBassWidth, mLayoutCenterHeight + mLinsRoomWidth4 + mBassHeight + mLineNum * mLinsRoomWidth30);
+            mScendStaffWidth += mBassWidth + mLinsRoomWidth;
+            drawFifths(canvas, false, false);
+        }
+        if (isTwoStaff) {
+            //两条五线谱
+            drawBass(canvas, (int) mScendStaffWidth, mLayoutCenterHeight + mLinsRoomWidth4 + mLineNum * mLinsRoomWidth30,
+                    (int) mScendStaffWidth + mBassWidth, mLayoutCenterHeight + mLinsRoomWidth4 + mBassHeight + mLineNum * mLinsRoomWidth30);
+            mScendStaffWidth += mBassWidth + mLinsRoomWidth;
+            drawFifths(canvas, false, clefList.get(0).getSign().equals("G"));
         }
     }
 
@@ -2325,23 +1888,13 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * @param canvas
      * @param isfrist 是否是第一条五线谱
      * @param isG     是否是高音
-     * @param isDraw
      */
-    private void drawFifths(Canvas canvas, boolean isfrist, boolean isG, boolean isDraw) {
-//        MyLogUtils.e(TAG, "mFristStaffWidth:" + mFristStaffWidth);
+    private void drawFifths(Canvas canvas, boolean isfrist, boolean isG) {
         if (fifth == null || fifth.length == 0) {
             return;
         }
         int size = fifth.length;
-        if (!isDraw) {
-            if (isfrist) {
-                mFristStaffWidth += mLinsRoomWidth * size;
-            } else {
-                mScendStaffWidth += mLinsRoomWidth * size;
-            }
-            return;
-        }
-        int position = 0;
+        int position;
         if (isfrist) {
             position = mLayoutCenterHeight - mLinsRoomWidth4;
         } else {
@@ -2353,26 +1906,22 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
             if (isG) {
                 //高音,升调
                 list.addAll(HighRise);
-//                MyLogUtils.e(TAG, "HighRise");
             } else {
                 //低音，升调
                 list.addAll(LowRise);
-//                MyLogUtils.e(TAG, "LowRise");
             }
         } else {
             //降调
             if (isG) {
                 //高音,降调
                 list.addAll(HighDrop);
-//                MyLogUtils.e(TAG, "HighDrop");
             } else {
                 //低音，降调
                 list.addAll(LowDrop);
-//                MyLogUtils.e(TAG, "LowDrop");
             }
         }
         while (size != 0) {
-            int where = position + list.get(0);
+            int where = position + list.get(0) + mLineNum * mLinsRoomWidth30;
             if (isfrist) {
                 //第一条五线谱
                 if (isUpfifth) {
@@ -2401,41 +1950,38 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * 绘制降调(开头的)
      */
     private void drawDownTune(Canvas canvas, float x, int y) {
-        canvas.drawLine(x, y, x, y + mLinsRoomWidth5 / 2, mLinsPaint2);
+        Path mPath = new Path();
+        canvas.drawLine(x, y, x, y + mLinsRoomWidth5 / 2, mPathPaint);
         mPath.moveTo(x, y + mLinsRoomWidth3 / 2);
         //二介
         mPath.quadTo(x + mLinsRoomWidth, y + mLinsRoomWidth2, x, y + mLinsRoomWidth5 / 2);
         //三介
 //        mPath.cubicTo();
-        canvas.drawPath(mPath, mTailPaint);
+        canvas.drawPath(mPath, mLinsPaint);
     }
 
     /**
      * 绘制升调（开头的）
      */
     private void drawUpTune(Canvas canvas, float x, int y) {
-        canvas.drawLine(x, y, x + mLinsRoomWidth, y - mLinsRoomWidth / 2, mLinsPaint2);
-        canvas.drawLine(x, y - mLinsRoomWidth, x + mLinsRoomWidth, y - mLinsRoomWidth3 / 2, mLinsPaint2);
-        canvas.drawLine(x + mLinsRoomWidth / 4, y - mLinsRoomWidth7 / 4, x + mLinsRoomWidth / 4, y + mLinsRoomWidth / 2, mLinsPaint2);
-        canvas.drawLine(x + mLinsRoomWidth3 / 4, y - mLinsRoomWidth2, x + mLinsRoomWidth3 / 4, y + mLinsRoomWidth / 4, mLinsPaint2);
+        canvas.drawLine(x, y, x + mLinsRoomWidth, y - mLinsRoomWidth / 2, mPathPaint);
+        canvas.drawLine(x, y - mLinsRoomWidth, x + mLinsRoomWidth, y - mLinsRoomWidth3 / 2, mPathPaint);
+        canvas.drawLine(x + mLinsRoomWidth / 4, y - mLinsRoomWidth7 / 4, x + mLinsRoomWidth / 4, y + mLinsRoomWidth / 2, mPathPaint);
+        canvas.drawLine(x + mLinsRoomWidth3 / 4, y - mLinsRoomWidth2, x + mLinsRoomWidth3 / 4, y + mLinsRoomWidth / 4, mPathPaint);
     }
 
     /**
      * 绘制降调(音符)
      */
     private void drawDownTune(Canvas canvas, float X, float startY, float stopY) {
-        float x = X + mLinsRoomWidth;
+        float x = X;
+        float y = startY + mLinsRoomWidth / 2;
+        Path mPath = new Path();
         //绘制一条竖线
-        drawLins(canvas, x, startY, x, stopY);
-        mPath.moveTo(x, startY + (stopY - startY) / 2);
-        mPath.quadTo(x + mLinsRoomWidth, stopY - (stopY - startY) / 4, x, stopY);
-        canvas.drawPath(mPath, mTailPaint);
-        mDwon.add(new Dwon(x, startY, x, stopY, x,
-                startY + (stopY - startY) / 2,
-                x + mLinsRoomWidth,
-                stopY - (stopY - startY) / 4,
-                x,
-                stopY));
+        drawLins(canvas, x, y, x, stopY);
+        mPath.moveTo(x, y + (stopY - y) / 2);
+        mPath.quadTo(x + mLinsRoomWidth, stopY - (stopY - y) / 4, x, stopY);
+        canvas.drawPath(mPath, mPathPaint);
     }
 
     /**
@@ -2455,7 +2001,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      * @param isDwon true：符尾向下
      * @param type
      */
-    private void drawTial(Canvas canvas, float x, int y, boolean isDwon, String type, Notes notes) {
+    private void drawTial(Canvas canvas, float x, float y, boolean isDwon, String type, Notes notes) {
         switch (type) {
             case "eighth":
                 if (isDwon) {
@@ -2561,200 +2107,52 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     //绘制符尾
-    private void drawTials(Canvas canvas, float x, int y, float x1, int y1, float x2, int y2, float x3, int y3) {
+    private void drawTials(Canvas canvas, float x, float y, float x1, float y1, float x2, float y2, float x3, float y3) {
+        Path mPath = new Path();
         mPath.moveTo(x, y);
         mPath.cubicTo(x1, y1, x2, y2, x3, y3);
         canvas.drawPath(mPath, mTailPaint);
-        mTial.add(new Tial(x, y, x1, y1, x2, y2, x3, y3));
     }
 
     /**
-     * 绘制尾部连音
+     * 初始化尾部连音
      *
      * @param beam
-     * @param isDwon
      * @param tialX
      * @param tialStartY
      * @param tialStopY
-     * @param canvas
-     * @param chord
      */
-    private void drawLegato(List<Beam> beam, boolean isDwon, float tialX, int tialStartY, int tialStopY, Canvas canvas, boolean chord) {
-        //第一个开始绘制连音符的音符坐标
-        float startX = 0;
-        int startY = 0;
-        float stopX = 0;
-        int stopY = 0;
-        //大于三个音符的时候相同的Y值
-        int myY = 0;
-        int dwon = isDwon ? -1 : 1;
-        int hook = 1;
+    private void initLegato(List<Beam> beam, float tialX,
+                            float tialStartY, float tialStopY) {
         for (int i = 0; i < beam.size(); i++) {
             Beam beam1 = beam.get(i);
             switch (beam1.getBeam()) {
                 case "begin":
-                    List<Legato> list;
-                    if (legatosMap.get(beam1.getNumber()) != null) {
-                        int y = legatosMap.get(beam1.getNumber()).get(0).getStopY();
-                        legatosMap.get(beam1.getNumber()).get(0).setStopY(isDwon ? Math.max(y, tialStopY) : Math.min(y, tialStopY));
-                    } else {
-                        list = new ArrayList<>();
-                        list.add(new Legato(tialX, tialStartY, tialX, tialStopY));
-                        legatosMap.put(beam1.getNumber(), list);
-                    }
+                    List<Legato> list = new ArrayList<>();
+                    list.add(new Legato(tialX, tialStartY, tialStopY));
+                    legatosMap.put(beam1.getNumber(), list);
                     break;
                 case "end":
-                    if (chord) return;
-                    if (legatosMap.size() == 0) {
-                        forwardHook.clear();
-                        break;
-                    }
-                    if (legatosMap.get(1) == null) break;
-                    if (legatosMap.get(1).size() == 0) break;
-                    if (legatosMap.get(1).get(0) == null) break;
-                    startX = legatosMap.get(1).get(0).getStartX();
-                    startY = legatosMap.get(1).get(0).getStartY();
-                    stopX = legatosMap.get(1).get(0).getStopX();
-                    stopY = legatosMap.get(1).get(0).getStopY();
-                    if (beam1.getNumber() == 1) {
-                        if (legatosMap.get(1).size() == 1) {
-////                            只有两个音符
-                            if (legatosMap.size() == 1 && forwardHook.size() > 0) {
-                                //只有一条连音线,处理hook
-                                for (int j = 0; j < forwardHook.size(); j++) {
-                                    canvas.drawLine(forwardHook.get(j).getStartX(),
-                                            startY + dwon * (j + 1) * mLinsRoomWidth,
-                                            forwardHook.get(0).getStopX(),
-                                            startY + dwon * (j + 1) * mLinsRoomWidth, mBeamPaint);
-                                    mSlurLins.add(new StaffSaveData(forwardHook.get(j).getStartX(),
-                                            startY + dwon * (j + 1) * mLinsRoomWidth,
-                                            forwardHook.get(0).getStopX(),
-                                            startY + dwon * (j + 1) * mLinsRoomWidth));
-                                }
-                            }
-                            drawLins(canvas, startX, startY, stopX, stopY);
-                            drawLins(canvas, tialX, tialStartY, tialX, tialStopY);
-                            mLins.add(new StaffSaveData(startX, startY, stopX, stopY));
-                            mLins.add(new StaffSaveData(tialX, tialStartY, tialX, tialStopY));
-                            //绘制底部连音线
-                            for (int j = 0; j < legatosMap.size(); j++) {
-                                canvas.drawLine(stopX, stopY + dwon * j * mLinsRoomWidth, tialX, tialStopY + dwon * j * mLinsRoomWidth, mBeamPaint);
-                                mSlurLins.add(new StaffSaveData(stopX,
-                                        stopY + dwon * j * mLinsRoomWidth,
-                                        tialX,
-                                        tialStopY + dwon * j * mLinsRoomWidth));
-                            }
-                        } else {
-                            //三个以上音符
-                            myY = isDwon ? Math.max(stopY, tialStopY) : Math.min(stopY, tialStopY);
-                            if (legatosMap.size() == 1 && forwardHook.size() > 0) {
-                                //只有一条连音线,处理hook
-                                for (int j = 0; j < forwardHook.size(); j++) {
-                                    canvas.drawLine(forwardHook.get(j).getStartX(),
-                                            myY + dwon * (j + 1) * mLinsRoomWidth,
-                                            forwardHook.get(0).getStopX(),
-                                            myY + dwon * (j + 1) * mLinsRoomWidth, mBeamPaint);
-                                    mSlurLins.add(new StaffSaveData(forwardHook.get(j).getStartX(),
-                                            myY + dwon * (j + 1) * mLinsRoomWidth,
-                                            forwardHook.get(0).getStopX(),
-                                            myY + dwon * (j + 1) * mLinsRoomWidth));
-                                }
-                            }
-////                            绘制符尾
-                            for (int j = 0; j < legatosMap.get(1).size(); j++) {
-                                drawLins(canvas, legatosMap.get(1).get(j).getStartX(),
-                                        legatosMap.get(1).get(j).getStartY(),
-                                        legatosMap.get(1).get(j).getStopX(), myY);
-                                mLins.add(new StaffSaveData(legatosMap.get(1).get(j).getStartX(),
-                                        legatosMap.get(1).get(j).getStartY(),
-                                        legatosMap.get(1).get(j).getStopX(), myY));
-                            }
-                            drawLins(canvas, tialX, tialStartY, tialX, myY);
-                            mLins.add(new StaffSaveData(tialX, tialStartY, tialX, myY));
-//
-//                            //绘制底部连音线
-                            canvas.drawLine(stopX, myY, tialX, myY, mBeamPaint);
-                            mSlurLins.add(new StaffSaveData(stopX, myY, tialX, myY));
-                            for (int j = 1; j < legatosMap.size(); j++) {
-                                if (legatosMap.get(j).size() == 1) {
-                                    canvas.drawLine(legatosMap.get(j).get(0).getStopX(),
-                                            myY + dwon * (j) * mLinsRoomWidth,
-                                            tialX,
-                                            myY + dwon * (j) * mLinsRoomWidth, mBeamPaint);
-                                    mSlurLins.add(new StaffSaveData(legatosMap.get(j).get(0).getStopX(),
-                                            myY + dwon * (j) * mLinsRoomWidth,
-                                            tialX,
-                                            myY + dwon * (j) * mLinsRoomWidth));
-                                } else {
-                                    canvas.drawLine(legatosMap.get(j).get(0).getStopX(),
-                                            myY + dwon * (j) * mLinsRoomWidth,
-                                            legatosMap.get(j).get(1).getStopX(),
-                                            myY + dwon * (j) * mLinsRoomWidth, mBeamPaint);
-                                    mSlurLins.add(new StaffSaveData(legatosMap.get(j).get(0).getStopX(),
-                                            myY + dwon * (j) * mLinsRoomWidth,
-                                            legatosMap.get(j).get(1).getStopX(),
-                                            myY + dwon * (j) * mLinsRoomWidth));
-                                }
-                            }
-                        }
-                        legatosMap.clear();
-                        forwardHook.clear();
-                    } else {
-                        //只有三个音符
-                        List<Legato> lists = legatosMap.get(beam1.getNumber());
-                        if (lists == null) break;
-                        lists.add(new Legato(tialX, tialStartY, tialX, tialStopY));
+                    if (beam1.getNumber() == 1) isStopBeam = true;
+                    List<Legato> lists = legatosMap.get(beam1.getNumber());
+                    if (lists != null) {
+                        lists.add(new Legato(tialX, tialStartY, tialStopY));
                         legatosMap.put(beam1.getNumber(), lists);
                     }
                     break;
                 case "forward hook":
                     //第一个音符（向后）
-                    forwardHook.add(new Legato(tialX, 0, tialX + mLinsRoomWidth, 0));
+                    forwardHook++;
                     break;
                 case "backward hook":
                     //最后一个音符（向前）
-                    if (myY != 0) {
-                        canvas.drawLine(tialX - mLinsRoomWidth,
-                                myY + dwon * (hook) * mLinsRoomWidth,
-                                tialX,
-                                myY + dwon * (hook) * mLinsRoomWidth, mBeamPaint);
-                        mSlurLins.add(new StaffSaveData(tialX - mLinsRoomWidth,
-                                myY + dwon * (hook) * mLinsRoomWidth,
-                                tialX,
-                                myY + dwon * (hook) * mLinsRoomWidth));
-                    } else {
-                        canvas.drawLine(tialX - mLinsRoomWidth,
-                                tialStopY + dwon * (hook) * mLinsRoomWidth,
-                                tialX,
-                                tialStopY + dwon * (hook) * mLinsRoomWidth, mBeamPaint);
-                        mSlurLins.add(new StaffSaveData(tialX - mLinsRoomWidth,
-                                tialStopY + dwon * (hook) * mLinsRoomWidth,
-                                tialX,
-                                tialStopY + dwon * (hook) * mLinsRoomWidth));
-                    }
-                    hook++;
+                    backwardHook++;
                     break;
                 case "continue":
-                    if (beam1.getNumber() == 1) {
-                        //只有num为1的时候保存数据
-                        if (legatosMap.size() > 0) {
-                            if (isDwon) {
-                                legatosMap.get(1).get(0).setStopY(Math.max(legatosMap.get(1).get(0).getStopY(), tialStopY));
-                            } else {
-                                legatosMap.get(1).get(0).setStopY(Math.min(legatosMap.get(1).get(0).getStopY(), tialStopY));
-                            }
-                        }
-                        if (chord) {
-//                            和音的话叠加到最后一个元素
-                            int y = legatosMap.get(1).get(legatosMap.get(1).size() - 1).getStopY();
-                            legatosMap.get(1).get(legatosMap.get(1).size() - 1).setStopY(isDwon ? Math.max(y, tialStopY) : Math.min(y, tialStopY));
-                        } else {
-                            List<Legato> adds = legatosMap.get(1);
-                            if (adds == null) break;
-                            adds.add(new Legato(tialX, tialStartY, tialX, tialStopY));
-                            legatosMap.put(beam1.getNumber(), adds);
-                        }
-                    }
+                    //有这个代表连音符连接的音符数量一定大于2
+                    //只有num为1的时候保存数据
+                    if (beam1.getNumber() == 1 && legatosMap.get(1) != null) legatosMap.get(1)
+                            .add(new Legato(tialX, tialStartY, tialStopY));
                     break;
             }
         }
@@ -2770,20 +2168,18 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     private void drawAllHollowHeads(boolean isAddDot, Canvas canvas, float x, float y, boolean isFristStaff) {
         float CenterX = x + mLinsRoomWidth3 / 2;
         float CenterY = y + mLinsRoomWidth / 2;
-        canvas.save();
-        RectF rectFs = new RectF(CenterX - mLinsRoomWidth3 / 4, CenterY - mLinsRoomWidth / 2, CenterX + mLinsRoomWidth3 / 4, CenterY + mLinsRoomWidth / 2);
+        RectF rectFs = new RectF(CenterX - mLinsRoomWidth5 / 10, CenterY - mLinsRoomWidth4 / 10,
+                CenterX + mLinsRoomWidth5 / 10, CenterY + mLinsRoomWidth4 / 10);
         canvas.drawOval(rectFs, mBlackPaint);
+        canvas.save();
+        canvas.clipRect(new RectF(x, y, x + mLinsRoomWidth4, y + mLinsRoomWidth2));
         canvas.rotate(30, CenterX, CenterY);
-        RectF rectF = new RectF(CenterX - mLinsRoomWidth / 2, CenterY - mLinsRoomWidth / 4, CenterX + mLinsRoomWidth / 2, CenterY + mLinsRoomWidth / 4);
+        RectF rectF = new RectF(CenterX - mLinsRoomWidth3 / 10, CenterY - mLinsRoomWidth2 / 10,
+                CenterX + mLinsRoomWidth3 / 10, CenterY + mLinsRoomWidth2 / 10);
         canvas.drawOval(rectF, mWhitePaint);
-        mWholeHead.add(new HeadData(CenterX - mLinsRoomWidth3 / 4, CenterY - mLinsRoomWidth / 2, CenterX + mLinsRoomWidth3 / 4, CenterY + mLinsRoomWidth / 2,
-                CenterX, CenterY,
-                CenterX - mLinsRoomWidth / 2, CenterY - mLinsRoomWidth / 4, CenterX + mLinsRoomWidth / 2, CenterY + mLinsRoomWidth / 4
-        ));
         canvas.restore();
         if (isAddDot) {
             canvas.drawCircle(CenterX + mLinsRoomWidth3 / 2, CenterY, mLinsRoomWidth / 3, mBlackPaint);
-            mDot.add(new Dot(CenterX + mLinsRoomWidth3 / 2, CenterY));
         }
         drawStub(canvas, x, CenterY, isFristStaff);
     }
@@ -2798,16 +2194,20 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
      */
     private void drawStub(Canvas canvas, float x, float y, boolean isFristStaff) {
         if (isFristStaff) {
-            if (y < twoStaff_fiveLins_up) {
-                drawStubLins(canvas, x, (int) (twoStaff_fiveLins_up - y) / mLinsRoomWidth, twoStaff_fiveLins_up, -1);
-            } else if (twoStaff_fristLins_up < y) {
-                drawStubLins(canvas, x, (int) (y - twoStaff_fristLins_up) / mLinsRoomWidth, twoStaff_fristLins_up, 1);
+            if (y < twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30) {
+                drawStubLins(canvas, x, (int) ((twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30) - y) / mLinsRoomWidth,
+                        twoStaff_fiveLins_up + mLineNum * mLinsRoomWidth30, -1);
+            } else if (twoStaff_fristLins_up + mLineNum * mLinsRoomWidth30 < y) {
+                drawStubLins(canvas, x, (int) (y - (twoStaff_fristLins_up + mLineNum * mLinsRoomWidth30)) / mLinsRoomWidth,
+                        twoStaff_fristLins_up + mLineNum * mLinsRoomWidth30, 1);
             }
         } else {
-            if (y < twoStaff_fiveLins_down) {
-                drawStubLins(canvas, x, (int) (twoStaff_fiveLins_down - y) / mLinsRoomWidth, twoStaff_fiveLins_down, -1);
-            } else if (twoStaff_fristLins_down < y) {
-                drawStubLins(canvas, x, (int) (y - twoStaff_fristLins_down) / mLinsRoomWidth, twoStaff_fristLins_down, 1);
+            if (y < twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30) {
+                drawStubLins(canvas, x, (int) ((twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30) - y) / mLinsRoomWidth,
+                        twoStaff_fiveLins_down + mLineNum * mLinsRoomWidth30, -1);
+            } else if (twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30 < y) {
+                drawStubLins(canvas, x, (int) (y - (twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30)) / mLinsRoomWidth,
+                        twoStaff_fristLins_down + mLineNum * mLinsRoomWidth30, 1);
             }
         }
     }
@@ -2819,8 +2219,7 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     private void drawStubLins(Canvas canvas, float x, int num, float y, int isReduce) {
         if (num == 0) return;
         while (num != 0) {
-            drawLins(canvas, x, y + isReduce * num * mLinsRoomWidth, x + mLinsRoomWidth3, y + isReduce * num * mLinsRoomWidth);
-            mHeadLins.add(new StaffSaveData(x, (int) y + isReduce * num * mLinsRoomWidth, x + mLinsRoomWidth3, (int) y + isReduce * num * mLinsRoomWidth));
+            drawLins(canvas, x, y + isReduce * num * mLinsRoomWidth, x + mLinsRoomWidth5 / 2, y + isReduce * num * mLinsRoomWidth);
             num--;
         }
     }
@@ -2836,22 +2235,21 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         float CenterX = x + mLinsRoomWidth3 / 2;
         float CenterY = y + mLinsRoomWidth / 2;
         canvas.save();
-        RectF rectFs = new RectF(CenterX - mLinsRoomWidth3 / 4, CenterY - mLinsRoomWidth / 3, CenterX + mLinsRoomWidth3 / 4, CenterY + mLinsRoomWidth / 3);
+        canvas.clipRect(new RectF(x, y, x + mLinsRoomWidth3, y + mLinsRoomWidth));
+        RectF rectFs = new RectF(CenterX - mLinsRoomWidth5 / 10, CenterY - mLinsRoomWidth3 / 10,
+                CenterX + mLinsRoomWidth5 / 10, CenterY + mLinsRoomWidth3 / 10);
         canvas.rotate(-30, CenterX, CenterY);
         canvas.drawOval(rectFs, mBlackPaint);
         canvas.restore();
         canvas.save();
-        RectF rectF = new RectF(CenterX - mLinsRoomWidth / 2, CenterY - mLinsRoomWidth / 4, CenterX + mLinsRoomWidth / 2, CenterY + mLinsRoomWidth / 4);
+        canvas.clipRect(new RectF(x, y, x + mLinsRoomWidth3, y + mLinsRoomWidth));
+        RectF rectF = new RectF(CenterX - mLinsRoomWidth3 / 10, CenterY - mLinsRoomWidth2 / 10,
+                CenterX + mLinsRoomWidth3 / 10, CenterY + mLinsRoomWidth2 / 10);
         canvas.rotate(-30, CenterX, CenterY);
         canvas.drawOval(rectF, mWhitePaint);
         canvas.restore();
-        mHalfHead.add(new HeadData(CenterX - mLinsRoomWidth3 / 4, CenterY - mLinsRoomWidth / 3, CenterX + mLinsRoomWidth3 / 4, CenterY + mLinsRoomWidth / 3,
-                CenterX, CenterY,
-                CenterX - mLinsRoomWidth / 2, CenterY - mLinsRoomWidth / 4, CenterX + mLinsRoomWidth / 2, CenterY + mLinsRoomWidth / 4
-        ));
         if (isAddDot) {
             canvas.drawCircle(CenterX + mLinsRoomWidth3 / 2, CenterY, mLinsRoomWidth / 3, mBlackPaint);
-            mDot.add(new Dot(CenterX + mLinsRoomWidth3 / 2, CenterY));
         }
         drawStub(canvas, x, CenterY, isFristStaff);
     }
@@ -2870,15 +2268,14 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
         float CenterX = x + mLinsRoomWidth3 / 2;
         float CenterY = y + mLinsRoomWidth / 2;
         canvas.save();
-        RectF rectFs = new RectF(CenterX - mLinsRoomWidth3 / 4, CenterY - mLinsRoomWidth2 / 5, CenterX + mLinsRoomWidth3 / 4, CenterY + mLinsRoomWidth2 / 5);
+        canvas.clipRect(new RectF(x, y, x + mLinsRoomWidth3, y + mLinsRoomWidth));
+        RectF rectFs = new RectF(CenterX - mLinsRoomWidth5 / 10, CenterY - mLinsRoomWidth3 / 10,
+                CenterX + mLinsRoomWidth5 / 10, CenterY + mLinsRoomWidth3 / 10);
         canvas.rotate(-30, CenterX, CenterY);//向上旋转30度
         canvas.drawOval(rectFs, mBlackPaint);
         canvas.restore();
-        mHead.add(new HeadData(CenterX - mLinsRoomWidth3 / 4, CenterY - mLinsRoomWidth2 / 5, CenterX + mLinsRoomWidth3 / 4, CenterY + mLinsRoomWidth2 / 5,
-                CenterX, CenterY));
         if (isAddDot) {
             canvas.drawCircle(CenterX + mLinsRoomWidth3 / 2, CenterY, mLinsRoomWidth / 3, mBlackPaint);
-            mDot.add(new Dot(CenterX + mLinsRoomWidth3 / 2, CenterY));
         }
         drawStub(canvas, x, CenterY, isFristStaff);
     }
@@ -2886,156 +2283,80 @@ public class StaffView extends SurfaceView implements SurfaceHolder.Callback {
     /**
      * 设置绘制五线谱的数据
      *
+     * @param progress
      * @param iPlay
      */
-    public void setStaffData(final IPlay iPlay) {
+    public void setStaffData(ProgresView progress, final IPlay iPlay) {
         MyLogUtils.e(TAG, "初始化五线谱");
-        init();
-        initStaffData();
-        new android.os.Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                iPlay.ReadyFinish();
-            }
-        });
-    }
-
-    /**
-     * 播放/暂停
-     */
-    public void play(boolean isplay) {
-        isMove = isplay;
-        if (thread != null) {
-            thread.interrupt();
-            thread = null;
-        }
-        if (isMove) {
-            thread = new MysurfaceviewThread();
-            thread.start();
-        }
-    }
-
-    /**
-     * 初始化五线谱数据
-     */
-    private void initStaffData() {
+        isUpNote = true;
+        x = 0;
+        fristLinsEndX.clear();
+        isFrist = true;
         mFristStaffWidth = 0;
         mScendStaffWidth = 0;
-        //是否绘制符尾（八分音符以后的倾斜符尾）
-        isDrawTial = false;
-        if (fristSingLenth != null) fristSingLenth.clear();
-        //是否保存五线谱移动的数据
-        isSaveData = true;
-        moveLenth = 0;
-        mProgressLeft = 0;
-
-        //true：二条五线谱上
-        isTowStaff = StaffDataHelper.getInstence().isTowStaff();
+        index = 0;
+        start_x = 0;
         mFristStaffData = StaffDataHelper.getInstence().getmFristStaffData();
         mSecondStaffData = StaffDataHelper.getInstence().getmSecondStaffData();
         mBackUPData = StaffDataHelper.getInstence().getmBackUPData();
         mAttributess = StaffDataHelper.getInstence().getmAttributess();
-        DEFAULT_TIME_NUM = StaffDataHelper.getInstence().getDEFAULT_TIME_NUM();
         //保存整个谱子升降音的数组
         fifth = StaffDataHelper.getInstence().getFifth();
         measureDurationNum = StaffDataHelper.getInstence().getMeasureDurationNum();
-        mSpeedTime = StaffDataHelper.getInstence().getmSpeedTime();
         mSpeedLenth = StaffDataHelper.getInstence().getmSpeedLenth();
         isUpfifth = StaffDataHelper.getInstence().isUpfifth();
         divisions = StaffDataHelper.getInstence().getDivisions();
         beats = StaffDataHelper.getInstence().getBeats();
-        mLenth = mSpeedLenth * Float.valueOf(mAttributess.getDivisions()) / 6;
-    }
-
-    public void onResume() {
-        isMove = true;
-    }
-
-    public void onPause() {
-        isMove = false;
-    }
-
-    public void resetPullView() {
-        isMove = false;
-        isUpfifth = false;
-
-        isSaveData = false;
-        moveLenth = 0;
-        mProgressLeft = 0;
-        if (thread != null) {
-            thread.interrupt();
-            thread = null;
+        isTwoStaff = StaffDataHelper.getInstence().isTowStaff();
+        if (!isTwoStaff && mAttributess.getClefList().get(0).getSign().equals("F")) {
+            isUpNote = false;
         }
-    }
-
-
-    /**
-     * 销毁时调用
-     */
-    public void onDrestry() {
-        if (mCanvas != null) {
-            holder.unlockCanvasAndPost(mCanvas);
-            mCanvas = null;
+        int num = 1;
+        if (fifth != null) num = fifth.length + 1;
+        measureNum = (2040 - (mBassWidth + mLinsRoomWidth * num)) / (measureDurationNum * mSpeedLenth + mLinsRoomWidth6);
+        start_x = (2040 - (mBassWidth + mLinsRoomWidth * num) - (measureDurationNum * mSpeedLenth + mLinsRoomWidth6) * measureNum) / 3;
+        progresView = progress;
+        this.iPlay = iPlay;
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        if (thread != null) {
-            thread.interrupt();
-            thread = null;
-        }
-    }
-
-    public void endRefreshCanvas(final long millis) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(millis);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                SurfaceHolder surfaceHolder = holder;
-                synchronized (surfaceHolder) {
-                    //锁定canvas
-                    try {
-                        Canvas canvas = surfaceHolder.lockCanvas();
-                        //canvas 执行一系列画的动作
-                        if (canvas != null) {
-                            canvas.drawColor(Color.WHITE);
-                            surfaceHolder.unlockCanvasAndPost(canvas);
-                        }
-                    } catch (Exception e) {
-                    }
-                }
-            }
-        }).start();
+        startMyThered(index);
     }
 
     /**
-     * 获取速度
+     * 开启线程
      *
-     * @return
+     * @param index
      */
-    public String getmReta() {
-        DecimalFormat decimalFormat = new DecimalFormat("0.0");
-        return decimalFormat.format(mReta);
+    public synchronized void startMyThered(int index) {
+        this.index = index;
+        if (thread != null) {
+            thread.interrupt();
+            thread = null;
+        }
+        thread = new MysurfaceviewThread();
+        thread.start();
     }
 
-    /**
-     * 加速
-     */
-    public String accelerate() {
-        mReta += 0.1f;
-        if (mReta >= 1.5f) mReta = 1.5f;
-        DecimalFormat decimalFormat = new DecimalFormat("0.0");
-        return decimalFormat.format(mReta);
+    public int getTwoStaff_fiveLins_up() {
+        return twoStaff_fiveLins_up;
     }
 
-    /**
-     * 减速
-     */
-    public String deceleration() {
-        mReta -= 0.1f;
-        if (mReta <= 0.5f) mReta = 0.5f;
-        DecimalFormat decimalFormat = new DecimalFormat("0.0");
-        return decimalFormat.format(mReta);
+    public int getTwoStaff_fristLins_down() {
+        return twoStaff_fristLins_down;
+    }
+
+    public int getTwoStaff_fristLins_up() {
+        return twoStaff_fristLins_up;
+    }
+
+    public boolean isUpNote() {
+        return isUpNote;
+    }
+
+    public int getTwoStaff_fiveLins_down() {
+        return twoStaff_fiveLins_down;
     }
 }

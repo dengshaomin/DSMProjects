@@ -13,9 +13,8 @@ import android.net.Uri;
 import android.os.Looper;
 
 import com.yizu.intelligentpiano.R;
+import com.yizu.intelligentpiano.constens.Constents;
 import com.yizu.intelligentpiano.constens.IDwonLoader;
-
-import java.util.logging.Handler;
 
 /**
  * Created by liuxiaozhu on 2017/9/19.
@@ -34,6 +33,10 @@ public class DownloadUtils {
     private FileType type;
     private AlertDialog mDialog;
     private IDwonLoader mIDwonLoader;
+    private AlertDialog.Builder mBuilder;
+    //是否需要销毁
+    private boolean isDrestry = false;
+    private boolean isSuccess = false;
 
     public DownloadUtils(Context context) {
         this.mContext = context;
@@ -53,6 +56,10 @@ public class DownloadUtils {
         }
         mIDwonLoader = iDwonLoader;
         type = types;
+        if (SDCardUtils.getSDFreeSize() < 100.0f) {
+            SDCardUtils.DeleteFolder(SDCardUtils.getExternalStorageDirectory().concat(Constents.PIANO_URL));
+            SDCardUtils.creatFile();
+        }
         // 创建下载任务
         final DownloadManager.Request request = new DownloadManager.Request(Uri.parse(DwonUrl));
         // 移动网络情况下是否允许漫游
@@ -72,11 +79,13 @@ public class DownloadUtils {
         // 将下载请求加入下载队列，加入下载队列后会给该任务返回一个long型的id，通过该id可以取消任务，重启任务、获取下载的文件等等
         downloadId = downloadManager.enqueue(request);
         // 注册广播接收者，监听下载状态
+        mContext.registerReceiver(receiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+        isDrestry = true;
+        isSuccess = false;
         new android.os.Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
-                mContext.registerReceiver(receiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
-                AlertDialog.Builder mBuilder = new AlertDialog.Builder(mContext);
+                mBuilder = new AlertDialog.Builder(mContext);
                 mBuilder.setIcon(R.mipmap.myicon);
                 mBuilder.setTitle("提示");
                 mBuilder.setMessage("下载中...");
@@ -104,26 +113,28 @@ public class DownloadUtils {
             switch (status) {
                 //     下载暂停
                 case DownloadManager.STATUS_PAUSED:
-                    if (mDialog != null && mDialog.isShowing()) {
-                        mDialog.dismiss();
-                    }
+                    mBuilder.setMessage("下载暂停");
                     break;
                 //     下载延迟
                 case DownloadManager.STATUS_PENDING:
-                    if (mDialog != null && mDialog.isShowing()) {
-                        mDialog.dismiss();
-                    }
+                    mBuilder.setMessage("下载延迟");
                     break;
                 //     正在下载
                 case DownloadManager.STATUS_RUNNING:
+                    mBuilder.setMessage("正在下载...");
                     break;
                 //     下载完成
                 case DownloadManager.STATUS_SUCCESSFUL:
+                    mBuilder.setMessage("下载完成");
                     if (mDialog != null && mDialog.isShowing()) {
                         mDialog.dismiss();
                     }
+                    isSuccess = true;
                     if (type == FileType.APK) {
                         //     下载完成安装APK
+                        if (mIDwonLoader != null) {
+                            mIDwonLoader.apk();
+                        }
                         installAPK();
                     } else if (type == FileType.VIDEO) {
                         if (mIDwonLoader != null) {
@@ -147,6 +158,7 @@ public class DownloadUtils {
             }
         }
         c.close();
+        isDrestry = false;
         mContext.unregisterReceiver(receiver);
     }
 
@@ -162,10 +174,16 @@ public class DownloadUtils {
         }
     }
 
+    public void onDrestry() {
+        if (isDrestry)mContext.unregisterReceiver(receiver);
+        if (!isSuccess) {
+            downloadManager.remove(downloadId);
+        }
+    }
+
     public enum FileType {
         APK,
         VIDEO,
         XML
     }
-
 }

@@ -76,7 +76,8 @@ public class SaveTimeData {
         this.bottom = bottom;
     }
 
-    public SaveTimeData(int mAddDuration, int duration, int octave, String step, int black, boolean isTie) {
+    public SaveTimeData(int mAddDuration, int duration, int octave, String step,
+                        int black, boolean isTie) {
         this.mAddDuration = mAddDuration;
         this.duration = duration;
         this.octave = octave;

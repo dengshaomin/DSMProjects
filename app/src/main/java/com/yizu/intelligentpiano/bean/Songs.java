@@ -77,11 +77,15 @@ public class Songs {
              */
 
             private String music_id;
+            private String music_title;
             private String title;
             private String auther;
             private String video_xml;
             private String music_xml;
-            private String category_id;
+//            private String category_id;
+            private String addtime;
+            private String updatetime;
+            private String score;
 
             public String getMusic_id() {
                 return music_id;
@@ -115,12 +119,12 @@ public class Songs {
                 this.music_xml = music_xml;
             }
 
-            public String getCategory_id() {
-                return category_id;
+            public String getScore() {
+                return score;
             }
 
-            public void setCategory_id(String category_id) {
-                this.category_id = category_id;
+            public void setScore(String score) {
+                this.score = score;
             }
 
             public String getVideo_xml() {
@@ -129,6 +133,18 @@ public class Songs {
 
             public void setVideo_xml(String video_xml) {
                 this.video_xml = video_xml;
+            }
+
+            public String getUpdatetime() {
+                return updatetime == null ? addtime : updatetime;
+            }
+
+            public String getMusic_title() {
+                return music_title;
+            }
+
+            public void setMusic_title(String music_title) {
+                this.music_title = music_title;
             }
         }
     }

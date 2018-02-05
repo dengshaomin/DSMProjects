@@ -34,8 +34,6 @@ public class XmlPrareUtils {
     private final static String TAG = "XmlPrareUtils";
 
     private XmlBean bean;
-    private Context context;
-
     private List<Measure> measureList;
     private Measure measure;
     private List<MeasureBase> measureBaseList;
@@ -50,22 +48,16 @@ public class XmlPrareUtils {
     private Barline barline;
     private Backup backup;
 
-//    private String sdCardUrl;
-
     private List<Beam> beams;
 
     private List<String> tie;
     private List<String> slur;
 
 
-    public XmlPrareUtils(Context context) {
-        this.context = context;
-//        sdCardUrl = SDCardUtils.getExternalStorageDirectory() + "/PianoApp/xml/";
+    public XmlPrareUtils() {
     }
 
     public XmlBean getXmlBean(String fileUrl) {
-        //assets资源管理器
-//        AssetManager manager = context.getAssets();
         if (fileUrl.equals("")) {
             return null;
         }
@@ -75,7 +67,6 @@ public class XmlPrareUtils {
             return null;
         }
         try {
-
             FileInputStream stream = new FileInputStream(file);
             if (stream == null) {
                 MyToast.ShowLong("xml文件解析失败");
@@ -272,7 +263,8 @@ public class XmlPrareUtils {
                     if (tie == null) {
                         tie = new ArrayList<>();
                     }
-                    tie.add(xmlPullParser.getAttributeValue(null, "type"));
+                    String stringss = xmlPullParser.getAttributeValue(null, "type");
+                    tie.add(stringss);
                     break;
                 case "stem":
                     String stem = xmlPullParser.nextText();

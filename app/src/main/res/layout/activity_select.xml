@@ -50,6 +50,7 @@
                         android:layout_height="wrap_content"
                         android:ellipsize="end"
                         android:lines="1"
+                        android:text="默认登录"
                         android:textColor="@color/white"
                         android:textSize="@dimen/com_40px" />
 
@@ -120,192 +121,193 @@
             android:scrollbars="none">
 
             <LinearLayout
+                android:id="@+id/linearLayout"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:orientation="horizontal">
 
-                <LinearLayout
-                    android:layout_width="@dimen/com_600px"
-                    android:layout_height="match_parent"
-                    android:layout_marginLeft="@dimen/com_80px"
-                    android:background="@drawable/selector_song"
-                    android:orientation="vertical"
-                    android:paddingBottom="@dimen/com_10px">
+                <!--<LinearLayout-->
+                    <!--android:layout_width="@dimen/com_600px"-->
+                    <!--android:layout_height="match_parent"-->
+                    <!--android:layout_marginLeft="@dimen/com_80px"-->
+                    <!--android:background="@drawable/selector_song"-->
+                    <!--android:orientation="vertical"-->
+                    <!--android:paddingBottom="@dimen/com_10px">-->
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="@dimen/com_50px"
-                        android:background="@drawable/shape_song"
-                        android:gravity="center_vertical"
-                        android:paddingLeft="@dimen/com_40px"
-                        android:paddingRight="@dimen/com_40px"
-                        android:text="@string/vedio"
-                        android:textColor="@color/white"
-                        android:textSize="@dimen/com_30px" />
+                    <!--<TextView-->
+                        <!--android:layout_width="match_parent"-->
+                        <!--android:layout_height="@dimen/com_50px"-->
+                        <!--android:background="@drawable/shape_song"-->
+                        <!--android:gravity="center_vertical"-->
+                        <!--android:paddingLeft="@dimen/com_40px"-->
+                        <!--android:paddingRight="@dimen/com_40px"-->
+                        <!--android:text="@string/vedio"-->
+                        <!--android:textColor="@color/white"-->
+                        <!--android:textSize="@dimen/com_30px" />-->
 
-                    <android.support.v7.widget.RecyclerView
-                        android:id="@+id/recycler_video"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scrollbars="none"></android.support.v7.widget.RecyclerView>
-                </LinearLayout>
+                    <!--<android.support.v7.widget.RecyclerView-->
+                        <!--android:id="@+id/recycler_video"-->
+                        <!--android:layout_width="match_parent"-->
+                        <!--android:layout_height="match_parent"-->
+                        <!--android:scrollbars="none"></android.support.v7.widget.RecyclerView>-->
+                <!--</LinearLayout>-->
 
-                <LinearLayout
-                    android:layout_width="@dimen/com_600px"
-                    android:layout_height="match_parent"
-                    android:layout_marginLeft="@dimen/com_80px"
-                    android:background="@drawable/selector_song"
-                    android:orientation="vertical"
-                    android:paddingBottom="@dimen/com_10px">
+                <!--<LinearLayout-->
+                    <!--android:layout_width="@dimen/com_600px"-->
+                    <!--android:layout_height="match_parent"-->
+                    <!--android:layout_marginLeft="@dimen/com_80px"-->
+                    <!--android:background="@drawable/selector_song"-->
+                    <!--android:orientation="vertical"-->
+                    <!--android:paddingBottom="@dimen/com_10px">-->
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="@dimen/com_50px"
-                        android:background="@drawable/shape_song"
-                        android:gravity="center_vertical"
-                        android:paddingLeft="@dimen/com_40px"
-                        android:paddingRight="@dimen/com_40px"
-                        android:text="@string/song1"
-                        android:textColor="@color/white"
-                        android:textSize="@dimen/com_30px" />
+                    <!--<TextView-->
+                        <!--android:layout_width="match_parent"-->
+                        <!--android:layout_height="@dimen/com_50px"-->
+                        <!--android:background="@drawable/shape_song"-->
+                        <!--android:gravity="center_vertical"-->
+                        <!--android:paddingLeft="@dimen/com_40px"-->
+                        <!--android:paddingRight="@dimen/com_40px"-->
+                        <!--android:text="@string/song1"-->
+                        <!--android:textColor="@color/white"-->
+                        <!--android:textSize="@dimen/com_30px" />-->
 
-                    <android.support.v7.widget.RecyclerView
-                        android:id="@+id/recycler_song1"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scrollbars="none"></android.support.v7.widget.RecyclerView>
-                </LinearLayout>
+                    <!--<android.support.v7.widget.RecyclerView-->
+                        <!--android:id="@+id/recycler_song1"-->
+                        <!--android:layout_width="match_parent"-->
+                        <!--android:layout_height="match_parent"-->
+                        <!--android:scrollbars="none"></android.support.v7.widget.RecyclerView>-->
+                <!--</LinearLayout>-->
 
-                <LinearLayout
-                    android:layout_width="@dimen/com_600px"
-                    android:layout_height="match_parent"
-                    android:layout_marginLeft="@dimen/com_80px"
-                    android:background="@drawable/selector_song"
-                    android:orientation="vertical"
-                    android:paddingBottom="@dimen/com_10px">
+                <!--<LinearLayout-->
+                    <!--android:layout_width="@dimen/com_600px"-->
+                    <!--android:layout_height="match_parent"-->
+                    <!--android:layout_marginLeft="@dimen/com_80px"-->
+                    <!--android:background="@drawable/selector_song"-->
+                    <!--android:orientation="vertical"-->
+                    <!--android:paddingBottom="@dimen/com_10px">-->
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="@dimen/com_50px"
-                        android:background="@drawable/shape_song"
-                        android:gravity="center_vertical"
-                        android:paddingLeft="@dimen/com_40px"
-                        android:paddingRight="@dimen/com_40px"
-                        android:text="@string/song2"
-                        android:textColor="@color/white"
-                        android:textSize="@dimen/com_30px" />
+                    <!--<TextView-->
+                        <!--android:layout_width="match_parent"-->
+                        <!--android:layout_height="@dimen/com_50px"-->
+                        <!--android:background="@drawable/shape_song"-->
+                        <!--android:gravity="center_vertical"-->
+                        <!--android:paddingLeft="@dimen/com_40px"-->
+                        <!--android:paddingRight="@dimen/com_40px"-->
+                        <!--android:text="@string/song2"-->
+                        <!--android:textColor="@color/white"-->
+                        <!--android:textSize="@dimen/com_30px" />-->
 
-                    <android.support.v7.widget.RecyclerView
-                        android:id="@+id/recycler_song2"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scrollbars="none"></android.support.v7.widget.RecyclerView>
-                </LinearLayout>
+                    <!--<android.support.v7.widget.RecyclerView-->
+                        <!--android:id="@+id/recycler_song2"-->
+                        <!--android:layout_width="match_parent"-->
+                        <!--android:layout_height="match_parent"-->
+                        <!--android:scrollbars="none"></android.support.v7.widget.RecyclerView>-->
+                <!--</LinearLayout>-->
 
-                <LinearLayout
-                    android:layout_width="@dimen/com_600px"
-                    android:layout_height="match_parent"
-                    android:layout_marginLeft="@dimen/com_80px"
-                    android:background="@drawable/selector_song"
-                    android:orientation="vertical"
-                    android:paddingBottom="@dimen/com_10px">
+                <!--<LinearLayout-->
+                    <!--android:layout_width="@dimen/com_600px"-->
+                    <!--android:layout_height="match_parent"-->
+                    <!--android:layout_marginLeft="@dimen/com_80px"-->
+                    <!--android:background="@drawable/selector_song"-->
+                    <!--android:orientation="vertical"-->
+                    <!--android:paddingBottom="@dimen/com_10px">-->
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="@dimen/com_50px"
-                        android:background="@drawable/shape_song"
-                        android:gravity="center_vertical"
-                        android:paddingLeft="@dimen/com_40px"
-                        android:paddingRight="@dimen/com_40px"
-                        android:text="@string/song3"
-                        android:textColor="@color/white"
-                        android:textSize="@dimen/com_30px" />
+                    <!--<TextView-->
+                        <!--android:layout_width="match_parent"-->
+                        <!--android:layout_height="@dimen/com_50px"-->
+                        <!--android:background="@drawable/shape_song"-->
+                        <!--android:gravity="center_vertical"-->
+                        <!--android:paddingLeft="@dimen/com_40px"-->
+                        <!--android:paddingRight="@dimen/com_40px"-->
+                        <!--android:text="@string/song3"-->
+                        <!--android:textColor="@color/white"-->
+                        <!--android:textSize="@dimen/com_30px" />-->
 
-                    <android.support.v7.widget.RecyclerView
-                        android:id="@+id/recycler_song3"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scrollbars="none"></android.support.v7.widget.RecyclerView>
-                </LinearLayout>
+                    <!--<android.support.v7.widget.RecyclerView-->
+                        <!--android:id="@+id/recycler_song3"-->
+                        <!--android:layout_width="match_parent"-->
+                        <!--android:layout_height="match_parent"-->
+                        <!--android:scrollbars="none"></android.support.v7.widget.RecyclerView>-->
+                <!--</LinearLayout>-->
 
-                <LinearLayout
-                    android:layout_width="@dimen/com_600px"
-                    android:layout_height="match_parent"
-                    android:layout_marginLeft="@dimen/com_80px"
-                    android:background="@drawable/selector_song"
-                    android:orientation="vertical"
-                    android:paddingBottom="@dimen/com_10px">
+                <!--<LinearLayout-->
+                    <!--android:layout_width="@dimen/com_600px"-->
+                    <!--android:layout_height="match_parent"-->
+                    <!--android:layout_marginLeft="@dimen/com_80px"-->
+                    <!--android:background="@drawable/selector_song"-->
+                    <!--android:orientation="vertical"-->
+                    <!--android:paddingBottom="@dimen/com_10px">-->
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="@dimen/com_50px"
-                        android:background="@drawable/shape_song"
-                        android:gravity="center_vertical"
-                        android:paddingLeft="@dimen/com_40px"
-                        android:paddingRight="@dimen/com_40px"
-                        android:text="@string/song4"
-                        android:textColor="@color/white"
-                        android:textSize="@dimen/com_30px" />
+                    <!--<TextView-->
+                        <!--android:layout_width="match_parent"-->
+                        <!--android:layout_height="@dimen/com_50px"-->
+                        <!--android:background="@drawable/shape_song"-->
+                        <!--android:gravity="center_vertical"-->
+                        <!--android:paddingLeft="@dimen/com_40px"-->
+                        <!--android:paddingRight="@dimen/com_40px"-->
+                        <!--android:text="@string/song4"-->
+                        <!--android:textColor="@color/white"-->
+                        <!--android:textSize="@dimen/com_30px" />-->
 
-                    <android.support.v7.widget.RecyclerView
-                        android:id="@+id/recycler_song4"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scrollbars="none"></android.support.v7.widget.RecyclerView>
-                </LinearLayout>
+                    <!--<android.support.v7.widget.RecyclerView-->
+                        <!--android:id="@+id/recycler_song4"-->
+                        <!--android:layout_width="match_parent"-->
+                        <!--android:layout_height="match_parent"-->
+                        <!--android:scrollbars="none"></android.support.v7.widget.RecyclerView>-->
+                <!--</LinearLayout>-->
 
-                <LinearLayout
-                    android:layout_width="@dimen/com_600px"
-                    android:layout_height="match_parent"
-                    android:layout_marginLeft="@dimen/com_80px"
-                    android:background="@drawable/selector_song"
-                    android:orientation="vertical"
-                    android:paddingBottom="@dimen/com_10px">
+                <!--<LinearLayout-->
+                    <!--android:layout_width="@dimen/com_600px"-->
+                    <!--android:layout_height="match_parent"-->
+                    <!--android:layout_marginLeft="@dimen/com_80px"-->
+                    <!--android:background="@drawable/selector_song"-->
+                    <!--android:orientation="vertical"-->
+                    <!--android:paddingBottom="@dimen/com_10px">-->
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="@dimen/com_50px"
-                        android:background="@drawable/shape_song"
-                        android:gravity="center_vertical"
-                        android:paddingLeft="@dimen/com_40px"
-                        android:paddingRight="@dimen/com_40px"
-                        android:text="@string/song5"
-                        android:textColor="@color/white"
-                        android:textSize="@dimen/com_30px" />
+                    <!--<TextView-->
+                        <!--android:layout_width="match_parent"-->
+                        <!--android:layout_height="@dimen/com_50px"-->
+                        <!--android:background="@drawable/shape_song"-->
+                        <!--android:gravity="center_vertical"-->
+                        <!--android:paddingLeft="@dimen/com_40px"-->
+                        <!--android:paddingRight="@dimen/com_40px"-->
+                        <!--android:text="@string/song5"-->
+                        <!--android:textColor="@color/white"-->
+                        <!--android:textSize="@dimen/com_30px" />-->
 
-                    <android.support.v7.widget.RecyclerView
-                        android:id="@+id/recycler_song5"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scrollbars="none"></android.support.v7.widget.RecyclerView>
-                </LinearLayout>
+                    <!--<android.support.v7.widget.RecyclerView-->
+                        <!--android:id="@+id/recycler_song5"-->
+                        <!--android:layout_width="match_parent"-->
+                        <!--android:layout_height="match_parent"-->
+                        <!--android:scrollbars="none"></android.support.v7.widget.RecyclerView>-->
+                <!--</LinearLayout>-->
 
-                <LinearLayout
-                    android:layout_width="@dimen/com_600px"
-                    android:layout_height="match_parent"
-                    android:layout_marginLeft="@dimen/com_80px"
-                    android:background="@drawable/selector_song"
-                    android:orientation="vertical"
-                    android:paddingBottom="@dimen/com_10px">
+                <!--<LinearLayout-->
+                    <!--android:layout_width="@dimen/com_600px"-->
+                    <!--android:layout_height="match_parent"-->
+                    <!--android:layout_marginLeft="@dimen/com_80px"-->
+                    <!--android:background="@drawable/selector_song"-->
+                    <!--android:orientation="vertical"-->
+                    <!--android:paddingBottom="@dimen/com_10px">-->
 
-                    <TextView
-                        android:id="@+id/song_title"
-                        android:layout_width="match_parent"
-                        android:layout_height="@dimen/com_50px"
-                        android:background="@drawable/shape_song"
-                        android:gravity="center_vertical"
-                        android:paddingLeft="@dimen/com_40px"
-                        android:paddingRight="@dimen/com_40px"
-                        android:text="@string/song6"
-                        android:textColor="@color/white"
-                        android:textSize="@dimen/com_30px" />
+                    <!--<TextView-->
+                        <!--android:id="@+id/song_title"-->
+                        <!--android:layout_width="match_parent"-->
+                        <!--android:layout_height="@dimen/com_50px"-->
+                        <!--android:background="@drawable/shape_song"-->
+                        <!--android:gravity="center_vertical"-->
+                        <!--android:paddingLeft="@dimen/com_40px"-->
+                        <!--android:paddingRight="@dimen/com_40px"-->
+                        <!--android:text="@string/song6"-->
+                        <!--android:textColor="@color/white"-->
+                        <!--android:textSize="@dimen/com_30px" />-->
 
-                    <android.support.v7.widget.RecyclerView
-                        android:id="@+id/recycler_song6"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scrollbars="none"></android.support.v7.widget.RecyclerView>
-                </LinearLayout>
+                    <!--<android.support.v7.widget.RecyclerView-->
+                        <!--android:id="@+id/recycler_song6"-->
+                        <!--android:layout_width="match_parent"-->
+                        <!--android:layout_height="match_parent"-->
+                        <!--android:scrollbars="none"></android.support.v7.widget.RecyclerView>-->
+                <!--</LinearLayout>-->
             </LinearLayout>
 
         </HorizontalScrollView>
@@ -372,56 +374,6 @@
                     android:layout_marginRight="@dimen/com_80px"
                     android:src="@drawable/selector_play" />
             </LinearLayout>
-        </LinearLayout>
-    </RelativeLayout>
-
-    <RelativeLayout
-        android:id="@+id/time"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:visibility="gone">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/shape_select"
-            android:gravity="center_horizontal"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/com_60px"
-                android:background="@drawable/shape_song"
-                android:gravity="center"
-                android:text="@string/prompt"
-                android:textColor="@color/white"
-                android:textSize="@dimen/com_20px" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/com_76px"
-                android:layout_marginLeft="@dimen/com_238px"
-                android:layout_marginRight="@dimen/com_238px"
-                android:layout_marginTop="@dimen/com_76px"
-                android:text="@string/time"
-                android:textColor="@color/black"
-                android:textSize="@dimen/com_25px" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/com_60px"
-                android:layout_marginLeft="@dimen/com_312px"
-                android:layout_marginRight="@dimen/com_312px"
-                android:background="@drawable/selector_button"
-                android:gravity="center"
-                android:paddingBottom="@dimen/com_20px"
-                android:paddingTop="@dimen/com_20px"
-                android:text="知道了"
-                android:textColor="@drawable/selector_text"
-                android:textSize="@dimen/com_20px" />
         </LinearLayout>
     </RelativeLayout>
 </RelativeLayout>

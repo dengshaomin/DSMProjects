@@ -15,6 +15,7 @@ import com.yizu.intelligentpiano.view.MainActivity;
 
 public class AppStartReceiver extends BroadcastReceiver {
     private static final String TAG= "AppStartReceiver";
+
     @Override
     public void onReceive(Context context, Intent intent) {
         if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)) {

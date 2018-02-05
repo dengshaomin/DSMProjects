@@ -6,8 +6,7 @@ package com.yizu.intelligentpiano.constens;
  */
 
 public class Constents {
-    //是否联网，true为联网
-    public static boolean isNetworkConnected = true;
+
     public static String user_id = "";
     //广播标识
     public static final String ACTION = "action";
@@ -26,4 +25,6 @@ public class Constents {
     public static final String VIDEO_URL = PIANO_URL.concat("/video");
     public static final String APK_URL = PIANO_URL.concat("/apk");
     public static final String XML = PIANO_URL.concat("/xml");
+    //五线谱条数(一个屏幕)
+    public static final int LINE_NUM = 3;
 }

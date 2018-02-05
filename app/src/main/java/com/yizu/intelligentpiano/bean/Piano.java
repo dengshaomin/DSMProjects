@@ -159,16 +159,26 @@ public class Piano {
     private void setBlackKeyDrawableBounds(int group, int positionOfGroup, Drawable drawable) {
         int whiteOffset = 0;
         int blackOffset = 0;
+        int padding = 25;
         if (group == 0) {
             whiteOffset = 5;
         }
         if (positionOfGroup == 2 || positionOfGroup == 3 || positionOfGroup == 4) {
             blackOffset = 1;
         }
+        if (positionOfGroup == 0 || positionOfGroup == 2) {
+            if (group > 0) {
+                padding = 32;
+            } else if (group == 0) {
+                padding =18;
+            }
+        } else if (positionOfGroup == 1 || positionOfGroup == 4) {
+            padding = 18;
+        }
         drawable.setBounds(
-                (7 * group - 4 + whiteOffset + blackOffset + positionOfGroup) * mWhiteKeyWidth - mBlackKeyWidth / 2 - 30,
+                (7 * group - 4 + whiteOffset + blackOffset + positionOfGroup) * mWhiteKeyWidth - mBlackKeyWidth / 2 - padding,
                 0,
-                (7 * group - 4 + whiteOffset + blackOffset + positionOfGroup) * mWhiteKeyWidth + mBlackKeyWidth / 2 - 30,
+                (7 * group - 4 + whiteOffset + blackOffset + positionOfGroup) * mWhiteKeyWidth + mBlackKeyWidth / 2 - padding,
                 mBlackKeyHeight
         );
     }
@@ -186,9 +196,9 @@ public class Piano {
             offset = 5;
         }
         drawable.setBounds(
-                (7 * group - 5 + offset + positionOfGroup) * mWhiteKeyWidth - 30,
+                (7 * group - 5 + offset + positionOfGroup) * mWhiteKeyWidth - 25,
                 0,
-                (7 * group - 4 + offset + positionOfGroup) * mWhiteKeyWidth - 1 - 30,
+                (7 * group - 4 + offset + positionOfGroup) * mWhiteKeyWidth - 1 - 25,
                 mWhiteKeyHeight - 1
         );
     }

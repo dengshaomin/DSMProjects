@@ -8,4 +8,6 @@ public interface IDwonLoader {
     void video();
 
     void Xml();
+
+    void apk();
 }

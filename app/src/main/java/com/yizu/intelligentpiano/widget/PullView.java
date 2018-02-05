@@ -1,14 +1,13 @@
 package com.yizu.intelligentpiano.widget;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
-import android.view.SurfaceHolder;
 
 import com.chillingvan.canvasgl.ICanvasGL;
 import com.chillingvan.canvasgl.glcanvas.GLPaint;
@@ -27,7 +26,10 @@ import com.yizu.intelligentpiano.utils.MyToast;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Created by liuxiaozhu on 2017/10/19.
@@ -63,7 +65,7 @@ public class PullView extends GLContinuousView {
 
     private RectF mRectF;
 
-    SurfaceHolder holder;
+//    SurfaceHolder holder;
 
 
     private IPlayEnd iPlayEnd;
@@ -86,10 +88,24 @@ public class PullView extends GLContinuousView {
 
     private Handler handler = new Handler(Looper.getMainLooper());
 
-    /************只管时间不管速度(200拍的速度是最快的，减小速度只需要缩短每次移动的长度)**************/
-    private int mTimess = 60;
-
     private float mLenth;//100拍的长度
+    //一小节的druction
+    private int measureDurationNum = 16;
+    //每小节的拍数
+    private int beat = 4;
+
+    /****
+     * *****************************************
+     * 按键动画效果
+     */
+    private GLPaint mPaints;
+    private List<Bubble> bubbleList;
+    private int maxRadius = 10;
+    private int maxBubble = 15;
+    private Random mRandom;
+    //    private Map<Integer, Float> map = new HashMap<>();
+    private int add = 0;
+//    private List<Integer> key = new ArrayList<>();
 
     public PullView(Context context) {
         this(context, null);
@@ -97,12 +113,10 @@ public class PullView extends GLContinuousView {
 
     public PullView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        holder = getHolder();//获取SurfaceHolder对象，同时指定callback
-        holder.addCallback(this);
 
 //        //整个界面透明
 //        holder.setFormat(PixelFormat.TRANSPARENT);
-//        setZOrderOnTop(true);
+//        setZOrderOnTop(false);
 
         mYellowPaint = new GLPaint();
         mYellowPaint.setStyle(Paint.Style.FILL);
@@ -118,6 +132,42 @@ public class PullView extends GLContinuousView {
         mBackgroundPaint.setStyle(Paint.Style.FILL);
         mBackgroundPaint.setColor(getResources().getColor(R.color.pullcolor));
 //        mBackgroundPaint.setAntiAlias(true);
+
+        bubbleList = new ArrayList<>();
+        mPaints = new GLPaint();
+        mPaints.setStyle(Paint.Style.FILL);
+//        mPaints.setAntiAlias(true);
+        mPaints.setColor(Color.YELLOW);
+        mRandom = new Random();
+
+//        ScoreHelper.getInstance().setBubble(new IBubble() {
+//            @Override
+//            public void pullAdd(int keyId, float x) {
+//                map.put(keyId, x);
+//            }
+//
+//            @Override
+//            public void pullRemove(int keyId, float x) {
+//                map.remove(keyId);
+//                if (map.size() == 0) key.clear();
+//            }
+//
+//            @Override
+//            public void keyAdd(int keyId) {
+//                if (map.size() != 0) key.add(keyId);
+//            }
+//
+//            @Override
+//            public void keyRemove(int keyId) {
+//                if (key.contains(keyId)) key.remove(key.indexOf(keyId));
+//            }
+//
+//            @Override
+//            public void clear() {
+//                map.clear();
+//                key.clear();
+//            }
+//        });
     }
 
     @Override
@@ -151,10 +201,22 @@ public class PullView extends GLContinuousView {
                 mRectF.bottom = mLayoutHeight;
                 canvas.drawRect(mRectF, mBackgroundPaint);
             }
-
+            initCircle();
+            BitSet data = ScoreHelper.getInstance().getKey();
+            List<SaveTimeData> map = ScoreHelper.getInstance().getCorrectKeys();
+            for (int i = 0; i < map.size(); i++) {
+                SaveTimeData saveTimeData = map.get(i);
+                if (data.get(saveTimeData.getPhysicalKey())) {
+                    for (int k = 0; k < bubbleList.size(); k++) {
+                        canvas.drawCircle(bubbleList.get(k).getCenterX() + saveTimeData.getLeft() + 15,
+                                bubbleList.get(k).getCenterY(),
+                                bubbleList.get(k).getRadius(), mPaints);
+                    }
+                }
+            }
             try {
-                MyLogUtils.e(TAG, (System.currentTimeMillis() - time) + "");
-                Thread.sleep((long) Math.max(0f, 25 - (System.currentTimeMillis() - time)));
+//                MyLogUtils.e(TAG, (System.currentTimeMillis() - time) + "");
+                Thread.sleep((long) Math.max(0f, 20 - (System.currentTimeMillis() - time)));
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -168,6 +230,8 @@ public class PullView extends GLContinuousView {
 //        MyLogUtils.e(TAG, "onMeasure");
         mLayoutWith = MeasureSpec.getSize(widthMeasureSpec);
         mLayoutHeight = MeasureSpec.getSize(heightMeasureSpec);
+        mSpeedLenth = (float) mLayoutHeight / measureDurationNum;
+        mLenth = (float) mLayoutHeight / (beat * 30);
     }
 
 
@@ -182,15 +246,18 @@ public class PullView extends GLContinuousView {
         mAttributess = StaffDataHelper.getInstence().getmAttributess();
         if (mAttributess == null) return;
         initAllData();
-
-        mSpeedLenth = StaffDataHelper.getInstence().getmSpeedLenth();
+        measureDurationNum = StaffDataHelper.getInstence().getMeasureDurationNum();
+        beat = StaffDataHelper.getInstence().getBeats();
+        mSpeedLenth = (float) mLayoutHeight / measureDurationNum;
+        mLenth = (float) mLayoutHeight / (beat * 30);
         mData.clear();
         mData.addAll(StaffDataHelper.getInstence().getPullData());
-        mLenth = (mSpeedLenth * Float.valueOf(mAttributess.getDivisions()) / 24);
+
         if (mData == null) return;
         if (mWhiteKeyWidth == 0) {
             mWhiteKeyWidth = mPianoKeyView.getmWhiteKeyWidth();
             mBlackKeyWidth = mPianoKeyView.getmBlackKeyWidth();
+            maxRadius = mBlackKeyWidth / 5;
         }
         caAllPosition(true);
         handler.post(new Runnable() {
@@ -272,14 +339,6 @@ public class PullView extends GLContinuousView {
         super.onDetachedFromWindow();
     }
 
-    public void onResume() {
-        isPlay = true;
-    }
-
-    public void onPause() {
-        isPlay = false;
-    }
-
     public void setiPlayEnd(IPlayEnd iPlayEnd) {
         this.iPlayEnd = iPlayEnd;
     }
@@ -295,29 +354,30 @@ public class PullView extends GLContinuousView {
             int keyNum = 0;
             int key = (octave - 1) * 7;
             int num = mWhiteKeyWidth * key;
-            key += 23;
+            int keys = (octave - 1) * 12 + 23;
+            int blackLenth = mBlackKeyWidth / 2;
             if (!saveTimeData.isRest()) {
                 if (octave == 0) {
                     switch (saveTimeData.getStep()) {
                         case "A":
                             if (black == 1) {
                                 keyNum = 22;
-                                mRectF.left = mWhiteKeyWidth - mBlackKeyWidth / 3;
-                                mRectF.right = mWhiteKeyWidth + mBlackKeyWidth / 3;
+                                mRectF.left = mWhiteKeyWidth - blackLenth + 7;
+                                mRectF.right = mWhiteKeyWidth + blackLenth + 7;
                             } else {
                                 keyNum = 21;
                                 mRectF.left = 0;
-                                mRectF.right = mWhiteKeyWidth - mBlackKeyWidth / 3;
+                                mRectF.right = mWhiteKeyWidth - blackLenth + 7;
                             }
                             break;
                         case "B":
                             if (black == -1) {
                                 keyNum = 22;
-                                mRectF.left = mWhiteKeyWidth - mBlackKeyWidth / 3;
-                                mRectF.right = mWhiteKeyWidth + mBlackKeyWidth / 3;
+                                mRectF.left = mWhiteKeyWidth - blackLenth + 7;
+                                mRectF.right = mWhiteKeyWidth + blackLenth + 7;
                             } else {
                                 keyNum = 23;
-                                mRectF.left = mWhiteKeyWidth + mBlackKeyWidth / 3;
+                                mRectF.left = mWhiteKeyWidth + blackLenth + 7;
                                 mRectF.right = mWhiteKeyWidth * 2;
                             }
                             break;
@@ -326,90 +386,90 @@ public class PullView extends GLContinuousView {
                     switch (saveTimeData.getStep()) {
                         case "C":
                             if (black == 1) {
-                                keyNum = key + 2;
-                                mRectF.left = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 3 + num;
-                                mRectF.right = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
+                                keyNum = keys + 2;
+                                mRectF.left = mWhiteKeyWidth * 3 - blackLenth - 7 + num;
+                                mRectF.right = mWhiteKeyWidth * 3 + blackLenth - 7 + num;
                             } else {
-                                keyNum = key + 1;
+                                keyNum = keys + 1;
                                 mRectF.left = mWhiteKeyWidth * 2 + num;
-                                mRectF.right = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 2 + num;
+                                mRectF.right = mWhiteKeyWidth * 3 - blackLenth - 7 + num;
                             }
                             break;
                         case "D":
                             if (black == 1) {
-                                keyNum = key + 4;
-                                mRectF.left = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
-                                mRectF.right = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 3 + num;
+                                keyNum = keys + 4;
+                                mRectF.left = mWhiteKeyWidth * 4 - blackLenth + 7 + num;
+                                mRectF.right = mWhiteKeyWidth * 4 + blackLenth + 7 + num;
                             } else if (black == -1) {
-                                keyNum = key + 2;
-                                mRectF.left = mWhiteKeyWidth * 3 - mWhiteKeyWidth / 3 + num;
-                                mRectF.right = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
+                                keyNum = keys + 2;
+                                mRectF.left = mWhiteKeyWidth * 3 - blackLenth - 7 + num;
+                                mRectF.right = mWhiteKeyWidth * 3 + blackLenth - 7 + num;
                             } else {
-                                keyNum = key + 3;
-                                mRectF.left = mWhiteKeyWidth * 3 + mWhiteKeyWidth / 3 + num;
-                                mRectF.right = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
+                                keyNum = keys + 3;
+                                mRectF.left = mWhiteKeyWidth * 3 + blackLenth - 7 + num;
+                                mRectF.right = mWhiteKeyWidth * 4 - blackLenth + 7 + num;
                             }
                             break;
                         case "E":
                             if (black == -1) {
-                                keyNum = key + 4;
-                                mRectF.left = mWhiteKeyWidth * 4 - mWhiteKeyWidth / 3 + num;
-                                mRectF.right = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 3 + num;
+                                keyNum = keys + 4;
+                                mRectF.left = mWhiteKeyWidth * 4 - blackLenth + 7 + num;
+                                mRectF.right = mWhiteKeyWidth * 4 + blackLenth + 7 + num;
                             } else {
-                                keyNum = key + 5;
-                                mRectF.left = mWhiteKeyWidth * 4 + mWhiteKeyWidth / 3 + num;
+                                keyNum = keys + 5;
+                                mRectF.left = mWhiteKeyWidth * 4 + blackLenth + 7 + num;
                                 mRectF.right = mWhiteKeyWidth * 5 + num;
                             }
                             break;
                         case "F":
                             if (black == 1) {
-                                keyNum = 7;
-                                mRectF.left = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 3 + num;
-                                mRectF.right = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
+                                keyNum = keys + 7;
+                                mRectF.left = mWhiteKeyWidth * 6 - blackLenth - 7 + num;
+                                mRectF.right = mWhiteKeyWidth * 6 + blackLenth - 7 + num;
                             } else {
-                                keyNum = 6;
+                                keyNum = keys + 6;
                                 mRectF.left = mWhiteKeyWidth * 5 + num;
-                                mRectF.right = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 3 + num;
+                                mRectF.right = mWhiteKeyWidth * 6 - blackLenth - 7 + num;
                             }
                             break;
                         case "G":
                             if (black == 1) {
-                                keyNum = 9;
-                                mRectF.left = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
-                                mRectF.right = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
+                                keyNum = keys + 9;
+                                mRectF.left = mWhiteKeyWidth * 7 - blackLenth + num;
+                                mRectF.right = mWhiteKeyWidth * 7 + blackLenth + num;
                             } else if (black == -1) {
-                                keyNum = 7;
-                                mRectF.left = mWhiteKeyWidth * 6 - mWhiteKeyWidth / 3 + num;
-                                mRectF.right = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
+                                keyNum = keys + 7;
+                                mRectF.left = mWhiteKeyWidth * 6 - blackLenth - 7 + num;
+                                mRectF.right = mWhiteKeyWidth * 6 + blackLenth - 7 + num;
                             } else {
-                                keyNum = 8;
-                                mRectF.left = mWhiteKeyWidth * 6 + mWhiteKeyWidth / 3 + num;
-                                mRectF.right = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
+                                keyNum = keys + 8;
+                                mRectF.left = mWhiteKeyWidth * 6 + blackLenth - 7 + num;
+                                mRectF.right = mWhiteKeyWidth * 7 - blackLenth + num;
                             }
                             break;
                         case "A":
                             if (black == 1) {
-                                keyNum = 11;
-                                mRectF.left = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
-                                mRectF.right = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 2 + num;
+                                keyNum = keys + 11;
+                                mRectF.left = mWhiteKeyWidth * 8 - blackLenth + 7 + num;
+                                mRectF.right = mWhiteKeyWidth * 8 + blackLenth + 7 + num;
                             } else if (black == -1) {
-                                keyNum = 9;
-                                mRectF.left = mWhiteKeyWidth * 7 - mWhiteKeyWidth / 3 + num;
-                                mRectF.right = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
+                                keyNum = keys + 9;
+                                mRectF.left = mWhiteKeyWidth * 7 - blackLenth + num;
+                                mRectF.right = mWhiteKeyWidth * 7 + blackLenth + num;
                             } else {
-                                keyNum = 10;
-                                mRectF.left = mWhiteKeyWidth * 7 + mWhiteKeyWidth / 3 + num;
-                                mRectF.right = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
+                                keyNum = keys + 10;
+                                mRectF.left = mWhiteKeyWidth * 7 + blackLenth + num;
+                                mRectF.right = mWhiteKeyWidth * 8 - blackLenth + 7 + num;
                             }
                             break;
                         case "B":
                             if (black == -1) {
-                                keyNum = 11;
-                                mRectF.left = mWhiteKeyWidth * 8 - mWhiteKeyWidth / 3 + num;
-                                mRectF.right = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 3 + num;
+                                keyNum = keys + 11;
+                                mRectF.left = mWhiteKeyWidth * 8 - blackLenth + 7 + num;
+                                mRectF.right = mWhiteKeyWidth * 8 + blackLenth + 7 + num;
                             } else {
-                                keyNum = 12;
-                                mRectF.left = mWhiteKeyWidth * 8 + mWhiteKeyWidth / 3 + num;
+                                keyNum = keys + 12;
+                                mRectF.left = mWhiteKeyWidth * 8 + blackLenth + 7 + num;
                                 mRectF.right = mWhiteKeyWidth * 9 + num;
                             }
                             break;
@@ -417,12 +477,12 @@ public class PullView extends GLContinuousView {
                 }
             }
             saveTimeData.setPhysicalKey(keyNum);
-            mRectF.top = 0 - (saveTimeData.getmAddDuration() + saveTimeData.getDuration() + (saveTimeData.isTie() ? 1 : 0)) * mSpeedLenth;
+            mRectF.top = 0 - (saveTimeData.getmAddDuration() + saveTimeData.getDuration()) * mSpeedLenth;
             mRectF.bottom = 0 - saveTimeData.getmAddDuration() * mSpeedLenth;
-            saveTimeData.setTop(mRectF.top);
+            saveTimeData.setTop(mRectF.top-(saveTimeData.isTie() ? 30 : 0));
             saveTimeData.setBottom(mRectF.bottom);
-            saveTimeData.setLeft(mRectF.left - 28);
-            saveTimeData.setRight(mRectF.right - 30);
+            saveTimeData.setLeft(mRectF.left - 23);
+            saveTimeData.setRight(mRectF.right - 27);
         }
         saveTimeData.setArriveBottomState(0);
     }
@@ -435,7 +495,7 @@ public class PullView extends GLContinuousView {
         mRectF.top = saveTimeData.getTop() + move;
         mRectF.right = saveTimeData.getRight();
         mRectF.bottom = saveTimeData.getBottom() + move;
-        ScoreHelper.getInstance().setCorrectKey(mRectF, saveTimeData, mLayoutHeight);
+        ScoreHelper.getInstance().setCorrectKey(isFrist, j, mRectF, saveTimeData, mLayoutHeight);
         if (isFrist && saveTimeData.getArriveBottomState() == 1) {
             //该数据对应的音符第一次达到pullview底部
             if (j == 0) {
@@ -497,7 +557,7 @@ public class PullView extends GLContinuousView {
             mReta = 1.5f;
         }
         DecimalFormat decimalFormat = new DecimalFormat("0.0");
-        return decimalFormat.format(mReta);
+        return "速度：" + decimalFormat.format(mReta);
     }
 
     /**
@@ -509,12 +569,92 @@ public class PullView extends GLContinuousView {
             mReta = 0.5f;
         }
         DecimalFormat decimalFormat = new DecimalFormat("0.0");
-        return decimalFormat.format(mReta);
+        return "速度：" + decimalFormat.format(mReta);
     }
 
 
     public String getmReta() {
         DecimalFormat decimalFormat = new DecimalFormat("0.0");
-        return decimalFormat.format(mReta);
+        return "速度：" + decimalFormat.format(mReta);
+    }
+
+
+    /**
+     * 用来计算圆形气泡
+     */
+    private void initCircle() {
+        if (add == 0) {
+            Bubble bubble = new Bubble();
+            bubble.setRadius(maxRadius);
+            bubble.setCenterX(0);
+            bubble.setCenterY(mLayoutHeight);
+            bubble.setDirection(mRandom.nextBoolean());
+            if (maxBubble > bubbleList.size()) bubbleList.add(bubble);
+        }
+        add++;
+        if (add > 10) add = 0;
+        for (int i = 0; i < bubbleList.size(); i++) {
+            float x = bubbleList.get(i).getCenterX();
+            float y = bubbleList.get(i).getCenterY();
+            float radius = bubbleList.get(i).getRadius();
+            x += (bubbleList.get(i).isDirection() ? -1 : 1) * 0.5;
+            y -= mRandom.nextFloat() * 3;
+            radius -= 0.1f;
+            bubbleList.get(i).setCenterX(x);
+            bubbleList.get(i).setCenterY(y);
+            bubbleList.get(i).setRadius(radius);
+        }
+        Iterator it = bubbleList.iterator();
+        while (it.hasNext()) {
+            Bubble bubble1 = (Bubble) it.next();
+            if (bubble1.getRadius() < 0) {
+                it.remove();
+            } else if (bubble1.getCenterY() < 0) {
+                it.remove();
+            }
+        }
+    }
+
+    /**
+     * 存储圆形的数据
+     */
+    class Bubble {
+        private float centerX;
+        private float centerY;
+        private float radius;
+        //方向，向左还是向右
+        private boolean direction;
+
+        public float getCenterX() {
+            return centerX;
+        }
+
+        public void setCenterX(float centerX) {
+            this.centerX = centerX;
+        }
+
+        public float getCenterY() {
+            return centerY;
+        }
+
+        public void setCenterY(float centerY) {
+            this.centerY = centerY;
+        }
+
+        public float getRadius() {
+            return radius;
+        }
+
+        public void setRadius(float radius) {
+            this.radius = radius;
+        }
+
+        public boolean isDirection() {
+            return direction;
+        }
+
+        public void setDirection(boolean direction) {
+            this.direction = direction;
+        }
     }
 }

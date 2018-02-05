@@ -54,7 +54,7 @@ public class VersionUtils {
      * @return
      */
     public static String getMacAddress(){
-        String macAddress = null;
+        String macAddress = "";
         StringBuffer buf = new StringBuffer();
         NetworkInterface networkInterface = null;
         try {
@@ -63,7 +63,7 @@ public class VersionUtils {
                 networkInterface = NetworkInterface.getByName("wlan0");
             }
             if (networkInterface == null) {
-                return "02:00:00:00:00:02";
+                return macAddress;
             }
             byte[] addr = networkInterface.getHardwareAddress();
             for (byte b : addr) {
@@ -75,7 +75,7 @@ public class VersionUtils {
             macAddress = buf.toString();
         } catch (SocketException e) {
             e.printStackTrace();
-            return "02:00:00:00:00:02";
+            return macAddress;
         }
         return macAddress;
     }

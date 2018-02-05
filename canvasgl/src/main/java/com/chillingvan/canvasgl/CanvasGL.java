@@ -246,6 +246,14 @@ public class CanvasGL implements ICanvasGL {
 
 
     @Override
+    public void drawEllipse(@NonNull RectF rect, @NonNull GLPaint paint) {
+        drawRect(rect.left, rect.top+ (rect.right - rect.left) / 2,
+                rect.right, rect.bottom- (rect.right - rect.left) / 2, paint);
+        drawCircle(rect.left + (rect.right - rect.left) / 2, rect.top+ (rect.right - rect.left) / 2, (rect.right - rect.left) / 2, paint);
+        drawCircle(rect.left + (rect.right - rect.left) / 2, rect.bottom- (rect.right - rect.left) / 2, (rect.right - rect.left) / 2, paint);
+    }
+
+    @Override
     public void drawRect(@NonNull RectF rect, GLPaint paint) {
         drawRect(rect.left, rect.top, rect.right, rect.bottom, paint);
     }
@@ -261,10 +269,11 @@ public class CanvasGL implements ICanvasGL {
             glCanvas.drawRect(left, top, right - left, bottom - top, paint, basicDrawShapeFilter);
         } else {
             glCanvas.fillRect(left, top, right - left, bottom - top, paint.getColor(), basicDrawShapeFilter);
-//            drawCircle(left + (right - left) / 2, top, 10, paint);
-//            drawCircle(left + (right - left) / 2, bottom, 10, paint);
+//            drawCircle(left + (right - left) / 2, top, (right - left) / 2, paint);
+//            drawCircle(left + (right - left) / 2, bottom, (right - left) / 2, paint);
         }
     }
+
 
     @Override
     public void save() {
@@ -272,7 +281,8 @@ public class CanvasGL implements ICanvasGL {
     }
 
     /**
-     * @param saveFlags {@link GLCanvas.SAVE_FLAG_ALL}
+     * @param saveFlags
+     * {@link GLCanvas.SAVE_FLAG_ALL}
      * {@link GLCanvas.SAVE_FLAG_ALPHA}
      * {@link GLCanvas.SAVE_FLAG_MATRIX}
      */

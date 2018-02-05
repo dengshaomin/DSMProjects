@@ -47,7 +47,7 @@ public class XCRoundImageView extends ImageView {
         Drawable drawable = getDrawable();
         if (null != drawable) {
             Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
-            Bitmap b = getCircleBitmap(bitmap, 14);
+            Bitmap b = getCircleBitmap(bitmap);
             final Rect rectSrc = new Rect(0, 0, b.getWidth(), b.getHeight());
             final Rect rectDest = new Rect(0,0,getWidth(),getHeight());
             paint.reset();
@@ -61,11 +61,10 @@ public class XCRoundImageView extends ImageView {
     /**
      * 获取圆形图片方法
      * @param bitmap
-     * @param pixels
      * @return Bitmap
      * @author caizhiming
      */
-    private Bitmap getCircleBitmap(Bitmap bitmap, int pixels) {
+    private Bitmap getCircleBitmap(Bitmap bitmap) {
         Bitmap output = Bitmap.createBitmap(bitmap.getWidth(),
                 bitmap.getHeight(), Config.ARGB_8888);
         Canvas canvas = new Canvas(output);

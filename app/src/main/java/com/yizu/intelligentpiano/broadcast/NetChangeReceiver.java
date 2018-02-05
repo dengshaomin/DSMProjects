@@ -6,40 +6,31 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
-import com.yizu.intelligentpiano.constens.Constents;
-import com.yizu.intelligentpiano.constens.INetStatus;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
+import com.yizu.intelligentpiano.utils.OkHttpUtils;
 
 /**
  * Author：Created by liuxiaozhu on 2017/11/24.
  * Email: chenhuixueba@163.com
  */
 
-public class TimeChangeReceiver extends BroadcastReceiver {
-    private final static String TAG = "TimeChangeReceiver";
-    private static INetStatus mINetStatus;
+public class NetChangeReceiver extends BroadcastReceiver {
+    private final static String TAG = "NetChangeReceiver";
+
+
     @Override
     public void onReceive(Context context, Intent intent) {
         ConnectivityManager manger = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo mobInfo = manger.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
         NetworkInfo wifiInfo = manger.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
         if (mobInfo.isConnected()) {
-            Constents.isNetworkConnected = true;
-            MyLogUtils.e(TAG,"移动网络连接");
+            OkHttpUtils.getInstance().startWebSocket();
         } else if (wifiInfo.isConnected()) {
-            Constents.isNetworkConnected = true;
-            MyLogUtils.e(TAG,"WIFI连接");
+            MyLogUtils.e(TAG, "WIFI连接");
+            OkHttpUtils.getInstance().startWebSocket();
         } else {
-            MyLogUtils.e(TAG,"网络断开");
-            Constents.isNetworkConnected = false;
-            if (mINetStatus != null) {
-                mINetStatus.isNoNet();
-            }
-        }
-    }
-    public static void getNetStatus(INetStatus netStatus) {
-        if (netStatus != null) {
-            mINetStatus = netStatus;
+            MyLogUtils.e(TAG, "网络断开");
+            OkHttpUtils.getInstance().webCancle();
         }
     }
 }

@@ -59,7 +59,7 @@ public abstract class GLView extends GLSurfaceView implements GLSurfaceView.Rend
 
     protected void init() {
         setZOrderOnTop(true);
-        setEGLContextClientVersion(2);
+        setEGLContextClientVersion(2);//兼容OpenGLES2.0
         setEGLConfigChooser(8, 8, 8, 8, 16, 0);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             setPreserveEGLContextOnPause(true);

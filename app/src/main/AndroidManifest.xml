@@ -27,12 +27,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <meta-data
-            android:name="com.alibaba.app.appkey"
-            android:value="24635410" />
-        <meta-data
-            android:name="com.alibaba.app.appsecret"
-            android:value="aa3052518c486e144d3b731eb6c5b7fd" />
+        <!--<meta-data-->
+            <!--android:name="com.alibaba.app.appkey"-->
+            <!--android:value="24635410" />-->
+        <!--<meta-data-->
+            <!--android:name="com.alibaba.app.appsecret"-->
+            <!--android:value="aa3052518c486e144d3b731eb6c5b7fd" />-->
 
         <activity
             android:name=".view.MainActivity"
@@ -40,7 +40,6 @@
             android:screenOrientation="landscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -56,33 +55,21 @@
             android:name=".view.PianoActivity"
             android:configChanges="screenSize|keyboardHidden|orientation"
             android:screenOrientation="landscape">
-
-            <!-- <intent-filter> -->
-            <!-- <action android:name="android.intent.action.MAIN" /> -->
-            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
-            <!-- </intent-filter> -->
         </activity>
-
-        <!-- (PUSH)消息接收监听器 （用户可自主扩展） -->
-        <receiver
-            android:name=".broadcast.MyMessageReceiver"
-            android:exported="false"> <!-- 为保证receiver安全，建议设置不可导出，如需对其他应用开放可通过android：permission进行限制 -->
-            <intent-filter>
-                <action android:name="com.alibaba.push2.action.NOTIFICATION_OPENED" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="com.alibaba.push2.action.NOTIFICATION_REMOVED" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="com.alibaba.sdk.android.push.RECEIVE" />
-            </intent-filter>
-        </receiver>
         <receiver android:name=".broadcast.AppStartReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <!--同时监听sd卡挂载-->
+            <intent-filter >
+                <action android:name="android.intent.action.MEDIA_MOUNTED"/>
+                <action android:name="android.intent.action.MEDIA_UNMOUNTED"/>
+                <data android:scheme="file">
+                </data>
             </intent-filter>
         </receiver>
-        <receiver android:name=".broadcast.TimeChangeReceiver">
+        <receiver android:name=".broadcast.NetChangeReceiver">
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>
@@ -98,7 +85,10 @@
             <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
             <!-- </intent-filter> -->
         </activity>
-        <activity android:name=".view.PullViewActivity"></activity>
+        <activity
+            android:name=".view.PullViewActivity"
+            android:configChanges="screenSize|keyboardHidden|orientation"
+            android:screenOrientation="landscape"></activity>
     </application>
 
 </manifest>

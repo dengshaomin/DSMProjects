@@ -25,6 +25,7 @@ import com.yizu.intelligentpiano.constens.IGetSelectData;
 import com.yizu.intelligentpiano.constens.IOkHttpCallBack;
 import com.yizu.intelligentpiano.constens.IPlay;
 import com.yizu.intelligentpiano.constens.IPlayEnd;
+import com.yizu.intelligentpiano.dialog.TimeDialog;
 import com.yizu.intelligentpiano.helper.ScoreHelper;
 import com.yizu.intelligentpiano.helper.StaffDataHelper;
 import com.yizu.intelligentpiano.utils.DownloadUtils;
@@ -42,13 +43,12 @@ import java.util.Map;
 
 import jp.kshoji.driver.midi.device.MidiInputDevice;
 
-public class PullViewActivity extends BaseActivity implements View.OnClickListener {
+public class PullViewActivity extends BasePullActivity implements View.OnClickListener {
 
     private static final String TAG = "PullViewActivity";
     private MyBroadcastReceiver receiver;
     private PianoKeyView mPianoKeyView;
     private PullView mPullView;
-    private RelativeLayout mTime;
     private RelativeLayout mScore;
     private TextView score_score, score_again, score_exit, score_songname;
     private ImageView score_img;
@@ -62,7 +62,7 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
     private TextView realyTimeScore;
 
     //是否处理按键，默认连接键盘
-    private boolean KeyIsOk = true;
+//    private boolean KeyIsOk = true;
     //实时得分
     private int realyScore = 0;
 
@@ -87,6 +87,7 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
     private String music_type = "";
     private String music_xml = "";
     private SelectActivity selectActivity;
+    private DownloadUtils utils;
 
     private MyThred myThred;
 
@@ -95,7 +96,7 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
         public boolean handleMessage(Message msg) {
             if (msg.what > 20 && msg.what < 109) {
                 mPianoKeyView.painoKeyPress(msg.what);
-                ScoreHelper.getInstance().caCorrectKey(msg.what);
+                ScoreHelper.getInstance().caCorrectKey(msg.what, true);
             }
             return true;
         }
@@ -104,23 +105,15 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
         @Override
         public boolean handleMessage(Message msg) {
             if (msg.what > 20 && msg.what < 109) {
+                ScoreHelper.getInstance().caCorrectKey(msg.what, false);
                 mPianoKeyView.painoKeyCanclePress(msg.what);
             }
             return true;
         }
     });
-    //键盘断开
-    private Handler keyCancleHandler = new Handler(new Handler.Callback() {
-        @Override
-        public boolean handleMessage(Message msg) {
-            if (msg.what == 0) {
-                mPlay.setSelected(false);
-                mPullView.play(false);
-            }
-            return true;
-        }
-    });
+
     private Handler mHandler = new Handler(Looper.getMainLooper());
+    private TimeDialog dialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,7 +129,8 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
      * @param saveUrl  保存的文件夹
      */
     private void downLoadFile(String fileUrl, final String fileName, final String saveUrl) {
-        new DownloadUtils(this).downloadFile(fileUrl,
+        if (utils==null)utils = new DownloadUtils(this);
+        utils.downloadFile(fileUrl,
                 fileName, DownloadUtils.FileType.XML, saveUrl, new IDwonLoader() {
                     @Override
                     public void video() {
@@ -149,6 +143,11 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
                         String urls = SDCardUtils.getExternalStorageDirectory().concat(saveUrl + "/" + fileName);
                         getXmlData(urls);
                     }
+
+                    @Override
+                    public void apk() {
+
+                    }
                 });
     }
 
@@ -159,7 +158,7 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
      */
     private void getXmlData(String urls) {
         MyLogUtils.e(TAG, "xmlUrls：" + urls);
-        XmlPrareUtils utils = new XmlPrareUtils(this);
+        XmlPrareUtils utils = new XmlPrareUtils();
         XmlBean bean = utils.getXmlBean(urls);
         if (bean == null || bean.getList() == null) {
 //            MyToast.ShowLong("解析失败");
@@ -172,15 +171,10 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
                 mPullView.setPullData(mPianoKeyView, new IPlay() {
                     @Override
                     public void ReadyFinish() {
-                        MyLogUtils.e(TAG,"瀑布流初始化完成");
-                        if (KeyIsOk) {
-                            mPlay.setSelected(true);
-                            mTimesSpeed.setText(mPullView.getmReta());
-                            mPullView.play(true);
-                        } else {
-                            MyToast.ShowLong("请连接键盘");
-                            mPlay.setSelected(false);
-                        }
+                        MyLogUtils.e(TAG, "瀑布流初始化完成");
+                        mPlay.setSelected(true);
+                        mTimesSpeed.setText(mPullView.getmReta());
+                        mPullView.play(true);
                     }
                 });
             }
@@ -215,33 +209,37 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
     @Override
     protected void setData() {
         setRegisterReceiver();
-//        getSongsData();
-        test();
+        getSongsData();
+//        test();
     }
 
-    private void test() {
-//        music_type = "2.3.7";
-//        music_title = "月亮代表我的心";
+//    private void test() {
+//        music_type = "2017-12-16_15-12-01";
+//        music_title = "梦中的婚礼";
 //        music_auther = "lalagu";
-
-        music_type = "2";
-        music_title = "梦中的婚礼";
-        music_auther = "lalagu";
-
-//        music_type = "2.3.4.5.6";
-//        music_title = "月亮之上";
-//        music_auther = "陈苹";
-
-//        music_type = "2.4";
-//        music_title = "别问我是谁";
-//        music_auther = "Lalagu";
-        if (myThred != null) {
-            myThred.interrupt();
-            myThred = null;
-        }
-        myThred = new MyThred();
-        myThred.start();
-    }
+//        music_xml = "http://piano.sinotransfer.com/Uploads/Download/2017-11-11/5a06f8178327f.xml";
+//
+////        music_type = "2017-12-16 17-45-59";
+////        music_title = "天空之城";
+////        music_auther = "lalago";
+////        music_xml = "http://piano.sinotransfer.com/Uploads/Download/2017-11-13/5a091ce51406f.xml";
+//
+////        music_type = "2017-12-16 17-45-08";
+////        music_title = "别问我是谁";
+////        music_auther = "lalagu";
+////        music_xml = "http://piano.sinotransfer.com/Uploads/Download/2017-11-11/5a06d4ad5c7e8.xml";
+//
+////        music_type = "2017-12-16 15-12-01";
+////        music_title = "月亮代表我的心";
+////        music_auther = "lalagu";
+////        music_xml = "http://piano.sinotransfer.com/Uploads/Download/2017-11-11/5a06f8178327f.xml";
+//        if (myThred != null) {
+//            myThred.interrupt();
+//            myThred = null;
+//        }
+//        myThred = new MyThred();
+//        myThred.start();
+//    }
 
 
     /**
@@ -252,13 +250,13 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
         if (selectActivity == null) return;
         selectActivity.getData(new IGetSelectData() {
             @Override
-            public void data(String nickname, String icon, boolean isShowPull,
-                             String music_type, String music_title, String music_auther,
+            public void data(String nickname, String icon,
+                             String music_updatatime, String music_title, String music_auther,
                              String music_xml, String music_id) {
                 PullViewActivity.this.nickName = nickname;
                 PullViewActivity.this.icon = icon;
 
-                PullViewActivity.this.music_type = music_type.replace("|", ".");
+                PullViewActivity.this.music_type = music_updatatime.replaceAll(":", "-");
                 PullViewActivity.this.music_title = music_title;
                 PullViewActivity.this.music_auther = music_auther;
                 PullViewActivity.this.music_xml = music_xml;
@@ -272,8 +270,8 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
         MyLogUtils.e(TAG, "xml：" + music_xml);
         MyLogUtils.e(TAG, "type：" + music_type);
 
-        mNickName.setText(nickName);
-        Glide.with(PullViewActivity.this).load(icon).into(mIcon);
+        if (nickName != null && !nickName.equals("")) mNickName.setText(nickName);
+        if (icon != null && !icon.equals("")) Glide.with(this).load(icon).into(mIcon);
         mSongName.setText(music_title + "—" + music_auther);
         if (myThred != null) {
             myThred.interrupt();
@@ -296,6 +294,7 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
         });
         String urls = SDCardUtils.getIsHave(Constents.XML.concat("/" + music_type + "_" + music_title + "_" + music_auther + ".xml"));
         if (urls.equals("")) {
+            MyLogUtils.e(TAG, "开始下载");
             downLoadFile(music_xml, music_type + "_" + music_title + "_" + music_auther + ".xml", Constents.XML);
         } else {
             getXmlData(urls);
@@ -319,7 +318,6 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
         mPlay = findViewById(R.id.play);
         mSpeed = findViewById(R.id.speed);
         mRewind = findViewById(R.id.rewind);
-        mTime = findViewById(R.id.time);
         mScore = findViewById(R.id.score_view);
         score_score = findViewById(R.id.score_score);
         score_again = findViewById(R.id.score_again);
@@ -339,6 +337,7 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
         if (music_id.equals("")) return;
         if (music_title.equals("")) return;
         if (music_auther.equals("")) return;
+//        if (nickName.equals("")) return;
         Map<String, String> map = new HashMap<>();
         map.put("music_id", music_id);
         map.put("music_title", music_title);
@@ -346,10 +345,11 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
         map.put("user_id", Constents.user_id);
         map.put("score", realyScore + "");
         map.put("auther", music_auther);
-        OkHttpUtils.postMap(HttpUrls.addMusicHistory, map, new IOkHttpCallBack() {
+        OkHttpUtils.getInstance().postMap(HttpUrls.addMusicHistory, map, new IOkHttpCallBack() {
             @Override
             public void success(String result) {
                 showResultView(realyScore);
+                selectActivity.isUpdata = true;
             }
         });
     }
@@ -363,25 +363,17 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
         score_img.setBackgroundResource(isGood ? R.mipmap.good : R.mipmap.bad);
         score_score.setBackgroundResource(isGood ? R.mipmap.score_good : R.mipmap.score_bad);
         score_again.setSelected(true);
+        score_exit.setSelected(false);
         score_score.setText(scores + "分");
         score_songname.setText(music_title + "—" + music_auther);
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        mPullView.onResume();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        mPullView.onPause();
-    }
-
-    @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (utils != null) {
+            utils.onDrestry();
+        }
         unregisterReceiver(receiver);
     }
 
@@ -418,15 +410,16 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
                     break;
                 case Constents.NOTIME_5:
                     //剩余5分钟
-                    mTime.setVisibility(View.VISIBLE);
+                    dialog=new TimeDialog(PullViewActivity.this);
+                    dialog.show();
                     mPullView.play(false);
                     break;
                 case Constents.MUSIC:
                     //推送音乐
                     if (mScore.getVisibility() == View.VISIBLE) {
                         mScore.setVisibility(View.GONE);
-                    } else if (mTime.getVisibility() == View.VISIBLE) {
-                        mTime.setVisibility(View.GONE);
+                    } else if (null!=dialog&&dialog.isShowing()) {
+                        dialog.dissmiss();
                     }
                     if (mPullView != null) {
                         mPullView.resetPullView();
@@ -443,68 +436,61 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (KeyIsOk) {
-            switch (keyCode) {
-                case KeyEvent.KEYCODE_DPAD_LEFT:
-                    //左
-                    if (mScore.getVisibility() == View.VISIBLE) {
-                        score_again.setSelected(true);
-                        score_exit.setSelected(false);
-                    } else if (mTime.getVisibility() == View.VISIBLE) {
-
-                    } else {
-                        //慢放
-                        mTimesSpeed.setText(mPullView.deceleration());
-                    }
-                    return true;
-                case KeyEvent.KEYCODE_DPAD_RIGHT:
-                    //右
-                    if (mScore.getVisibility() == View.VISIBLE) {
-                        score_again.setSelected(false);
-                        score_exit.setSelected(true);
-                    } else if (mTime.getVisibility() == View.VISIBLE) {
-                    } else {
-                        //快放
-                        mTimesSpeed.setText(mPullView.accelerate());
-                    }
-                    return true;
-                case KeyEvent.KEYCODE_DPAD_CENTER:
-                    if (mTime.getVisibility() == View.VISIBLE) {
-                        mTime.setVisibility(View.GONE);
-                    } else if (mScore.getVisibility() == View.VISIBLE) {
-                        if (score_again.isSelected()) {
-                            //再来一次
-                            mScore.setVisibility(View.GONE);
-                            mPlay.setSelected(true);
-                            mPullView.play(true);
-                        } else {
-                            //退出
-                            mScore.setVisibility(View.GONE);
-                            PullViewActivity.this.finish();
-                        }
-                    } else {
-                        //播放，暂停
-                        if (mPlay.isSelected()) {
-                            mPlay.setSelected(false);
-                            mPullView.play(false);
-                        } else {
-                            mPlay.setSelected(true);
-                            mPullView.play(true);
-                        }
-                    }
-                    return true;
-                case KeyEvent.KEYCODE_BACK:
-                    if (mTime.getVisibility() == View.VISIBLE) {
-                        mTime.setVisibility(View.GONE);
-                        return true;
-                    }
-                    if (mScore.getVisibility() == View.VISIBLE) {
+//        if (KeyIsOk) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_DPAD_LEFT:
+                //左
+                if (mScore.getVisibility() == View.VISIBLE) {
+                    score_again.setSelected(true);
+                    score_exit.setSelected(false);
+                    MyLogUtils.e(TAG, "再来一次");
+                } else {
+                    //慢放
+                    mTimesSpeed.setText(mPullView.deceleration());
+                }
+                return true;
+            case KeyEvent.KEYCODE_DPAD_RIGHT:
+                //右
+                if (mScore.getVisibility() == View.VISIBLE) {
+                    score_again.setSelected(false);
+                    score_exit.setSelected(true);
+                    MyLogUtils.e(TAG, "退出");
+                } else  {
+                    //快放
+                    mTimesSpeed.setText(mPullView.accelerate());
+                }
+                return true;
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+                if (mScore.getVisibility() == View.VISIBLE) {
+                    if (score_again.isSelected()) {
+                        //再来一次
                         mScore.setVisibility(View.GONE);
-                        return true;
+                        mPlay.setSelected(true);
+                        mPullView.play(true);
+                    } else {
+                        //退出
+                        mScore.setVisibility(View.GONE);
+                        PullViewActivity.this.finish();
                     }
-                    return super.onKeyDown(keyCode, event);
-            }
+                } else {
+                    //播放，暂停
+                    if (mPlay.isSelected()) {
+                        mPlay.setSelected(false);
+                        mPullView.play(false);
+                    } else {
+                        mPlay.setSelected(true);
+                        mPullView.play(true);
+                    }
+                }
+                return true;
+            case KeyEvent.KEYCODE_BACK:
+                if (mScore.getVisibility() == View.VISIBLE) {
+                    mScore.setVisibility(View.GONE);
+                    return true;
+                }
+                return super.onKeyDown(keyCode, event);
         }
+//        }
         return super.onKeyDown(keyCode, event);
     }
 
@@ -524,7 +510,7 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
         MyLogUtils.e(TAG, "onMidiInputDeviceAttached");
         //钢琴键盘可以将midi传入到手机
         MyToast.ShowLong("设备ID：" + midiInputDevice.getUsbDevice().getDeviceId() + ",已链接");
-        KeyIsOk = true;
+//        KeyIsOk = true;
     }
 
     @Override
@@ -532,8 +518,8 @@ public class PullViewActivity extends BaseActivity implements View.OnClickListen
         MyLogUtils.e(TAG, "onMidiInputDeviceDetached");
         //usb断开，钢琴键盘不可以将midi传入到手机
         MyToast.ShowLong("设备ID：" + midiInputDevice.getUsbDevice().getDeviceId() + ",已断开");
-        KeyIsOk = false;
-        keyCancleHandler.sendEmptyMessage(0);
+//        KeyIsOk = false;
+//        keyCancleHandler.sendEmptyMessage(0);
     }
 
     @Override

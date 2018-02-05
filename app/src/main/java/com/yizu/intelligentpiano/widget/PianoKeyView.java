@@ -20,22 +20,20 @@ import java.util.List;
 /**
  * Created by liuxiaozhu on 2017/10/9.
  * All Rights Reserved by YiZu
- * ���ټ��̵Ĵ���
  */
 
 public class PianoKeyView extends View {
     private static final String TAG = "PianoKeyView";
-    //�׼�����Ŀ
     public final static int WHITE_PIANO_KEY_NUMS = 52;
 
     private Context mContext;
-    //������ټ�
+
     private Piano mPiano;
-    //���ֿ��
+
     private int mLayoutWidth;
     private int mLayoutHeight;
 
-    //�ڰ׼��߶ȺͿ��
+
     private int mBlackKeyWidth;
     private int mBlackKeyHeight;
     private int mWhiteKeyWidth;
@@ -44,11 +42,11 @@ public class PianoKeyView extends View {
     private float scaleWidth;
     private float scaleHeight;
 
-    //�׼����
+
     private ArrayList<PianoKey[]> whitePianoKeys;
-    //�ڼ����
+    //
     private ArrayList<PianoKey[]> blackPianoKeys;
-    //�ڰ׼�
+    //
     private List<PianoKey> allPianoKeys;
 
     public PianoKeyView(Context context) {
@@ -67,64 +65,52 @@ public class PianoKeyView extends View {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 //        MyLogUtils.e(TAG, "onMeasure");
-        //��ȡ���ֿ��
         mLayoutWidth = MeasureSpec.getSize(widthMeasureSpec);
         Drawable whiteKeyDrawable = ContextCompat.getDrawable(mContext, R.drawable.white_piano_key);
         Drawable blackKeyDrawable = ContextCompat.getDrawable(mContext, R.drawable.black_piano_key);
-        //�ڰ׼��Ŀ��
         int whiteKeyHeight = whiteKeyDrawable.getIntrinsicHeight();
         int whiteKeyWidth = whiteKeyDrawable.getIntrinsicWidth();
         int blackKeyWidth = blackKeyDrawable.getIntrinsicWidth();
         int blackKeyHeight = blackKeyDrawable.getIntrinsicHeight();
-        //���ݰ׼��Ŀ�߼������
         float scale = (float) whiteKeyHeight / whiteKeyWidth;
-        MyLogUtils.e(TAG, "" + scale);
-        //�׼����
+
         mWhiteKeyWidth = (mLayoutWidth + 60) / WHITE_PIANO_KEY_NUMS;
-//        if (mLayoutWidth % WHITE_PIANO_KEY_NUMS != 0) {
-//            mWhiteKeyWidth += 1;
-//        }
-//        ����ó����ֵ�ʵ�ʸ߶�
+
         mLayoutHeight = (int) ((mWhiteKeyWidth * scale * 10 + 9) / 10);
         mWhiteKeyHeight = mLayoutHeight;
         scaleHeight = (float) mWhiteKeyHeight / whiteKeyHeight;
         scaleWidth = (float) mWhiteKeyWidth / whiteKeyWidth;
-        //����ڼ����
         mBlackKeyHeight = (int) (blackKeyHeight * scaleHeight);
         mBlackKeyWidth = (int) (blackKeyWidth * scaleWidth);
-        //�������ò��ָ߶ȺͿ��
         setMeasuredDimension(mLayoutWidth, mLayoutHeight);
-        MyLogUtils.e(TAG, mWhiteKeyHeight + "   " + mWhiteKeyWidth + "   " + mBlackKeyHeight + "   " + mBlackKeyWidth);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 //        MyLogUtils.e(TAG, "onDraw");
-//        long time = System.currentTimeMillis();
         if (mPiano == null) {
             mPiano = new Piano(mContext, mBlackKeyHeight, mBlackKeyWidth,
                     mWhiteKeyHeight, mWhiteKeyWidth, scaleHeight, scaleWidth);
-//            //��ȡ�׼�
+//
             whitePianoKeys = mPiano.getWhitePianoKeys();
-//            //��ȡ�ڼ�
+//            //
             blackPianoKeys = mPiano.getBlackPianoKeys();
-            //��ȡ���а�˳�����е����
+            //
             allPianoKeys = mPiano.getKeyList();
         }
-//      ��ʼ���׼�
+//
         for (int i = 0; i < whitePianoKeys.size(); i++) {
             for (PianoKey key : whitePianoKeys.get(i)) {
                 key.getKeyDrawable().draw(canvas);
             }
         }
-        //��ʼ���ڼ�
+        //
         for (int i = 0; i < blackPianoKeys.size(); i++) {
             for (PianoKey key : blackPianoKeys.get(i)) {
                 key.getKeyDrawable().draw(canvas);
             }
         }
-//        MyLogUtils.e(TAG, "���̻���ʱ�䣺" + (System.currentTimeMillis() - time));
     }
 
 
@@ -139,7 +125,7 @@ public class PianoKeyView extends View {
     }
 
     /**
-     * ��ȡ�׼����
+     * 获取白键宽度
      *
      * @return
      */
@@ -148,7 +134,7 @@ public class PianoKeyView extends View {
     }
 
     /**
-     * ��ȡ�ڼ����
+     * 获取黑键宽度
      *
      * @return
      */

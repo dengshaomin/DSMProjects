@@ -6,14 +6,14 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -24,27 +24,28 @@ import com.liuxiaozhu.lowrecyclerviews.callbacks.IPullLoading;
 import com.liuxiaozhu.lowrecyclerviews.utils.LowRecyclerViewUtils;
 import com.yizu.intelligentpiano.R;
 import com.yizu.intelligentpiano.appliction.MyAppliction;
-import com.yizu.intelligentpiano.bean.MusicHistort;
+import com.yizu.intelligentpiano.bean.Category;
+import com.yizu.intelligentpiano.bean.OneSong;
 import com.yizu.intelligentpiano.bean.Songs;
 import com.yizu.intelligentpiano.bean.UserInfo;
-import com.yizu.intelligentpiano.broadcast.MyMessageReceiver;
-import com.yizu.intelligentpiano.broadcast.TimeChangeReceiver;
+import com.yizu.intelligentpiano.bean.WebSocketBean;
 import com.yizu.intelligentpiano.constens.Constents;
 import com.yizu.intelligentpiano.constens.HttpUrls;
 import com.yizu.intelligentpiano.constens.IGetSelectData;
 import com.yizu.intelligentpiano.constens.IMusic;
 import com.yizu.intelligentpiano.constens.INetStatus;
 import com.yizu.intelligentpiano.constens.IOkHttpCallBack;
+import com.yizu.intelligentpiano.constens.ITimeNot;
+import com.yizu.intelligentpiano.dialog.TimeDialog;
 import com.yizu.intelligentpiano.utils.MyLogUtils;
 import com.yizu.intelligentpiano.utils.MyToast;
 import com.yizu.intelligentpiano.utils.OkHttpUtils;
 import com.yizu.intelligentpiano.utils.PreManger;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 
 
 /**
@@ -54,43 +55,23 @@ public class SelectActivity extends BaseActivity {
     private final static String TAG = "SelectActivity";
     private TextView mUserName, mSongName, mSongFraction;
     private ImageView mIcon;
-    private RecyclerView mFractionRecyler;
 
-    private ListViewAdapter<MusicHistort.DataBean.ListBean> fractionAdapter;
-
-    //是否是微信登陆，默认不是,如果是在activity销毁的时候停止计时
+    //是否是微信登陆，默认不是
     private boolean isWXLogin = false;
-    //定时器
-    private Timer timer;
     //动态广播
     private MyBroadcastReceiver receiver;
     private boolean isShowDialog = true;
 
     //选择类型，水平 ,-1代表打分，0-6代表歌曲,
-    private int type = -2;
+    private int type = -1;
     private int vertical = -1;
 
-    //显示时间的dialog
-    private RelativeLayout timeDialog;
-    //记录分页状态 0视频 1-6歌曲 7；打分
-    private int[] pagingMap = {1, 1, 1, 1, 1, 1, 1, 1};
+    //记录分页状态
+    private Map<Integer, Integer> pagingMap = new HashMap<>();
 
+    private List<RecyclerView> recyclerViewList = new ArrayList<>();
+    private List<ListViewAdapter<Songs.DataBean.ListBean>> mAdapterList = new ArrayList<>();
 
-    private RecyclerView recycler_video;
-    private RecyclerView recycler_song1;
-    private RecyclerView recycler_song2;
-    private RecyclerView recycler_song3;
-    private RecyclerView recycler_song4;
-    private RecyclerView recycler_song5;
-    private RecyclerView recycler_song6;
-
-    private ListViewAdapter<Songs.DataBean.ListBean> mAdapterVedio;
-    private ListViewAdapter<Songs.DataBean.ListBean> mAdapterSong1;
-    private ListViewAdapter<Songs.DataBean.ListBean> mAdapterSong2;
-    private ListViewAdapter<Songs.DataBean.ListBean> mAdapterSong3;
-    private ListViewAdapter<Songs.DataBean.ListBean> mAdapterSong4;
-    private ListViewAdapter<Songs.DataBean.ListBean> mAdapterSong5;
-    private ListViewAdapter<Songs.DataBean.ListBean> mAdapterSong6;
     private HorizontalScrollView scrollView;
     //选择播放模式
     private TextView popText;
@@ -100,15 +81,19 @@ public class SelectActivity extends BaseActivity {
     private RelativeLayout selectView;
 
 
-    private String nickname;
-    private String icon;
+    private String nickname = "";
+    private String icon = "";
     private String music_title;
     private String music_auther;
     private String music_xml;
     private String music_id;
-    private String music_type;
+    private String music_updatatime;
 
     public static SelectActivity selectActivity;
+    private LinearLayout layout;
+    //是否刷新记录数据
+    public boolean isUpdata = false;
+    private TimeDialog dialog;
 
 
     @Override
@@ -120,22 +105,13 @@ public class SelectActivity extends BaseActivity {
 
     @Override
     protected void initView() {
+        layout = findViewById(R.id.linearLayout);
         mUserName = (TextView) findViewById(R.id.user_name);
         mSongName = (TextView) findViewById(R.id.user_song);
         mSongFraction = (TextView) findViewById(R.id.user_songfunction);
         mIcon = (ImageView) findViewById(R.id.user_icon);
-        mFractionRecyler = (RecyclerView) findViewById(R.id.record);
-        recycler_video = (RecyclerView) findViewById(R.id.recycler_video);
-        recycler_song1 = (RecyclerView) findViewById(R.id.recycler_song1);
-        recycler_song2 = (RecyclerView) findViewById(R.id.recycler_song2);
-        recycler_song3 = (RecyclerView) findViewById(R.id.recycler_song3);
-        recycler_song4 = (RecyclerView) findViewById(R.id.recycler_song4);
-        recycler_song5 = (RecyclerView) findViewById(R.id.recycler_song5);
-        recycler_song6 = (RecyclerView) findViewById(R.id.recycler_song6);
+        recyclerViewList.add(0, (RecyclerView) findViewById(R.id.record));
         scrollView = findViewById(R.id.scrollView);
-
-        timeDialog = findViewById(R.id.time);
-
         selectView = findViewById(R.id.select_view);
         popText = findViewById(R.id.dialog_songname);
         popLeftImg = findViewById(R.id.dialog_satisfied);
@@ -148,24 +124,65 @@ public class SelectActivity extends BaseActivity {
         setRegisterReceiver();
         if (getIntent() != null) {
             isWXLogin = getIntent().getBooleanExtra("isWXLogin", false);
+            if (isWXLogin) {
+                nickname = getIntent().getStringExtra("username");
+                icon = getIntent().getStringExtra("pic");
+                mUserName.setText(nickname);
+                Glide.with(SelectActivity.this).load(icon).into(mIcon);
+            }
         }
         //获取用户信息
-        getUserInfo();
+//        getUserInfo();
         //打分
         setFraction();
+        //设置视频view
+        setVedioView();
+        //获取歌曲分类信息
+        getCategory();
+    }
+
+    private void setVedioView() {
+        View view = LayoutInflater.from(this).inflate(R.layout.song, null);
+        TextView textView = (TextView) view.findViewById(R.id.list_name);
+        textView.setText("视频-练习指导");
+        recyclerViewList.add(1, (RecyclerView) view.findViewById(R.id.list_recycler));
         setVedio();
-        //儿童
-        setSongs1();
-        //金典
-        setSongs2();
-        //怀古
-        setSongs3();
-        //流行
-        setSongs4();
-        //动漫游戏
-        setSongs5();
-        //伤感
-        setSongs6();
+        layout.addView(view);
+    }
+
+    /**
+     * 获取分类信息
+     */
+    private void getCategory() {
+        OkHttpUtils.getInstance().postMap(HttpUrls.GETCATEGORY, new HashMap<String, String>(), new IOkHttpCallBack() {
+            @Override
+            public void success(String result) {
+                Category bean = OkHttpUtils.Json2Bean(result, Category.class);
+                if (bean.getCode().equals("000")) {
+                    setSongView(bean.getData());
+                } else {
+                    MyToast.ShowLong(bean.getMessage());
+                }
+            }
+        });
+    }
+
+    /**
+     * 设置HorizontalScrollView
+     *
+     * @param data
+     */
+    private void setSongView(List<Category.Song> data) {
+        if (data == null) return;
+        for (int i = 0; i < data.size(); i++) {
+            View view = LayoutInflater.from(this).inflate(R.layout.song, null);
+            TextView textView = (TextView) view.findViewById(R.id.list_name);
+            textView.setText(data.get(i).getTitle());
+            MyLogUtils.e(TAG, data.get(i).getTitle());
+            recyclerViewList.add(i + 2, (RecyclerView) view.findViewById(R.id.list_recycler));
+            setSongs(i + 2, data.get(i).getId());
+            layout.addView(view);
+        }
     }
 
 
@@ -173,10 +190,11 @@ public class SelectActivity extends BaseActivity {
      * 设置视频-练习指导
      */
     private void setVedio() {
-        mAdapterVedio = new ListViewAdapter<Songs.DataBean.ListBean>(null, this, R.layout.item_song_item) {
+        pagingMap.put(1, 1);
+        mAdapterList.add(1, new ListViewAdapter<Songs.DataBean.ListBean>(null, this, R.layout.item_song_item) {
             @Override
-            protected void setData(BaseViewHoloder holder, int position, Songs.DataBean.ListBean item) {
-                if (0 == type && position == vertical) {
+            public void setData(BaseViewHoloder holder, int position, Songs.DataBean.ListBean item) {
+                if (1 == type && position == vertical) {
                     holder.getAbroadView().setSelected(true);
                 } else {
                     holder.getAbroadView().setSelected(false);
@@ -189,28 +207,31 @@ public class SelectActivity extends BaseActivity {
                 holder.getTextView(R.id.song_context).setText(item.getTitle() + "-" + item.getAuther());
                 holder.getImageView(R.id.song_img).setImageResource(R.mipmap.vdio);
             }
-        };
-        mAdapterVedio.setPullToData(20, true, new IPullLoading() {
+        });
+        mAdapterList.get(1).setPullToData(20, true, new IPullLoading() {
             @Override
             public void PullToLoading() {
-                int size = pagingMap[0] + 1;
-                pagingMap[0] = size;
+                pagingMap.put(1, pagingMap.get(1) + 1);
                 getVideo();
             }
         });
-        new LowRecyclerViewUtils<Songs.DataBean.ListBean>(recycler_video, 0, mAdapterVedio).addItemDecoration(1, R.color.gary);
-        recycler_video.setAdapter(mAdapterVedio);
+        new LowRecyclerViewUtils<Songs.DataBean.ListBean>(recyclerViewList.get(1), 0, mAdapterList.get(1)).addItemDecoration(1, R.color.gary);
+        recyclerViewList.get(1).setAdapter(mAdapterList.get(1));
         getVideo();
     }
 
     /**
      * 儿童
+     *
+     * @param i
+     * @param id
      */
-    private void setSongs1() {
-        mAdapterSong1 = new ListViewAdapter<Songs.DataBean.ListBean>(null, this, R.layout.item_song_item) {
+    private void setSongs(final int i, final String id) {
+        pagingMap.put(i, 1);
+        mAdapterList.add(i, new ListViewAdapter<Songs.DataBean.ListBean>(null, this, R.layout.item_song_item) {
             @Override
             protected void setData(BaseViewHoloder holder, int position, Songs.DataBean.ListBean item) {
-                if (1 == type && position == vertical) {
+                if (type == i && position == vertical) {
                     holder.getAbroadView().setSelected(true);
                 } else {
                     holder.getAbroadView().setSelected(false);
@@ -223,188 +244,17 @@ public class SelectActivity extends BaseActivity {
                 holder.getTextView(R.id.song_context).setText(item.getTitle() + "-" + item.getAuther());
 
             }
-        };
-        mAdapterSong1.setPullToData(20, true, new IPullLoading() {
+        });
+        mAdapterList.get(i).setPullToData(20, true, new IPullLoading() {
             @Override
             public void PullToLoading() {
-                int size = pagingMap[1] + 1;
-                pagingMap[1] = size;
-                getAllList(1, mAdapterSong1, pagingMap[1]);
+                pagingMap.put(i, pagingMap.get(i) + 1);
+                getAllList(id, mAdapterList.get(i), pagingMap.get(i));
             }
         });
-        new LowRecyclerViewUtils<Songs.DataBean.ListBean>(recycler_song1, 0, mAdapterSong1).addItemDecoration(1, R.color.gary);
-        recycler_song1.setAdapter(mAdapterSong1);
-        getAllList(1, mAdapterSong1, pagingMap[1]);
-    }
-
-    /**
-     * 金典
-     */
-    private void setSongs2() {
-        mAdapterSong2 = new ListViewAdapter<Songs.DataBean.ListBean>(null, this, R.layout.item_song_item) {
-            @Override
-            protected void setData(BaseViewHoloder holder, int position, Songs.DataBean.ListBean item) {
-                if (2 == type && position == vertical) {
-                    holder.getAbroadView().setSelected(true);
-                } else {
-                    holder.getAbroadView().setSelected(false);
-                }
-                if (position < 9) {
-                    holder.getTextView(R.id.song_id).setText("0" + (position + 1));
-                } else {
-                    holder.getTextView(R.id.song_id).setText("" + (position + 1));
-                }
-                holder.getTextView(R.id.song_context).setText(item.getTitle() + "-" + item.getAuther());
-
-            }
-        };
-        mAdapterSong2.setPullToData(20, true, new IPullLoading() {
-            @Override
-            public void PullToLoading() {
-                int size = pagingMap[2] + 1;
-                pagingMap[2] = size;
-                getAllList(2, mAdapterSong2, pagingMap[2]);
-            }
-        });
-        new LowRecyclerViewUtils<Songs.DataBean.ListBean>(recycler_song2, 0, mAdapterSong2).addItemDecoration(1, R.color.gary);
-        recycler_song2.setAdapter(mAdapterSong2);
-        getAllList(2, mAdapterSong2, pagingMap[2]);
-    }
-
-    /**
-     * 怀古
-     */
-    private void setSongs3() {
-        mAdapterSong3 = new ListViewAdapter<Songs.DataBean.ListBean>(null, this, R.layout.item_song_item) {
-            @Override
-            protected void setData(BaseViewHoloder holder, int position, Songs.DataBean.ListBean item) {
-                if (3 == type && position == vertical) {
-                    holder.getAbroadView().setSelected(true);
-                } else {
-                    holder.getAbroadView().setSelected(false);
-                }
-                if (position < 9) {
-                    holder.getTextView(R.id.song_id).setText("0" + (position + 1));
-                } else {
-                    holder.getTextView(R.id.song_id).setText("" + (position + 1));
-                }
-                holder.getTextView(R.id.song_context).setText(item.getTitle() + "-" + item.getAuther());
-
-            }
-        };
-        mAdapterSong3.setPullToData(20, true, new IPullLoading() {
-            @Override
-            public void PullToLoading() {
-                int size = pagingMap[3] + 1;
-                pagingMap[3] = size;
-                getAllList(3, mAdapterSong3, pagingMap[3]);
-            }
-        });
-        new LowRecyclerViewUtils<Songs.DataBean.ListBean>(recycler_song3, 0, mAdapterSong3).addItemDecoration(1, R.color.gary);
-        recycler_song3.setAdapter(mAdapterSong3);
-        getAllList(3, mAdapterSong3, pagingMap[3]);
-    }
-
-    /**
-     * 流行
-     */
-    private void setSongs4() {
-        mAdapterSong4 = new ListViewAdapter<Songs.DataBean.ListBean>(null, this, R.layout.item_song_item) {
-            @Override
-            protected void setData(BaseViewHoloder holder, int position, Songs.DataBean.ListBean item) {
-                if (4 == type && position == vertical) {
-                    holder.getAbroadView().setSelected(true);
-                } else {
-                    holder.getAbroadView().setSelected(false);
-                }
-                if (position < 9) {
-                    holder.getTextView(R.id.song_id).setText("0" + (position + 1));
-                } else {
-                    holder.getTextView(R.id.song_id).setText("" + (position + 1));
-                }
-                holder.getTextView(R.id.song_context).setText(item.getTitle() + "-" + item.getAuther());
-
-            }
-        };
-        mAdapterSong4.setPullToData(20, true, new IPullLoading() {
-            @Override
-            public void PullToLoading() {
-                int size = pagingMap[4] + 1;
-                pagingMap[4] = size;
-                getAllList(4, mAdapterSong4, pagingMap[4]);
-            }
-        });
-        new LowRecyclerViewUtils<Songs.DataBean.ListBean>(recycler_song4, 0, mAdapterSong4).addItemDecoration(1, R.color.gary);
-        recycler_song4.setAdapter(mAdapterSong4);
-        getAllList(4, mAdapterSong4, pagingMap[4]);
-    }
-
-    /**
-     * 动漫游戏
-     */
-    private void setSongs5() {
-        mAdapterSong5 = new ListViewAdapter<Songs.DataBean.ListBean>(null, this, R.layout.item_song_item) {
-            @Override
-            protected void setData(BaseViewHoloder holder, int position, Songs.DataBean.ListBean item) {
-                if (5 == type && position == vertical) {
-                    holder.getAbroadView().setSelected(true);
-                } else {
-                    holder.getAbroadView().setSelected(false);
-                }
-                if (position < 9) {
-                    holder.getTextView(R.id.song_id).setText("0" + (position + 1));
-                } else {
-                    holder.getTextView(R.id.song_id).setText("" + (position + 1));
-                }
-                holder.getTextView(R.id.song_context).setText(item.getTitle() + "-" + item.getAuther());
-
-            }
-        };
-        mAdapterSong5.setPullToData(20, true, new IPullLoading() {
-            @Override
-            public void PullToLoading() {
-                int size = pagingMap[5] + 1;
-                pagingMap[5] = size;
-                getAllList(5, mAdapterSong5, pagingMap[5]);
-            }
-        });
-        new LowRecyclerViewUtils<Songs.DataBean.ListBean>(recycler_song5, 0, mAdapterSong5).addItemDecoration(1, R.color.gary);
-        recycler_song5.setAdapter(mAdapterSong5);
-        getAllList(5, mAdapterSong5, pagingMap[5]);
-    }
-
-    /**
-     * 伤感
-     */
-    private void setSongs6() {
-        mAdapterSong6 = new ListViewAdapter<Songs.DataBean.ListBean>(null, this, R.layout.item_song_item) {
-            @Override
-            protected void setData(BaseViewHoloder holder, int position, Songs.DataBean.ListBean item) {
-                if (6 == type && position == vertical) {
-                    holder.getAbroadView().setSelected(true);
-                } else {
-                    holder.getAbroadView().setSelected(false);
-                }
-                if (position < 9) {
-                    holder.getTextView(R.id.song_id).setText("0" + (position + 1));
-                } else {
-                    holder.getTextView(R.id.song_id).setText("" + (position + 1));
-                }
-                holder.getTextView(R.id.song_context).setText(item.getTitle() + "-" + item.getAuther());
-
-            }
-        };
-        mAdapterSong6.setPullToData(20, true, new IPullLoading() {
-            @Override
-            public void PullToLoading() {
-                int size = pagingMap[6] + 1;
-                pagingMap[6] = size;
-                getAllList(6, mAdapterSong6, pagingMap[6]);
-            }
-        });
-        new LowRecyclerViewUtils<Songs.DataBean.ListBean>(recycler_song6, 0, mAdapterSong6).addItemDecoration(1, R.color.gary);
-        recycler_song6.setAdapter(mAdapterSong6);
-        getAllList(6, mAdapterSong6, pagingMap[6]);
+        new LowRecyclerViewUtils<Songs.DataBean.ListBean>(recyclerViewList.get(i), 0, mAdapterList.get(i)).addItemDecoration(1, R.color.gary);
+        recyclerViewList.get(i).setAdapter(mAdapterList.get(i));
+        getAllList(id, mAdapterList.get(i), pagingMap.get(i));
     }
 
     /**
@@ -419,149 +269,62 @@ public class SelectActivity extends BaseActivity {
     /**
      * 获取用户信息
      */
-    private void getUserInfo() {
-        if (Constents.user_id.equals("")) {
-            return;
-        }
-        final Map<String, String> maps = new HashMap<>();
-        maps.put("user_id", Constents.user_id);
-        maps.put("device_id", PreManger.instance().getMacId());
-        OkHttpUtils.postMap(HttpUrls.GETUSERINFO, maps, new IOkHttpCallBack() {
-            @Override
-            public void success(String result) {
-                UserInfo mUserInfo = OkHttpUtils.Json2Bean(result, UserInfo.class);
-                if (mUserInfo == null) return;
-                if (mUserInfo.getCode().equals("000")) {
-                    if (mUserInfo.getData().getLeftscore().length() < 6) {
-                        int time = Integer.parseInt(mUserInfo.getData().getLeftscore());
-                        if (isShowDialog) {
-                            if (time <= 60) {
-//                                直接退出，时间不足一分钟，请求服务器
-                                Intent intent = new Intent(Constents.ACTION);
-                                intent.putExtra(Constents.KEY, Constents.LOGOUT);
-                                SelectActivity.this.sendBroadcast(intent);
-                                MyToast.ShowLong("时间不足，请去充值");
-                                MyLogUtils.e(TAG, "结束广播，没有时间");
-                            } else if (time / 60 == 5) {
-                                //不足5分钟
-                                RelativeLayout view = (RelativeLayout) findViewById(R.id.main_select);
-                                timeDialog.setVisibility(View.VISIBLE);
-                                MyLogUtils.e(TAG, "不足5分钟");
-                            }
-                        } else {
-                            if (time <= 60) {
-                                Intent intent = new Intent(Constents.ACTION);
-                                intent.putExtra(Constents.KEY, Constents.LOGOUT_FINISH);
-                                SelectActivity.this.sendBroadcast(intent);
-                                MyToast.ShowLong("时间不足，请去充值");
-                                MyLogUtils.e(TAG, "结束广播，没有时间");
-                            } else if (time / 60 == 5) {
-                                Intent intent = new Intent(Constents.ACTION);
-                                intent.putExtra(Constents.KEY, Constents.NOTIME_5);
-                                SelectActivity.this.sendBroadcast(intent);
-                            }
-                        }
-
-                    }
-                    if (mUserName.getText().toString().trim().equals("")) {
-                        nickname = mUserInfo.getData().getNickname();
-                        icon = mUserInfo.getData().getHeadimg();
-                        mUserName.setText(nickname);
-                        Glide.with(SelectActivity.this).load(mUserInfo.getData().getHeadimg()).into(mIcon);
-                    }
-                    if (PreManger.instance().getStatus().equals("1")) {
-                        timer = new Timer();
-                        //60s发送一次请求
-                        timer.schedule(new TimerTask() {
-                            @Override
-                            public void run() {
-                                //公用
-                                getUserInfo();
-                            }
-                        }, 1000 * 60);
-                    }
-                }
-            }
-        });
-
-    }
+//    private void getUserInfo() {
+//        if (Constents.user_id.equals("")) {
+//            return;
+//        }
+//        final Map<String, String> maps = new HashMap<>();
+//        maps.put("user_id", Constents.user_id);
+//        maps.put("device_id", PreManger.instance().getMacId());
+//        OkHttpUtils.getInstance().postMap(HttpUrls.GETUSERINFO, maps, new IOkHttpCallBack() {
+//            @Override
+//            public void success(String result) {
+//                UserInfo mUserInfo = OkHttpUtils.Json2Bean(result, UserInfo.class);
+//                if (mUserInfo == null) return;
+//                if (mUserInfo.getCode().equals("000")) {
+//                    if (mUserInfo.getData().getLeftscore().length() < 6) {
+//
+//                    }
+//
+//                }
+//            }
+//        });
+//
+//    }
 
     @Override
     protected void setLinster() {
-        TimeChangeReceiver.getNetStatus(new INetStatus() {
+        OkHttpUtils.getInstance().getNetStatus(new INetStatus() {
             @Override
             public void isNoNet() {
                 if (isWXLogin) {
-                    MyToast.ShowLong("网络断开，请联网后登陆");
+                    MyToast.ShowLong("网络异常断开，请联网后登陆");
                     Intent intent = new Intent(Constents.ACTION);
                     intent.putExtra(Constents.KEY, Constents.LOGOUT_FINISH);
                     SelectActivity.this.sendBroadcast(intent);
-                    MyLogUtils.e(TAG, "结束广播，网络断开");
                 }
             }
         });
-        popLeftImg.setOnClickListener(new View.OnClickListener() {
+        OkHttpUtils.getInstance().getMusic(new IMusic() {
             @Override
-            public void onClick(View v) {
-                popLeftImg.setSelected(true);
-                popRigetImg.setSelected(false);
-                if (selectView.getVisibility() == View.VISIBLE) {
-                    selectView.setVisibility(View.GONE);
-                    if (nickname == null || nickname.equals("")) return;
-                    if (icon == null || icon.equals("")) return;
-                    if (music_title == null || music_title.equals("")) return;
-                    if (music_auther == null || music_auther.equals("")) return;
-                    if (music_xml == null || music_xml.equals("")) return;
-                    if (music_id == null || music_id.equals("")) return;
-                    isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
-                    Intent intent = new Intent(SelectActivity.this, PianoActivity.class);
-                    startActivity(intent);
-                } else {
-                    setPopWinndow();
-                }
-            }
-        });
-        popRigetImg.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                popLeftImg.setSelected(false);
-                popRigetImg.setSelected(true);
-                if (selectView.getVisibility() == View.VISIBLE) {
-                    selectView.setVisibility(View.GONE);
-                    if (nickname == null || nickname.equals("")) return;
-                    if (icon == null || icon.equals("")) return;
-                    if (music_title == null || music_title.equals("")) return;
-                    if (music_auther == null || music_auther.equals("")) return;
-                    if (music_xml == null || music_xml.equals("")) return;
-                    if (music_id == null || music_id.equals("")) return;
-                    isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
-                    Intent intent = new Intent(SelectActivity.this, PianoActivity.class);
-                    startActivity(intent);
-                } else {
-                    setPopWinndow();
-                }
-            }
-        });
-        MyMessageReceiver.getMusic(new IMusic() {
-            @Override
-            public void music(Map<String, String> map) {
-                if (map == null) return;
+            public void music(WebSocketBean.Datas data) {
+                if (data == null) return;
                 //音乐推送
-                music_id = map.get("music_id");
-                music_title = map.get("music_title");
-                music_auther = map.get("auther");
-                music_xml = map.get("file_xml");
-                music_type = map.get("type");
-                MyLogUtils.e(TAG, "music_id" + music_id);
-                MyLogUtils.e(TAG, "music_title" + music_title);
-                MyLogUtils.e(TAG, "music_auther" + music_auther);
-                MyLogUtils.e(TAG, "music_xml" + music_xml);
-                MyLogUtils.e(TAG, "music_type" + music_type);
-                MyLogUtils.e(TAG, "" + getTopActivityName(MyAppliction.getContext()));
+                music_id = data.getMusic_id();
+                music_title = data.getMusic_title();
+                music_auther = data.getAuther();
+                music_xml = data.getFile_xml();
+                music_updatatime = data.getUpdatetime();
+                if (type != -1) {
+                    int a = type;
+                    type = 2;
+                    mAdapterList.get(a).upData();
+                } else {
+                    type = 2;
+                }
                 if (getTopActivityName(MyAppliction.getContext())) {
                     selectView.setVisibility(View.VISIBLE);
                     popText.setText(music_title + "—" + music_auther);
-                    type = 1;
                 } else {
                     Intent intent = new Intent(Constents.ACTION);
                     intent.putExtra(Constents.KEY, Constents.MUSIC);
@@ -569,6 +332,34 @@ public class SelectActivity extends BaseActivity {
                 }
             }
         });
+        OkHttpUtils.getInstance().getTimeNot(new ITimeNot() {
+            @Override
+            public void notTime() {
+                if (isShowDialog) {
+                    dialog = new TimeDialog(SelectActivity.this);
+                    dialog.show();
+                    MyLogUtils.e(TAG, "不足5分钟");
+                } else {
+                    Intent intent = new Intent(Constents.ACTION);
+                    intent.putExtra(Constents.KEY, Constents.NOTIME_5);
+                    SelectActivity.this.sendBroadcast(intent);
+                }
+            }
+        });
+//        popLeftImg.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                selectView.setVisibility(View.GONE);
+//                if (music_title == null || music_title.equals("")) return;
+//                if (music_auther == null || music_auther.equals("")) return;
+//                if (music_xml == null || music_xml.equals("")) return;
+//                if (music_id == null || music_id.equals("")) return;
+//                if (music_updatatime == null || music_updatatime.equals("")) return;
+//                isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
+//                Intent intent = new Intent(SelectActivity.this, PullViewActivity.class);
+//                startActivity(intent);
+//            }
+//        });
     }
 
     /**
@@ -585,7 +376,7 @@ public class SelectActivity extends BaseActivity {
             ComponentName f = runningTaskInfos.get(0).topActivity;
             topActivityClassName = f.getClassName();
         }
-        MyLogUtils.e(TAG, "当前topActivity：" + topActivityClassName);
+//        MyLogUtils.e(TAG, "当前topActivity：" + topActivityClassName);
         return topActivityClassName.contains(TAG);
     }
 
@@ -593,14 +384,15 @@ public class SelectActivity extends BaseActivity {
      * 设置分数列表,用来展示，不做任何操作
      */
     private void setFraction() {
-        fractionAdapter = new ListViewAdapter<MusicHistort.DataBean.ListBean>(null, this, R.layout.item_song_item) {
+        pagingMap.put(0, 1);
+        mAdapterList.add(0, new ListViewAdapter<Songs.DataBean.ListBean>(null, this, R.layout.item_song_item) {
             @Override
-            protected void setData(BaseViewHoloder holder, int position, MusicHistort.DataBean.ListBean item) {
+            public void setData(BaseViewHoloder holder, int position, Songs.DataBean.ListBean item) {
                 if (position == 0) {
                     mSongName.setText(item.getMusic_title() + "-" + item.getAuther());
                     mSongFraction.setText(item.getScore() + "分");
                 }
-                if (type == -1 && position == vertical) {
+                if (type == 0 && position == vertical) {
                     holder.getAbroadView().setSelected(true);
                 } else {
                     holder.getAbroadView().setSelected(false);
@@ -616,34 +408,37 @@ public class SelectActivity extends BaseActivity {
                 text.setVisibility(View.VISIBLE);
                 holder.getImageView(R.id.song_img).setVisibility(View.GONE);
             }
-        };
-        fractionAdapter.setPullToData(20, true, new IPullLoading() {
+        });
+        mAdapterList.get(0).setPullToData(20, true, new IPullLoading() {
             @Override
             public void PullToLoading() {
-                int size = pagingMap[7] + 1;
-                pagingMap[7] = size;
-                getFraction();
+                pagingMap.put(0, pagingMap.get(0) + 1);
+                getFraction(false);
             }
         });
-        new LowRecyclerViewUtils<MusicHistort.DataBean.ListBean>(mFractionRecyler, 0, fractionAdapter).addItemDecoration(1, R.color.gary);
-        mFractionRecyler.setAdapter(fractionAdapter);
-        getFraction();
+        new LowRecyclerViewUtils<Songs.DataBean.ListBean>(recyclerViewList.get(0), 0, mAdapterList.get(0)).addItemDecoration(1, R.color.gary);
+        recyclerViewList.get(0).setAdapter(mAdapterList.get(0));
+        getFraction(true);
     }
 
     /**
      * 获取分数列表
      */
-    private void getFraction() {
+    private void getFraction(final boolean isUpdatas) {
         Map<String, String> maps = new HashMap<>();
         maps.put("sort", "1");//排序
         maps.put("user_id", Constents.user_id);//排序
-        maps.put("page", "" + pagingMap[7]);//分页，每页20条
-        OkHttpUtils.postMap(HttpUrls.MUSICHISTORY, maps, new IOkHttpCallBack() {
+        maps.put("page", "" + pagingMap.get(0));//分页，每页20条
+        OkHttpUtils.getInstance().postMap(HttpUrls.MUSICHISTORY, maps, new IOkHttpCallBack() {
             @Override
             public void success(String result) {
-                MusicHistort bean = OkHttpUtils.Json2Bean(result, MusicHistort.class);
+                Songs bean = OkHttpUtils.Json2Bean(result, Songs.class);
                 if (bean.getCode().equals("000")) {
-                    fractionAdapter.insertDatas(bean.getData().getList());
+                    if (isUpdatas) {
+                        mAdapterList.get(0).upData(bean.getData().getList());
+                    } else {
+                        mAdapterList.get(0).insertDatas(bean.getData().getList());
+                    }
                 }
             }
         });
@@ -656,11 +451,11 @@ public class SelectActivity extends BaseActivity {
      * @param id
      * @param adapter
      */
-    private void getAllList(final int id, final ListViewAdapter<Songs.DataBean.ListBean> adapter, int pager) {
+    private void getAllList(final String id, final ListViewAdapter<Songs.DataBean.ListBean> adapter, int pager) {
         Map<String, String> maps = new HashMap<>();
-        maps.put("category_id", "" + id);
+        maps.put("category_id", id);
         maps.put("page", "" + pager);
-        OkHttpUtils.postMap(HttpUrls.GETLIST, maps, new IOkHttpCallBack() {
+        OkHttpUtils.getInstance().postMap(HttpUrls.GETLIST, maps, new IOkHttpCallBack() {
             @Override
             public void success(String result) {
                 Songs beans = OkHttpUtils.Json2Bean(result, Songs.class);
@@ -676,13 +471,13 @@ public class SelectActivity extends BaseActivity {
      */
     private void getVideo() {
         Map<String, String> maps = new HashMap<>();
-        maps.put("page", "" + pagingMap[0]);
-        OkHttpUtils.postMap(HttpUrls.GETVIDEOLIST, maps, new IOkHttpCallBack() {
+        maps.put("page", "" + pagingMap.get(1));
+        OkHttpUtils.getInstance().postMap(HttpUrls.GETVIDEOLIST, maps, new IOkHttpCallBack() {
             @Override
             public void success(String result) {
                 Songs bean = OkHttpUtils.Json2Bean(result, Songs.class);
                 if (bean.getCode().equals("000")) {
-                    mAdapterVedio.insertDatas(bean.getData().getList());
+                    mAdapterList.get(1).insertDatas(bean.getData().getList());
                 }
             }
         });
@@ -697,7 +492,7 @@ public class SelectActivity extends BaseActivity {
                     popLeftImg.setSelected(true);
                     popRigetImg.setSelected(false);
                 } else {
-                    MyLogUtils.e(TAG, "左");
+//                    MyLogUtils.e(TAG, "左");
                     type--;
                     vertical = 0;
                     setLevelSelect();
@@ -707,7 +502,7 @@ public class SelectActivity extends BaseActivity {
             case KeyEvent.KEYCODE_DPAD_UP:
                 //上
                 if (selectView.getVisibility() == View.VISIBLE) return true;
-                MyLogUtils.e(TAG, "上");
+//                MyLogUtils.e(TAG, "上");
                 vertical--;
                 setVerticalSelect();
                 return true;
@@ -718,7 +513,7 @@ public class SelectActivity extends BaseActivity {
                     popRigetImg.setSelected(true);
                     popLeftImg.setSelected(false);
                 } else {
-                    MyLogUtils.e(TAG, "右");
+//                    MyLogUtils.e(TAG, "右");
                     type++;
                     vertical = 0;
                     setLevelSelect();
@@ -728,35 +523,56 @@ public class SelectActivity extends BaseActivity {
             case KeyEvent.KEYCODE_DPAD_DOWN:
                 //下
                 if (selectView.getVisibility() == View.VISIBLE) return true;
-                MyLogUtils.e(TAG, "下");
+//                MyLogUtils.e(TAG, "下");
                 vertical++;
                 setVerticalSelect();
                 return true;
             case KeyEvent.KEYCODE_DPAD_CENTER:
-//                MyLogUtils.e(TAG, "确定");
-//                MyLogUtils.e(TAG, "确定" + type);
-                if (timeDialog.getVisibility() == View.VISIBLE) {
-                    timeDialog.setVisibility(View.GONE);
-                    MyLogUtils.e(TAG, "时间提示框消失");
-                } else if (type > 0) {
+                if (type > 1 || type == 0) {
                     if (selectView.getVisibility() == View.VISIBLE) {
-                        selectView.setVisibility(View.GONE);
-                        if (nickname == null || nickname.equals("")) return true;
-                        if (icon == null || icon.equals("")) return true;
-                        if (music_title == null || music_title.equals("")) return true;
-                        if (music_auther == null || music_auther.equals("")) return true;
-                        if (music_xml == null || music_xml.equals("")) return true;
-                        if (music_id == null || music_id.equals("")) return true;
-                        if (music_type == null || music_type.equals("")) return true;
-                        isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
-                        Intent intent = new Intent(SelectActivity.this, PianoActivity.class);
-                        startActivity(intent);
+                        startNextActivity();
                     } else {
-                        setPopWinndow();
+                        if (type == 0) {
+                            if (mAdapterList.get(type).getmData().size() == 0) {
+                                vertical = 0;
+                                return true;
+                            }
+                            if (mAdapterList.get(type).getmData().size() - 1 < vertical)
+                                vertical = mAdapterList.get(type).getmData().size() - 1;
+                            popData = null;
+                            popData = (Songs.DataBean.ListBean) mAdapterList.get(type).getmData().get(vertical);
+                            if (popData == null) return true;
+                            Map<String, String> map = new HashMap<>();
+                            map.put("id", popData.getMusic_id());
+                            OkHttpUtils.getInstance().postMap(HttpUrls.GETONEMUSIC, map, new IOkHttpCallBack() {
+                                @Override
+                                public void success(String result) {
+                                    OneSong data = OkHttpUtils.Json2Bean(result, OneSong.class);
+                                    if (data != null && data.getCode().equals("000")) {
+                                        popData = data.getData();
+                                        selectView.setVisibility(View.VISIBLE);
+                                        music_title = popData.getTitle();
+                                        music_auther = popData.getAuther();
+                                        music_xml = popData.getMusic_xml();
+                                        music_id = popData.getMusic_id();
+                                        music_updatatime = popData.getUpdatetime();
+                                        popText.setText(music_title + "—" + music_auther);
+                                    } else {
+                                        MyToast.ShowLong("获取数据失败");
+                                    }
+                                }
+                            });
+                        } else {
+                            setPopWinndow();
+                        }
                     }
-                } else if (type == 0) {
-                    popData = (Songs.DataBean.ListBean) mAdapterVedio.getmData().get(vertical);
+                } else if (type == 1) {
+                    popData = (Songs.DataBean.ListBean) mAdapterList.get(1).getmData().get(vertical);
                     if (popData != null) {
+                        if (popData.getVideo_xml() == null || popData.getVideo_xml().equals("")) {
+                            MyToast.ShowLong("没有有效的路径");
+                            return true;
+                        }
                         isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
                         Intent intent = new Intent(SelectActivity.this, VideoActivity.class);
                         intent.putExtra("title", popData.getTitle());
@@ -767,235 +583,122 @@ public class SelectActivity extends BaseActivity {
                 }
                 return true;
             case KeyEvent.KEYCODE_BACK:
-                //返回
-                MyLogUtils.e(TAG, "返回");
-                if (timeDialog.getVisibility() == View.VISIBLE) {
-                    timeDialog.setVisibility(View.GONE);
-                } else if (selectView.getVisibility() == View.VISIBLE) {
+                if (selectView.getVisibility() == View.VISIBLE) {
                     selectView.setVisibility(View.GONE);
+                    return true;
                 } else if (isWXLogin) {
+                    MyToast.ShowLong("请求退出中...");
                     Intent intent = new Intent(Constents.ACTION);
                     intent.putExtra(Constents.KEY, Constents.LOGOUT);
                     SelectActivity.this.sendBroadcast(intent);
+                } else {
+                    finish();
                 }
                 return true;
-//            case KeyEvent.KEYCODE_ENTER:
-//                MyLogUtils.e(TAG, "确定");
-//                MyLogUtils.e(TAG, "确定" + type);
-//                if (timeDialog.getVisibility() == View.VISIBLE) {
-//                    timeDialog.setVisibility(View.GONE);
-//                    MyLogUtils.e(TAG, "时间提示框消失");
-//                } else if (type > 0) {
-//                    if (selectView.getVisibility() == View.VISIBLE) {
-//                        selectView.setVisibility(View.GONE);
-//                        if (nickname == null || nickname.equals("")) return true;
-//                        if (icon == null || icon.equals("")) return true;
-//                        if (music_title == null || music_title.equals("")) return true;
-//                        if (music_auther == null || music_auther.equals("")) return true;
-//                        if (music_xml == null || music_xml.equals("")) return true;
-//                        if (music_id == null || music_id.equals("")) return true;
-//                        if (music_type == null || music_type.equals("")) return true;
-//                        isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
-//                        Intent intent = new Intent(SelectActivity.this, PianoActivity.class);
-//                        startActivity(intent);
-//                    } else {
-//                        setPopWinndow();
-//                    }
-//                } else if (type == 0) {
-//                    popData = (Songs.DataBean.ListBean) mAdapterVedio.getmData().get(vertical);
-//                    if (popData != null) {
-//                        isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
-//                        Intent intent = new Intent(SelectActivity.this, VideoActivity.class);
-//                        intent.putExtra("title", popData.getTitle());
-//                        intent.putExtra("auther", popData.getAuther());
-//                        intent.putExtra("xml", popData.getMusic_xml());
-//                        startActivity(intent);
-//                    }
-//                }
-//                return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    private void startNextActivity() {
+        selectView.setVisibility(View.GONE);
+        isShowDialog = false;//开启另一个activity的时候要设置为false，防止dialog在本页出现
+        if (popLeftImg.isSelected()) {
+            Intent intent = new Intent(SelectActivity.this, PullViewActivity.class);
+            startActivity(intent);
+        } else {
+            Intent intent = new Intent(SelectActivity.this, PianoActivity.class);
+            startActivity(intent);
+        }
     }
 
     /**
      * 上下移动
      */
     private void setVerticalSelect() {
-        if (type < -1) {
-            type = -1;
-        }
-        if (vertical < 0) {
+        if (type == -1) type = 0;
+        if (mAdapterList.get(type).getmData().size() == 0) return;
+        if (vertical > mAdapterList.get(type).getmData().size() - 1) {
+            vertical = mAdapterList.get(type).getmData().size() - 1;
+        } else if (vertical < 0) {
             vertical = 0;
         }
-        switch (type) {
-            case -1:
-//                打分
-                if (vertical >= fractionAdapter.getmData().size()) {
-                    vertical = fractionAdapter.getmData().size() - 1;
-                }
-                mFractionRecyler.smoothScrollToPosition(vertical);
-                fractionAdapter.upData();
-                break;
-            case 0:
-//                视频
-                if (vertical >= mAdapterVedio.getmData().size()) {
-                    vertical = mAdapterVedio.getmData().size() - 1;
-                }
-                recycler_video.smoothScrollToPosition(vertical);
-                mAdapterVedio.upData();
-                scrollView.smoothScrollTo(0, 0);
-                break;
-            case 1:
-                if (vertical >= mAdapterSong1.getmData().size()) {
-                    vertical = mAdapterSong1.getmData().size() - 1;
-                }
-                recycler_song1.smoothScrollToPosition(vertical);
-                mAdapterSong1.upData();
-                scrollView.smoothScrollTo(680, 0);
-                break;
-            case 2:
-                if (vertical >= mAdapterSong2.getmData().size()) {
-                    vertical = mAdapterSong2.getmData().size() - 1;
-                }
-                recycler_song2.smoothScrollToPosition(vertical);
-                mAdapterSong2.upData();
-                scrollView.smoothScrollTo(680 * 2, 0);
-                break;
-            case 3:
-                if (vertical >= mAdapterSong3.getmData().size()) {
-                    vertical = mAdapterSong3.getmData().size() - 1;
-                }
-                recycler_song3.smoothScrollToPosition(vertical);
-                mAdapterSong3.upData();
-                scrollView.smoothScrollTo(680 * 3, 0);
-                break;
-            case 4:
-                if (vertical >= mAdapterSong4.getmData().size()) {
-                    vertical = mAdapterSong4.getmData().size() - 1;
-                }
-                recycler_song4.smoothScrollToPosition(vertical);
-                mAdapterSong4.upData();
-                scrollView.smoothScrollTo(680 * 4, 0);
-                break;
-            case 5:
-                if (vertical >= mAdapterSong5.getmData().size()) {
-                    vertical = mAdapterSong5.getmData().size() - 1;
-                }
-                recycler_song5.smoothScrollToPosition(vertical);
-                mAdapterSong5.upData();
-                scrollView.smoothScrollTo(680 * 5, 0);
-                break;
-            case 6:
-                if (vertical >= mAdapterSong6.getmData().size()) {
-                    vertical = mAdapterSong6.getmData().size() - 1;
-                }
-                recycler_song6.smoothScrollToPosition(vertical);
-                mAdapterSong6.upData();
-                scrollView.smoothScrollTo(680 * 6, 0);
-                break;
-        }
+        recyclerViewList.get(type).smoothScrollToPosition(vertical);
+        mAdapterList.get(type).upData();
     }
 
     /**
      * 选择视频，歌曲(向左右移动)
      */
     private void setLevelSelect() {
-        if (type < -1) {
-            type = -1;
-        } else if (type > 6) {
-            type = 6;
+        int size = mAdapterList.size();
+        if (type < 0) {
+            type = 0;
+        } else if (type > size - 1) {
+            type = size - 1;
         }
-        switch (type) {
-            case -1:
-//                打分
-                mFractionRecyler.smoothScrollToPosition(vertical);
-                fractionAdapter.upData();
-                mAdapterVedio.upData();
-                break;
-            case 0:
-//                视频
-                scrollView.smoothScrollTo(0, 0);
-                recycler_video.smoothScrollToPosition(vertical);
-                fractionAdapter.upData();
-                mAdapterVedio.upData();
-                mAdapterSong1.upData();
-                break;
-            case 1:
-                scrollView.smoothScrollTo(680, 0);
-                recycler_song1.smoothScrollToPosition(vertical);
-                mAdapterVedio.upData();
-                mAdapterSong1.upData();
-                mAdapterSong2.upData();
-                break;
-            case 2:
-                scrollView.smoothScrollTo(680 * 2, 0);
-                recycler_song2.smoothScrollToPosition(vertical);
-                mAdapterSong1.upData();
-                mAdapterSong2.upData();
-                mAdapterSong3.upData();
-                break;
-            case 3:
-                scrollView.smoothScrollTo(680 * 3, 0);
-                recycler_song3.smoothScrollToPosition(vertical);
-                mAdapterSong2.upData();
-                mAdapterSong3.upData();
-                mAdapterSong4.upData();
-                break;
-            case 4:
-                scrollView.smoothScrollTo(680 * 4, 0);
-                recycler_song4.smoothScrollToPosition(vertical);
-                mAdapterSong3.upData();
-                mAdapterSong4.upData();
-                mAdapterSong5.upData();
-                break;
-            case 5:
-                scrollView.smoothScrollTo(680 * 5, 0);
-                recycler_song5.smoothScrollToPosition(vertical);
-                mAdapterSong4.upData();
-                mAdapterSong5.upData();
-                mAdapterSong6.upData();
-                break;
-            case 6:
-                scrollView.smoothScrollTo(680 * 6, 0);
-                recycler_song6.smoothScrollToPosition(vertical);
-                mAdapterSong5.upData();
-                mAdapterSong6.upData();
-                break;
+        if (type == 0) {
+            recyclerViewList.get(type).smoothScrollToPosition(vertical);
+            mAdapterList.get(type).upData();
+            mAdapterList.get(type + 1).upData();
+        } else if (type == 1) {
+            recyclerViewList.get(type).smoothScrollToPosition(vertical);
+            scrollView.smoothScrollTo(680 * (type - 1), 0);
+            mAdapterList.get(type - 1).upData();
+            mAdapterList.get(type).upData();
+            if (type < size - 1) mAdapterList.get(type + 1).upData();
+        } else {
+            recyclerViewList.get(type).smoothScrollToPosition(vertical);
+            scrollView.smoothScrollTo(680 * (type - 1), 0);
+            mAdapterList.get(type - 1).upData();
+            mAdapterList.get(type).upData();
+            if (type < size - 1) mAdapterList.get(type + 1).upData();
         }
+        if (mAdapterList.get(type).getmData().size() == 0) return;
     }
 
     /**
      * 选择演奏模式
      */
     private void setPopWinndow() {
-        if (popData == null) return;
-        switch (type) {
-            case 1:
-                popData = (Songs.DataBean.ListBean) mAdapterSong1.getmData().get(vertical);
-                break;
-            case 2:
-                popData = (Songs.DataBean.ListBean) mAdapterSong2.getmData().get(vertical);
-                break;
-            case 3:
-                popData = (Songs.DataBean.ListBean) mAdapterSong3.getmData().get(vertical);
-                break;
-            case 4:
-                popData = (Songs.DataBean.ListBean) mAdapterSong4.getmData().get(vertical);
-                break;
-            case 5:
-                popData = (Songs.DataBean.ListBean) mAdapterSong5.getmData().get(vertical);
-                break;
-            case 6:
-                popData = (Songs.DataBean.ListBean) mAdapterSong6.getmData().get(vertical);
-                break;
+//        MyLogUtils.e(TAG, "选择模式");
+        if (mAdapterList.get(type).getmData().size() == 0) {
+            vertical = 0;
+            return;
         }
+        if (mAdapterList.get(type).getmData().size() - 1 < vertical)
+            vertical = mAdapterList.get(type).getmData().size() - 1;
+        popData = null;
+        popData = (Songs.DataBean.ListBean) mAdapterList.get(type).getmData().get(vertical);
         if (popData == null) return;
-        selectView.setVisibility(View.VISIBLE);
         music_title = popData.getTitle();
         music_auther = popData.getAuther();
         music_xml = popData.getMusic_xml();
         music_id = popData.getMusic_id();
-        music_type = popData.getCategory_id();
+        music_updatatime = popData.getUpdatetime();
+
+        if (music_xml == null || music_xml.equals("")) {
+            MyToast.ShowLong("没有发现该文件");
+            return;
+        }
+
+        if (music_title == null || music_title.equals("")) {
+            MyToast.ShowLong("歌曲名字为空");
+            return;
+        }
+
+        if (music_auther == null || music_auther.equals("")) {
+            MyToast.ShowLong("作者为空");
+            return;
+        }
+        if (music_id == null || music_id.equals("")) {
+            MyToast.ShowLong("Id为空");
+            return;
+        }
+
+        if (music_updatatime == null || music_updatatime.equals(""))
+            return;
+
+        selectView.setVisibility(View.VISIBLE);
         popText.setText(music_title + "—" + music_auther);
     }
 
@@ -1010,9 +713,6 @@ public class SelectActivity extends BaseActivity {
             switch (intent.getStringExtra(Constents.KEY)) {
                 case Constents.LOGOUT_FINISH:
                     //activity直接退出
-                    if (timer != null) {
-                        timer.cancel();
-                    }
                     SelectActivity.this.finish();
                     break;
             }
@@ -1022,13 +722,24 @@ public class SelectActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        selectActivity = null;
         unregisterReceiver(receiver);
     }
 
     public void getData(IGetSelectData data) {
         if (data == null) return;
-        data.data(nickname, icon, popLeftImg.isSelected(),//昵称，用户头像，是否是瀑布流
-                music_type, music_title, music_auther, music_xml, music_id);//音乐相关
+        data.data(nickname, icon,//昵称，用户头像
+                music_updatatime.replace(" ", "_"), music_title,
+                music_auther, music_xml, music_id);//音乐相关
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (isUpdata) {
+            pagingMap.put(0, 1);
+            getFraction(true);
+            isUpdata = false;
+        }
+    }
 }

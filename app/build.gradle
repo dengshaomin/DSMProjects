@@ -1,21 +1,36 @@
 apply plugin: 'com.android.application'
 
 android {
+    signingConfigs {
+        config {
+            keyAlias 'paino'
+            keyPassword 'painos'
+            storeFile file('E:/android-workspace/IntelligentPiano/paino.jks')
+            storePassword 'painos'
+        }
+    }
     compileSdkVersion 26
     buildToolsVersion "26.0.2"
     defaultConfig {
         applicationId "com.yizu.intelligentpiano"
         minSdkVersion 19
         targetSdkVersion 26
-        versionCode 1
-        versionName "1.0"
+        versionCode 5
+        versionName "5.0"
+        multiDexEnabled true
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         ndk {
             abiFilters 'armeabi', 'x86', 'arm64-v8a', 'armeabi-v7a', 'x86_64', 'mips', 'mips64'
         }
+        vectorDrawables.useSupportLibrary = true
     }
     buildTypes {
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
         release {
+            //混淆
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
@@ -36,10 +51,11 @@ android {
             maven { url 'https://maven.google.com' }
         }
     }
-
 }
 
 dependencies {
+    implementation 'com.android.support:design:26.1.0'
+    implementation 'com.android.support:support-vector-drawable:26.1.0'
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile project(':lowrecyclerviews')
     //aLi PUSH
@@ -52,11 +68,9 @@ dependencies {
     compile 'com.android.support.test.espresso:espresso-core:3.0.1'
     compile 'com.squareup.okhttp3:okhttp:3.9.0'
     compile 'com.google.code.gson:gson:2.8.2'
-    compile 'com.aliyun.ams:alicloud-android-push:3.0.11@aar'
-    compile 'com.aliyun.ams:alicloud-android-utdid:1.1.5.3'
-    compile 'com.aliyun.ams:alicloud-android-ut:5.1.0'
     compile 'com.github.bumptech.glide:glide:4.1.1'
     testCompile 'junit:junit:4.12'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.1.1'
     implementation project(':canvasgl')
+    compile "org.java-websocket:Java-WebSocket:1.3.7"
 }

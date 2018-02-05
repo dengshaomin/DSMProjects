@@ -1,6 +1,6 @@
 package com.yizu.intelligentpiano.constens;
 
-import java.util.Map;
+import com.yizu.intelligentpiano.bean.WebSocketBean;
 
 /**
  * Created by liuxiaozhu on 2017/9/25.
@@ -8,5 +8,5 @@ import java.util.Map;
  */
 
 public interface ILogin {
-    void login(Map<String, String> map);
+    void login(WebSocketBean.Datas data);
 }

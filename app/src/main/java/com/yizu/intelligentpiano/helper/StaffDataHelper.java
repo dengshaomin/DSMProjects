@@ -30,7 +30,7 @@ public class StaffDataHelper {
     //保存绘制瀑布流的数据
     private List<PullData> pullData=new ArrayList<>();
     //保存整个谱子升降音的数组
-    private String[] fifth;
+    private String[] fifth={};
     //开头是升还是降银
     private boolean isUpfifth = false;
     //默认每分钟88拍
@@ -43,7 +43,7 @@ public class StaffDataHelper {
     //每小节多少Duration
     private int measureDurationNum = 0;
     //默认每个druction的长度20像素
-    private int mSpeedLenth = 20;
+    private int mSpeedLenth = 15;
     //每个duration多少毫秒
     private float mSpeedTime = 0;
 
@@ -86,9 +86,13 @@ public class StaffDataHelper {
                 if (mAttributess == null && staffData.get(j).getMeasure().get(k).getAttributes() != null) {
                     //五线谱信息
                     mAttributess = staffData.get(j).getMeasure().get(k).getAttributes();
+                    divisions = Integer.valueOf(mAttributess.getDivisions());
+                    beats = Integer.valueOf(mAttributess.getTime().getBeats());
+                    //每一小节的duraction数量
+                    measureDurationNum = divisions * beats;
                     //处理整条五线谱的升降音
                     initFifthData(mAttributess.getKey().getFifths());
-                    if (mAttributess.getStaves() != null && mAttributess.getStaves().equals("2")) {
+                    if (mAttributess.getClefList().size()==2) {
                         isTowStaff = true;
                     } else {
                         isTowStaff = false;
@@ -103,6 +107,7 @@ public class StaffDataHelper {
                         secondTimeDuration = fristTimeDuration - Integer.valueOf(staffData.get(j).getMeasure().get(k).getBackup().getDuration());
                         //保存backup数据
                         mBackUPData.add(Integer.valueOf(staffData.get(j).getMeasure().get(k).getBackup().getDuration()));
+//                        mBackUPData.add(Math.min(measureDurationNum,Integer.valueOf(staffData.get(j).getMeasure().get(k).getBackup().getDuration())));
                     } else {
                         if (!isBackUp) {
                             list.add(staffData.get(j).getMeasure().get(k));
@@ -138,17 +143,14 @@ public class StaffDataHelper {
             mSecondStaffData.add(new Measure(list1));
             pullData.add(new PullData(fristTime, secondTime));
         }
-        divisions = Integer.valueOf(mAttributess.getDivisions());
-        beats = Integer.valueOf(mAttributess.getTime().getBeats());
         //每个duraction的时间
         mSpeedTime = 60 * 1000 / (DEFAULT_TIME_NUM * divisions);
 
-        //每一小节的duraction数量
-        measureDurationNum = divisions * beats;
 
 //        每小节长度为320
-        mSpeedLenth = 320 / measureDurationNum;
+        mSpeedLenth = 300 / measureDurationNum;
         if (mSpeedLenth < 2) mSpeedLenth = 2;//每个druction不小于1
+        if (mSpeedLenth>20) mSpeedLenth = 20;
         if (mAttributess==null)return;
         if (mFristStaffData.size()==0) return;
         if (mSecondStaffData.size()==0) return;
@@ -607,10 +609,6 @@ public class StaffDataHelper {
         return DEFAULT_TIME_NUM;
     }
 
-    public boolean isTowStaff() {
-        return isTowStaff;
-    }
-
     public List<Integer> getmBackUPData() {
         return mBackUPData;
     }
@@ -633,5 +631,9 @@ public class StaffDataHelper {
 
     public float getmSpeedTime() {
         return mSpeedTime;
+    }
+
+    public boolean isTowStaff() {
+        return isTowStaff;
     }
 }

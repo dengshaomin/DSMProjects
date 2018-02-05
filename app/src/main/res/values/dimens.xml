@@ -1,41 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!--<dimen name="com_240dp">760px</dimen>-->
-    <dimen name="com_240dp">240dp</dimen>
-    <dimen name="com_300dp">300dp</dimen>
-    <dimen name="com_40dp">40dp</dimen>
-    <dimen name="com_10dp">10dp</dimen>
-    <dimen name="com_5dp">5dp</dimen>
-    <dimen name="com_80dp">80dp</dimen>
-    <dimen name="com_210dp">210dp</dimen>
-    <dimen name="com_15sp">15sp</dimen>
-    <dimen name="com_100dp">100dp</dimen>
-    <dimen name="com_30dp">30dp</dimen>
-    <dimen name="com_20sp">20sp</dimen>
-    <dimen name="com_20dp">20dp</dimen>
-    <dimen name="com_7dp">7dp</dimen>
-    <dimen name="com_10sp">10sp</dimen>
-    <dimen name="com_200dp">200dp</dimen>
-    <dimen name="com_160dp">160dp</dimen>
-    <dimen name="com_140dp">140dp</dimen>
-    <dimen name="com_15dp">15dp</dimen>
-    <dimen name="com_60dp">60dp</dimen>
-    <dimen name="com_7sp">7sp</dimen>
-    <dimen name="com_3dp">3dp</dimen>
-    <dimen name="com_2dp">2dp</dimen>
-    <dimen name="com_1dp">1dp</dimen>
-    <dimen name="com_2px">2px</dimen>
-    <dimen name="com_5sp">5sp</dimen>
-    <dimen name="com_35dp">35dp</dimen>
-    <dimen name="com_50dp">50dp</dimen>
-    <dimen name="com_90dp">90dp</dimen>
-    <dimen name="com_25dp">25dp</dimen>
-    <dimen name="com_70dp">70dp</dimen>
-    <dimen name="com_0dp">0dp</dimen>
-    <dimen name="com_150dp">150dp</dimen>
-
-
     <dimen name="com_760px">760px</dimen>
     <dimen name="com_72px">72px</dimen>
     <dimen name="com_22px">22px</dimen>
@@ -66,4 +31,15 @@
     <dimen name="com_240px">240px</dimen>
     <dimen name="com_170px">170px</dimen>
     <dimen name="com_400px">400px</dimen>
+    <dimen name="com_420px">900px</dimen>
+    <dimen name="com_2000px">2040px</dimen>
+    <dimen name="com_45px">45px</dimen>
+    <dimen name="com_650px">660px</dimen>
+    <dimen name="com_15px">15px</dimen>
+    <dimen name="com_3px">3px</dimen>
+    <dimen name="com_0px">0px</dimen>
+    <dimen name="com_2px">2px</dimen>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
 </resources>
